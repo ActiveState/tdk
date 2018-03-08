@@ -1,0 +1,729 @@
+# -*- tcl -*- tclX.tcl --
+#
+#	This file contains type and command checkers for the TclX
+#	commands.
+#
+# Copyright (c) 1998-2000 Ajuba Solutions
+
+# 
+# RCS: @(#) $Id: tclX.tcl,v 1.3 2000/10/31 23:30:54 welch Exp $
+
+# ### ######### ###########################
+## Requisites
+
+package require pcx          ; # PCX API
+
+# ### ######### ###########################
+## Tcl core version dependencies of the package this checker is for.
+
+pcx::register tclX Tclx
+pcx::tcldep   8.0 needs tcl 8.0
+pcx::tcldep   8.1 needs tcl 8.1
+pcx::tcldep   8.2 needs tcl 8.3
+
+# ### ######### ###########################
+
+# ### ######### ###########################
+## Package specific message types and their human-readable
+## translations.
+
+pcx::message badProfileOpt  {option "%1$s" not valid when turning off profiling} err
+pcx::message optionRequired {expected %1$s, got "%2$s"} err
+pcx::message badLIndex      {invalid index: should be integer, "len" or "end"} err
+pcx::message badTlibFile    {the filename must have a ".tlib" suffix} err
+
+# ### ######### ###########################
+# scanCmdsX.X --
+# Define the set of commands that need to be recuresed into when
+# generating a list of user defiend procs, namespace and Class
+# contexts and procedure name resolutions info.
+
+pcx::scan 8.0 commandloop
+pcx::scan 8.0 for_array_keys
+pcx::scan 8.0 for_recursive_glob
+pcx::scan 8.0 loop
+pcx::scan 8.0 try_eval
+pcx::scan 8.0 cmdtrace
+pcx::scan 8.0 signal
+pcx::scan 8.0 for_file
+
+# ### ######### ###########################
+# checkersX.X --
+# Define the set of command-specific checkers used by this package.
+
+pcx::check 8.0 std dirs			{checkSimpleArgs 0 0 {}}
+pcx::check 8.0 std commandloop		{checkSwitches 1 {
+    -async 
+    {-endcommand checkBody}
+    {-prompt1	 checkBody}
+    {-prompt2	 checkBody}
+    {-interactive tclX::checkTtyOrBoolean}
+} {}}
+pcx::check 8.0 std echo			{checkSimpleArgs 0 -1 checkWord}
+pcx::check 8.0 std infox			{checkSimpleArgs 1  1 {{checkOption {
+    {version		{checkSimpleArgs 0 0 {}}}
+    {patchlevel		{checkSimpleArgs 0 0 {}}}
+    {have_chown		{checkSimpleArgs 0 0 {}}}
+    {have_fchmod	{checkSimpleArgs 0 0 {}}}
+    {have_fchown	{checkSimpleArgs 0 0 {}}}
+    {have_flock		{checkSimpleArgs 0 0 {}}}
+    {have_fsync		{checkSimpleArgs 0 0 {}}}
+    {have_ftruncate	{checkSimpleArgs 0 0 {}}}
+    {have_msgcats	{checkSimpleArgs 0 0 {}}}
+    {have_posix_signals	{checkSimpleArgs 0 0 {}}}
+    {have_signal_restart	{checkSimpleArgs 0 0 {}}}
+    {have_symlink	{checkSimpleArgs 0 0 {}}}
+    {have_truncate	{checkSimpleArgs 0 0 {}}}
+    {have_waitpid	{checkSimpleArgs 0 0 {}}}
+    {appname		{checkSimpleArgs 0 0 {}}}
+    {applongname	{checkSimpleArgs 0 0 {}}}
+    {appversion		{checkSimpleArgs 0 0 {}}}
+    {apppatchlevel	{checkSimpleArgs 0 0 {}}}
+} {}}}}
+pcx::check 8.0 std for_array_keys		{checkSimpleArgs 3 3 {
+    checkVarNameWrite checkVarName checkBody
+}   }
+pcx::check 8.0 std for_recursive_glob	{checkSimpleArgs 4 4 {
+    checkVarNameWrite checkList checkList checkBody
+}   }
+pcx::check 8.0 std loop			{checkNumArgs {
+    {4	{checkSimpleArgs 4 4 {
+	checkVarNameWrite 
+	checkInt 
+	checkInt 
+	checkBody
+}   }   }
+{5	{checkSimpleArgs 5 5 {
+    checkVarNameWrite 
+    checkInt 
+    checkInt 
+    checkInt 
+    checkBody
+}   }   }
+}   }
+pcx::check 8.0 std popd			{checkSimpleArgs 0 0 {}}
+pcx::check 8.0 std pushd			{checkSimpleArgs 0 1 {checkFileName}}
+pcx::check 8.0 std recursive_glob		{checkSimpleArgs 2 2 {checkList}}
+pcx::check 8.0 std showproc		{checkSimpleArgs 0 -1 {checkWord}}
+pcx::check 8.0 std try_eval		{checkSimpleArgs 2 3 {checkBody}}
+
+
+pcx::check 8.0 std cmdtrace		{checkSimpleArgs 1 -1 {{checkOption {
+    {off		{checkSimpleArgs 0 0 {}}}
+    {depth		{checkSimpleArgs 0 0 {}}}
+    {on			{tclX::checkCmdTraceOnCmd}}
+} {tclX::checkCmdTraceLevelCmd}}}}
+pcx::check 8.0 std edprocs			{checkSimpleArgs 0 -1 {checkWord}}
+pcx::check 8.0 std profile			{tclX::checkProfileCmd}
+pcx::check 8.0 std profrep			{checkSimpleArgs 2 4 {
+    checkVarName 
+    {checkKeyword 1 {calls cpu real}}
+    checkFileName
+    checkWord
+}   }
+pcx::check 8.0 std saveprocs		{checkSimpleArgs 1 -1 {
+    checkFileName checkWord
+}   }
+
+
+pcx::check 8.0 std alarm			{checkSimpleArgs 1 1 {checkInt}}
+pcx::check 8.0 std execl			{checkSwitches 1 {
+    {-argv0 checkWord}
+} {checkSimpleArgs 1 -1 checkWord}}
+pcx::check 8.0 std chroot			{checkSimpleArgs 1 1 {checkFileName}}
+pcx::check 8.0 std fork			{::analyzer::warn nonPortCmd {} {checkSimpleArgs 0 0 {}}}
+pcx::check 8.0 std id			{checkSimpleArgs 1 -1 {{checkOption {
+    {convert		{checkSimpleArgs 1 -1 {{checkOption {
+	{group		{checkSimpleArgs 1 1 {checkWord}}}
+	{groupid	{checkSimpleArgs 1 1 {checkWord}}}
+	{user		{checkSimpleArgs 1 1 {checkWord}}}
+	{userid		{checkSimpleArgs 1 1 {checkWord}}}
+    } {checkSimpleArgs 0 0 {}}}}}}
+    {effective		{checkSimpleArgs 1 -1 {{checkOption {
+	{group		{checkSimpleArgs 0 0 {}}}
+	{groupid	{checkSimpleArgs 0 0 {}}}
+	{groupids	{checkSimpleArgs 0 0 {}}}
+	{user		{checkSimpleArgs 0 0 {}}}
+	{userid		{checkSimpleArgs 0 0 {}}}
+    } {checkSimpleArgs 0 0 {}}}}}}
+    {group		{checkSimpleArgs 0 1 {checkWord}}}
+    {groupid		{checkSimpleArgs 0 1 {checkWord}}}
+    {groupids		{checkSimpleArgs 0 0 {checkWord}}}
+    {groups		{checkSimpleArgs 0 0 {checkWord}}}
+    {host		{checkSimpleArgs 0 0 {checkWord}}}
+    {process		{checkSimpleArgs 0 -1 {{checkOption {
+	{group		{checkSimpleArgs 0 -1 {{checkOption {
+	    {set	{checkSimpleArgs 0 0 {}}}
+	} {checkSimpleArgs 0 0 {}}}}}}
+	{parent		{checkSimpleArgs 0 0 {}}}
+    } {checkSimpleArgs 0 0 {}}}}}}
+    {user		{checkSimpleArgs 0 1 {checkWord}}}
+    {userid		{checkSimpleArgs 0 1 {checkWord}}}
+} {checkSimpleArgs 0 0 {}}}}}
+pcx::check 8.0 std kill			{::analyzer::warn nonPortCmd {} {checkSwitches 1 {
+    -pgroup
+} {checkSimpleArgs 1 2 {checkWord checkList}}}}
+pcx::check 8.0 std link			{::analyzer::warn nonPortCmd {} {checkSwitches 1 {
+    -sym
+} {checkSimpleArgs 2 2 {checkFileName}}}}
+pcx::check 8.0 std nice			{::analyzer::warn nonPortCmd {} {
+    checkSimpleArgs 0 1 {checkInt}}
+}
+pcx::check 8.0 std readdir			{checkSwitches 1 {
+    -hidden
+} {checkSimpleArgs 1 1 {checkFileName}}}
+pcx::check 8.0 std signal			{checkSwitches 1 {
+    -restart
+} {checkSimpleArgs 2 3 {
+    {checkKeyword 1 \
+	    {default ignore error trap get \
+	    set block unblock *}
+}
+checkList
+checkBody
+}   }   }
+pcx::check 8.0 std sleep			{checkSimpleArgs 1  1 {checkInt}}
+pcx::check 8.0 std system			{checkSimpleArgs 1 -1 {checkWord}}
+pcx::check 8.0 std sync			{checkSimpleArgs 0  1 {checkChannelID}}
+pcx::check 8.0 std times			{checkSimpleArgs 0  0 {}}
+pcx::check 8.0 std umask			{checkSimpleArgs 0  1 {checkInt}}
+pcx::check 8.0 std wait			{checkSwitches 1 {
+    -nohang -untraced -pgroup
+} {checkSimpleArgs 0 1 {checkInt}}}
+
+
+pcx::check 8.0 std bsearch			{checkSimpleArgs 2 4 {
+    checkChannelID checkWord
+}   }
+pcx::check 8.0 std chmod			{::analyzer::warn nonPortCmd {} {checkSwitches 1 {
+    -fileid
+} {checkSimpleArgs 1 2 {checkWord checkList}}}}
+pcx::check 8.0 std chown			{::analyzer::warn nonPortCmd {} {checkSwitches 1 {
+    -fileid
+} {checkSimpleArgs 1 -1 {
+    checkList
+    checkWord
+}   }   }   }
+pcx::check 8.0 std chgrp			{::analyzer::warn nonPortCmd {} {checkSwitches 1 {
+    -fileid
+} {checkSimpleArgs 1 2 {checkWord checkList}}}}
+pcx::check 8.0 std dup			{checkSimpleArgs 1 2 {checkChannelID}}
+
+# fcntl - not easily translated to equivalent fconfigure - therefore not done
+pcx::check 8.0 std fcntl {::analyzer::warn warnDeprecated fconfigure {
+    checkSimpleArgs 2 3 {
+	checkChannelID checkWord
+    }
+}}
+pcx::check 8.0 std flock			{::analyzer::warn nonPortCmd {} {checkSwitches 1 {
+    -read -write -nowait
+} {checkSimpleArgs 1 4 {
+    checkChannelID
+    checkInt
+    checkInt
+    {checkKeyword 1 {start current end}}
+}   }   }   }
+pcx::check 8.0 std for_file		{checkSimpleArgs 3 3 {
+    checkVarNameWrite checkFileName checkBody
+}   }
+pcx::check 8.0 std funlock			{::analyzer::warn nonPortCmd {} {checkSimpleArgs 1 4 {
+    checkChannelID
+    checkInt
+    checkInt
+    {checkKeyword 1 {start current end}}
+}   }   }
+pcx::check 8.0 std fstat			{checkSimpleArgs 1 -1 {
+    checkChannelID 
+    {checkOption {
+	{stat		{checkSimpleArgs 1 1 {checkVarNameWrite}}}
+    } {checkSimpleArgs 1 1 {{checkOption {
+	{atime		{checkSimpleArgs 0 0 {}}}
+	{ctime		{checkSimpleArgs 0 0 {}}}
+	{dev		{checkSimpleArgs 0 0 {}}}
+	{gid		{checkSimpleArgs 0 0 {}}}
+	{ino		{checkSimpleArgs 0 0 {}}}
+	{mode		{checkSimpleArgs 0 0 {}}}
+	{mtime		{checkSimpleArgs 0 0 {}}}
+	{nlink		{checkSimpleArgs 0 0 {}}}
+	{size		{checkSimpleArgs 0 0 {}}}
+	{tty		{checkSimpleArgs 0 0 {}}}
+	{type		{checkSimpleArgs 0 0 {}}}
+	{uid		{checkSimpleArgs 0 0 {}}}
+	{remotehost		{checkSimpleArgs 0 0 {}}}
+	{localhost		{checkSimpleArgs 0 0 {}}}
+    } {}}}}}}}
+    pcx::check 8.0 std ftruncate		{checkSwitches 1 {
+	{-fileid {::analyzer::warn nonPortCmd {} {
+	    checkSwitchArg {} 0 0 {}
+}   }   }
+} {checkSimpleArgs 2 2 {checkWord checkInt}}}
+pcx::check 8.0 std lgets			{checkSimpleArgs 1 2 {
+    checkChannelID checkVarNameWrite
+}   }
+pcx::check 8.0 std pipe			{checkSimpleArgs 0 2 {checkChannelID}}
+pcx::check 8.0 std read_file		{tclX::checkReadFileCmd}
+pcx::check 8.0 std select			{checkSimpleArgs 1 4 {
+    checkList checkList checkList checkFloat
+}   }
+pcx::check 8.0 std write_file		{checkSimpleArgs 1 -1 {
+    checkFileName checkWord
+}   }
+
+
+
+pcx::check 8.0 std host_info		{checkSimpleArgs 2 2 {{checkOption {
+    {addresses		{checkSimpleArgs 1 1 {checkWord}}}
+    {official_name	{checkSimpleArgs 1 1 {checkWord}}}
+    {aliases		{checkSimpleArgs 1 1 {checkWord}}}
+} {}}}}
+
+
+
+pcx::check 8.0 std scancontext		{checkSimpleArgs 1 3 {{checkOption {
+    {create		{checkSimpleArgs 0 0 {}}}
+    {delete		{checkSimpleArgs 1 1 {checkWord}}}
+    {copyfile		{checkSimpleArgs 1 2 {checkWord}}}
+} {}}}}
+pcx::check 8.0 std scanfile		{checkSwitches 1 {
+    {-copyfile checkChannelID}
+} {checkSimpleArgs 2 2 {
+    checkWord checkChannelID
+}   }   }
+pcx::check 8.0 std scanmatch		{checkSwitches 1 {
+    -nocase
+} {checkNumArgs {
+    {2	{checkSimpleArgs 2 2 {checkWord}}}
+    {3	{checkSimpleArgs 3 3 {
+	checkWord checkPattern checkWord
+}   }   }
+}   }   }
+
+pcx::check 8.0 std abs			{checkSimpleArgs 1  1 {checkFloat}}
+pcx::check 8.0 std acos			{checkSimpleArgs 1  1 {checkFloat}}
+pcx::check 8.0 std asin			{checkSimpleArgs 1  1 {checkFloat}}
+pcx::check 8.0 std atan 			{checkSimpleArgs 1  1 {checkFloat}}
+pcx::check 8.0 std atan2			{checkSimpleArgs 1  1 {checkFloat}}
+pcx::check 8.0 std ceil			{checkSimpleArgs 1  1 {checkFloat}}
+pcx::check 8.0 std cos			{checkSimpleArgs 1  1 {checkFloat}}
+pcx::check 8.0 std cosh			{checkSimpleArgs 1  1 {checkFloat}}
+pcx::check 8.0 std double			{checkSimpleArgs 1  1 {checkFloat}}
+pcx::check 8.0 std floor 			{checkSimpleArgs 1  1 {checkFloat}}
+pcx::check 8.0 std fmod			{checkSimpleArgs 2  2 {checkFloat}}
+pcx::check 8.0 std int			{checkSimpleArgs 1  1 {checkFloat}}
+pcx::check 8.0 std log10			{checkSimpleArgs 1  1 {checkFloat}}
+pcx::check 8.0 std log			{checkSimpleArgs 1  1 {checkFloat}}
+pcx::check 8.0 std max			{checkSimpleArgs 1 -1 {checkFloat}}
+pcx::check 8.0 std min			{checkSimpleArgs 1 -1 {checkFloat}}
+pcx::check 8.0 std pow			{checkSimpleArgs 2  2 {checkFloat}}
+pcx::check 8.0 std random			{checkSimpleArgs 1 2 {{checkOption {
+    {seed		    {checkSimpleArgs 0 1 {checkInt}}}
+} {checkSimpleArgs 1 1 {checkInt}}}}}
+pcx::check 8.0 std round			{checkSimpleArgs 1  1 {checkFloat}}
+pcx::check 8.0 std sin			{checkSimpleArgs 1  1 {checkFloat}}
+pcx::check 8.0 std sinh			{checkSimpleArgs 1  1 {checkFloat}}
+pcx::check 8.0 std sqrt			{checkSimpleArgs 1  1 {checkFloat}}
+pcx::check 8.0 std tan			{checkSimpleArgs 1  1 {checkFloat}}
+pcx::check 8.0 std tanh			{checkSimpleArgs 1  1 {checkFloat}}
+
+pcx::check 8.0 std intersect		{checkSimpleArgs 2  2 {checkList}}
+pcx::check 8.0 std intersect3		{checkSimpleArgs 2  2 {checkList}}
+pcx::check 8.0 std lassign			{checkSimpleArgs 2 -1 {checkList checkWord}}
+pcx::check 8.0 std lcontain		{checkSimpleArgs 2  2 {checkList checkWord}}
+pcx::check 8.0 std lempty			{checkSimpleArgs 1  1 {checkList}}
+pcx::check 8.0 std lmatch			{checkSwitches 1 {
+    -exact -glob -regexp
+} {checkSimpleArgs 2  2 {
+    checkList checkPattern
+}   }   }
+pcx::check 8.0 std lrmdups	{checkSimpleArgs 1  1 {checkList}}
+pcx::check 8.0 std lvarcat	{checkSimpleArgs 2 -1 {checkVarNameWrite checkWord}}
+pcx::check 8.0 std lvarpop	{checkSimpleArgs 1  3 {checkVarNameWrite tclX::checkLIndex checkWord}}
+pcx::check 8.0 std lvarpush	{checkSimpleArgs 2  3 {checkVarNameWrite checkWord tclX::checkLIndex}}
+pcx::check 8.0 std union	{checkSimpleArgs 2  2 {checkList}}
+
+pcx::check 8.0 std keyldel	{checkSimpleArgs 2  2 {checkVarNameWrite checkWord}}
+pcx::check 8.0 std keylget	{checkSimpleArgs 1  3 {checkVarName checkWord checkVarNameWrite}}
+pcx::check 8.0 std keylkeys	{checkSimpleArgs 1  2 {checkVarName checkWord}}
+pcx::check 8.0 std keylset	{checkSimpleArgs 3 -1 {
+    checkVarNameWrite 
+    {tclX::checkPair 1 checkWord checkWord}}
+}
+
+pcx::check 8.0 std ccollate	{checkSwitches 1 {-local} {checkSimpleArgs 2  2 {checkWord}}}
+pcx::check 8.0 std cconcat	{checkSimpleArgs 0 -1 {checkWord}}
+pcx::check 8.0 std cequal	{checkSimpleArgs 2  2 {checkWord}}
+pcx::check 8.0 std cindex	{checkSimpleArgs 2  2 {checkWord tclX::checkLIndex}}
+pcx::check 8.0 std clength	{checkSimpleArgs 1  1 {checkWord}}
+pcx::check 8.0 std crange	{checkSimpleArgs 3  3 {checkWord tclX::checkLIndex}}
+pcx::check 8.0 std csubstr	{checkSimpleArgs 3  3 {checkWord tclX::checkLIndex}}
+pcx::check 8.0 std ctoken	{checkSimpleArgs 2  2 {checkVarNameWrite checkWord}}
+
+pcx::check 8.0 std ctype			{checkOption {
+    {char  {checkSimpleArgs 1 1 checkByteNum}}
+    {ord   {checkSimpleArgs 1 1 checkWord}}} {checkSwitches 1 {
+	{-failindex checkVarNameWrite}
+    } {checkSimpleArgs 2 2 {{checkKeyword 1 {
+	alnum alpha ascii cntrl digit graph lower space print punct upper xdigit
+    }
+} checkWord}}}}
+
+pcx::check 8.0 std replicate		{checkSimpleArgs 2  2 {checkWord checkInt}}
+pcx::check 8.0 std translit		{checkSimpleArgs 3  3 {checkWord}}
+
+pcx::check 8.0 std catopen		{checkSimpleArgs 1 2 {{checkSwitches 1 {
+    -fail -nofail
+} {checkSimpleArgs 1  1 {checkWord}}}}}
+pcx::check 8.0 std catgets		{checkSimpleArgs 4  4 {
+    checkWord checkInt checkInt checkWord
+}   }
+pcx::check 8.0 std catclose		{checkSimpleArgs 1 2 {{checkSwitches 1 {
+    -fail -nofail
+} {checkSimpleArgs 1  1 {checkWord}}}}}
+
+pcx::check 8.0 std mainloop		{checkSimpleArgs 0  0 {}}
+
+pcx::check 8.0 std auto_commands	{checkSwitches 1 {
+    -loaders
+} {checkSimpleArgs 0 0 {}}}
+pcx::check 8.0 std buildpackageindex	{checkSimpleArgs 1 1 {checkList}}
+pcx::check 8.0 std convert_lib		{checkSimpleArgs 2 3 {
+    checkFileName checkFileName checkList
+}   }
+pcx::check 8.0 std loadlibindex		{checkSimpleArgs 1 1 {tclX::checkTlibSuffix}}
+pcx::check 8.0 std auto_packages	{checkSwitches 1 {
+    -locations
+} {checkSimpleArgs 0  0 {}}}
+pcx::check 8.0 std auto_load_file	{checkSimpleArgs 1 1 {checkWord}}
+pcx::check 8.0 std searchpath		{checkSimpleArgs 2 2 {checkFileName checkWord}}
+
+## Nothing for 8.1
+## Nothing for 8.2
+
+# ### ######### ###########################
+## Expr operators and functions declared by this package
+
+pcx::mathop 8.2 min 2
+pcx::mathop 8.2 max 2
+
+# ### ######### ###########################
+
+# ### ######### ###########################
+## Initialization
+
+## This package relies on the standard initialization sequence of
+## 'pcx::init'. This is automatically called if no 'init' command
+## is found in the namespace of the checker package.
+
+# ### ######### ###########################
+
+# ### ######### ###########################
+# Checkers for specific commands --
+
+namespace eval ::tclX {}
+
+# tclX::checkPair --
+#
+#	Check the next pair of command arguments.  This checker is
+#	useful when there is a required sequence of word1 word2 
+#	pairs.  An error is flagged if word1 exists, but word2 
+#	does not.
+#
+# Arguments:
+#	atLeastOne	Boolean, indicating if there is a minumun
+#			of one pair required.
+#	cmd1		The type checker for the first word.
+#	cmd2		The type checker for the second word.
+#	tokens		The list of word tokens after the initial
+#			command and subcommand names
+#	index		The index into the token tree where the 
+#			checkers should start checking.
+#
+# Results:
+#	Return the list of message type keywords.
+
+proc ::tclX::checkPair {atLeastOne cmd1 cmd2 tokens index} {
+    set oneFound 0
+    set argc [llength $tokens]
+    while {$index < $argc} {
+	set index [$cmd1 $tokens $index]
+	if {$index < $argc} {
+	    set index [$cmd2 $tokens $index]
+	} else {
+	    logError numArgs {}
+	}
+	set oneFound 1
+    }
+    if {$atLeastOne && !$oneFound} {
+	logError numArgs {}
+    }
+    return $index
+}
+
+# Checkers for specific commands --
+#
+#	Each checker is passed the tokens for the arguments to 
+#	the command.  The name of each checker should be of the
+#	form tclX::check<Name>Cmd, where <name> is the command
+# 	being checked.
+#
+# Arguments:
+#	tokens		The list of word tokens after the initial
+#			command and subcommand names
+#	index		The index into the token tree where the 
+#			checkers should start checking.
+#
+# Results:
+#	Return the next index, in the tokens tree, to check.
+
+
+proc ::tclX::checkTtyOrBoolean {tokens index} {
+    # Used by the commandloop command, this checks to see if the word 
+    # is a literal "tty" value or a valid boolean value.
+
+    set word [lindex $tokens $index]
+    if {[getLiteral $word literal]} {
+	if {$literal == "tty"} {
+	    incr index
+	} else {
+	    set index [checkBoolean $tokens $index]
+	}
+    } else {
+	set index [checkWord $tokens $index]
+    }
+    return $index
+}
+
+proc ::tclX::checkCmdTraceOnCmd {tokens index} {
+    # Check the various options for the "cmdtrace on" subcommand.
+
+    set file -1
+    set cmd  -1
+    set err  {}
+    set argc [llength $tokens]
+    while {$index < $argc} {
+	if {![getLiteral [lindex $tokens $index] arg]} {
+	    incr index
+	    continue
+	}
+
+	switch -glob -- $arg {
+	    notruncate -
+	    noeval -
+	    procs {
+		incr index
+	    }
+	    std* -
+	    file* {
+		set file $index
+		set err  $index
+		incr index
+		set index \
+			[checkSwitchArg $arg 1 1 checkChannelID $tokens $index]
+	    }
+	    command {
+		set cmd $index
+		set err $index
+		incr index
+		set index [checkSwitchArg $arg 1 1 checkBody $tokens $index]
+	    }
+	    default {
+		set range [getTokenRange [lindex $tokens $index]]
+		logError badOption $range \
+			{notruncate, noeval, procs, filed or command} $arg
+		incr index
+	    }
+	}
+    }
+    
+    if {(($file >= 0) && ($cmd >= 0))} {
+	set range [getTokenRange [lindex $tokens $err]]
+	logExtendedError \
+	    [CorrectionsOf 0 $tokens \
+		 ldrop $file ldrop $file save \
+		 ldrop $cmd  ldrop $cmd  save] \
+	    mismatchOptions $range
+    }
+
+    return $index
+}
+
+proc ::tclX::checkCmdTraceLevelCmd {tokens index} {
+    # Check the "cmdtrace" command.  This is called if none of the
+    # sub commands matched.  If there is one token left, then this
+    # should be an integer value for the level.  Otherwise, this
+    # should be logged as an unknown option.
+
+    set argc [llength $tokens]
+    if {![getLiteral [lindex $tokens $index] arg]} {
+	return [checkCommand $tokens $index]
+    }
+
+    set remaining [expr {$argc - $index}]
+    if {$remaining == 1} {
+	checkInt $tokens $index
+	incr index
+    } else {
+	set range [getTokenRange [lindex $tokens $index]]
+	logError badOption $range \
+		{notruncate, noeval, procs, filed or command} $arg
+	set index [checkCommand $tokens $index]
+    }
+    return $index
+}
+
+proc ::tclX::checkProfileCmd {tokens index} {
+    # Check the various options for the "profile" command.
+
+    set onOpt {}
+    set on    0
+    set off   0
+    set var   0
+
+    set argc [llength $tokens]
+    if {$index >= $argc} {
+	logError numArgs {}
+	return $index
+    }
+
+    while {$index < $argc} {
+	if {![getLiteral [lindex $tokens $index] arg]} {
+	    incr index
+	    set var 1
+	    continue
+	}
+
+	switch -glob -- $arg {
+	    -commands -
+	    -eval {
+		set onOpt $arg
+		set index \
+			[checkSwitchArg $arg 1 1 checkChannelID $tokens $index]
+	    }
+	    on {
+		set on 1
+		incr index
+		break
+	    }
+	    off {
+		set off 1
+		set index \
+			[checkSwitchArg $arg 1 1 checkVarNameWrite $tokens $index]
+		break
+	    }
+	    default {
+		set range [getTokenRange [lindex $tokens $index]]
+		logError badOption $range {commands eval on off} $arg
+		incr index
+	    }
+	}
+    }
+    
+    # Verify at least "on" or "off" was specified.  If a non-literal 
+    # was encountered, give the benefit of the doubt and assume that
+    # it will be OK.  
+
+    if {!($on) && !($off) && !($var)} {
+	set range [getTokenRange [lindex $tokens $index]]
+	logError tclX::optionRequired $range {"on" or "off"} $arg
+    } elseif {$off && ($onOpt != {})} {
+	logError tclX::badProfileOpt {} $onOpt
+    }
+
+    set remaining [expr {$argc - $index}]
+    if {$on && ($remaining > 0)} {
+	logError numArgs {}
+	set index [checkCommand $tokens $index]
+    } elseif {$off} {
+	if {$remaining == 1} {
+	    set index [checkVarNameWrite $tokens $index]
+	} else {
+	    logError numArgs {}
+	    set index [checkCommand $tokens $index]
+	}
+    } elseif {$remaining > 0} {
+	set index [checkCommand $tokens $index]
+    }
+    return $index
+}
+
+proc ::tclX::checkReadFileCmd {tokens index} {
+    # Check the various options for the "read)file" command.
+
+    set argc [expr {[llength $tokens] - $index}]
+    if {($argc != 1) && ($argc != 2)} {
+	logError numArgs {}
+	return [checkCommand $tokens $index]
+    }	
+
+    set arg {}
+    set len [llength $tokens]
+    set literal [getLiteral [lindex $tokens $index] arg]
+
+    if {($argc == 1) && ($arg != "-nonewline")} {
+	if {$index < $len} {
+	    set index [checkFileName $tokens $index]
+	} else {
+	    logError numArgs {}
+	}
+    } elseif {$arg == "-nonewline"} {	
+	incr index
+	if {$index < $len} {
+	    set index [checkFileName $tokens $index]
+	} else {
+	    logError numArgs {}
+	}
+    } else {
+	set  index [checkFileName $tokens $index]
+	set  index [checkInt $tokens $index]
+    }
+    return $index
+}
+
+proc ::tclX::checkLIndex {tokens index} {
+    set word [lindex $tokens $index]
+    # Check to see if:
+    # - it's a string then verify it's "end", or "end-<integer>".
+    # - it's a string then verify it's "len", or "len-<integer>".
+    # - it's an integer (as opposed to a float.)
+
+    if {[getLiteral $word literal]} {
+	set length [string length $literal]
+	if {[string range $literal 0 2] in {end len}} {
+	    if {$length <= 3} {
+		return [incr index]
+	    } elseif {[string equal "-" [string index $literal 3]]} {
+		set literal [string range $literal 4 end]
+		if {[catch {incr literal}]} {
+		    logError tclX::badLIndex [getTokenRange $word]
+		}
+		return [incr index]
+	    } else {
+		logError tclX::badLIndex [getTokenRange $word]
+	    }
+		
+	} elseif {[catch {incr literal}]} {
+	    logError tclX::badLIndex [getTokenRange $word]
+	}
+	return [incr index]
+    } else {
+	return [checkWord $tokens $index]
+    }
+}
+
+proc ::tclX::checkTlibSuffix {tokens index} {
+    # Check to see if:
+    # - it's a string then verify it ends with ".tlib"
+
+    set word [lindex $tokens $index]
+    if {[getLiteral $word literal]} {
+	if {![string match "*.tlib" $literal]} {
+	    logError tclX::badTlibFile [getTokenRange $word]
+	}
+	return [incr index]
+    } else {
+	return [checkWord $tokens $index]
+    }
+}
+
+# ### ######### ###########################
+pcx::complete

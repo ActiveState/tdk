@@ -1,0 +1,103 @@
+TDK 3.0 Checker Xref
+====================
+
+To be recognized:
+
+1.	Proc definitions
+2.	Command usage
+3.	Namespace "definitions" (== usage)
+4.	Variable definitions
+5.	Variable usage
+6.	Package requirements
+
+=====================
+
+Ad 1.	Simple.
+	Has to know namespace context of the definition
+	to generate fully qualified name.
+
+	Standard procheck multi-pass does definition scanning
+	in the first pass to recognize all commands in the
+	second one. This does namespace recording too.
+
+	Does it record imported commands ?
+	Aliasing ?
+
+	This database is among the information which has to be
+	written out.
+
+
+Ad 2.	Simple
+
+	The complex part here is to resolve namespace issues.
+	What is the current namespace context, name of the
+	command => look for command. This is actually part of
+	the standard step in checking it, the generic engine
+	has to find the right command to be able to apply the
+	correct checker command.
+
+	In this mode we have to additionally record the location of
+	the call together with the fully qualified name of the
+	command.
+
+
+Ad 3.	See ad 1. about the database accumulated in the pre-pass.
+
+Ad 4.	Requires extension of the internal database
+
+	The pre-pass has to record global and local definitions.
+	The relevant commands are 'global', 'set', 'variable',
+	and 'upvar'.
+
+Ad 5.	Requires command rules which recognize where variables are
+	in a command.
+
+	The standard rules do this, but also more.
+
+	This has to use the database built in the pre-pass, see
+	ad 4. to determine where the variable was defined.
+
+NOTE:
+	Ad 4. and 5. are also the essential components for the
+	'extended syntax check II', see "TDK_3.0_Checker.txt".
+
+Ad 6.	Simple.
+
+	Just add the relevant requires to the pre-pass database.
+
+=====================
+
+
+=====================
+
+Advanced scanning:
+
+Ad 1.	Complex
+
+	Use the body of a proc definition to determine which
+	arguments of the procedure contain variable names.
+
+	This information can be used to define a rule which
+	allows for better checking of procedure invokations.
+
+	This is actually something which has to be done when
+	generating rules files for packages for use by the
+	normal scanner.
+
+Ad 6.	Look for a package rules file and load it when present.
+	This provides better rules for procedures in the package
+	=> More commands are recognized, and more variable usages
+	can be detected.
+
+	This is also the essential component for the 'extended syntax
+	check I', see "TDK_3.0_Checker.txt".
+
+
+=====================
+
+Highlevel control
+
+-	The frontend may run a rule generation step on the files to
+	scan to get advanced checker rules for procedures.
+
+-	The frontend will run a xref scan on the selected files.

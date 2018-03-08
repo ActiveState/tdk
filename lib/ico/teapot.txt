@@ -1,0 +1,11 @@
+Package ico 0.3
+Meta category        Windows ICO handling
+Meta description     Reading and writing windows icons
+Meta entrysource     ico.tcl
+Meta included        ico.tcl
+Meta platform        tcl
+Meta require         BWidget
+Meta require         {Tcl 8.4}
+Meta require         Tk
+Meta subject         dll icon exe entry ico
+Meta license         BSD

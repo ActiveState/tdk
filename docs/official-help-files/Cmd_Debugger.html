@@ -1,0 +1,189 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<HTML>
+<HEAD>
+<LINK REL="STYLESHEET" HREF="aspn.css" TYPE="text/css">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<TITLE>TDK Command-Line Reference - Debugger</TITLE>
+</HEAD>
+
+<body marginheight="5" topmargin="5" marginwidth="10" leftmargin="10">
+
+@header@
+
+<hr size="1" noshade width="100%">
+
+<a name="top"></a>
+
+<H1>Tcl Dev Kit tcldebugger_attach Package Reference</H1>
+
+<UL>
+  <li><a class="doc" href="#name">Name</a></li>
+  <LI><A class="doc" HREF="#synopsis">Synopsis</A></LI>
+  <LI><A class="doc" HREF="#intro">Introduction</A></LI>
+  <LI><A class="doc" HREF="#cmd_procs">Command Procedures</A></LI>
+  <LI><A class="doc" HREF="#examples">Examples</A></LI>
+</UL>
+
+<H2><a name="name">Name</A></H2>
+
+debugger_init, debugger_eval, debugger_break, debugger_attached
+
+
+<h2><a name="synopsis">Synopsis</a></h2>
+
+<p><strong>debugger_init</strong> ?<i>host</i> ?<i>port</i> ?<i>cdata</i>???</p>
+
+<p><strong>debugger_eval</strong> ?<i>switches</i>? <i>script</i></p>
+
+<p><strong>debugger_break</strong> ?<i>str</i>?</p>
+
+<p><strong>debugger_attached</strong></p>
+
+
+<h2><a name="intro">Introduction</a></h2>
+
+<p>The Tcl command procedures defined below are used to debug remote, embedded,
+and CGI applications. To establish and maintain a connection with the
+<a class="doc" href="Debugger.html">Tcl Dev Kit Debugger</a>, you must ensure
+that your script sources the <code>tcldebugger_attach</code> package and calls
+the <code>debugger_init</code> and <code>debugger_eval</code> procedures.</p>
+
+<p>Use the following package command:</p>
+
+<p><code>package require tcldebugger_attach</code></p>
+
+
+<h2><a name="cmd_procs">Command Procedures</a></h2>
+
+<h3><a name="init">debugger_init ?<i>host</i> ?<i>port</i> ?<i>cdata</i>???</a></h3>
+
+<p>This command establishes a connection with the debugger that is running on
+<i>host</i> and listening on <i>port</i>. By default, the <i>host</i> is
+localhost and the <i>port</i> is 2576. The <i>cdata</i> argument specifies any
+client data to be transferred to the debugger. If the session using the
+<code>tcldebugger_attach</code> package is a subordinate session spawned from the main
+debugger session, the <i>cdata</i> option cannot be empty.</p>
+
+<p><strong>Note:</strong> Data specified in the <i>cdata</i> argument is for
+display only. If <i>cdata</i> is empty, "REMOTE project" will appear in the
+debugger's status bar.</p>
+
+<p>Once connected, the <a class="doc" href="Debugger.html">Tcl Dev Kit Debugger</a>
+will instrument any files sourced using the <code>source</code> command, or any
+commands that appear in the argument list of the <code>debugger_eval</code>
+command. The command returns 1 if the connection succeeds and 0 if it fails.</p>
+
+<p><strong>Note</strong>: If your embedded application uses multiple subsequent
+interpreters (that is, it quits and restarts a Tcl interpreter more than once),
+each main Tcl script is treated as an individual application and must make a new
+connection with the <a class="doc" href="Debugger.html">Tcl Dev Kit Debugger</a>.
+
+<h3><a name="eval">debugger_eval ?<i>switches</i>? <i>script</i></a></h3>
+
+<p>This command instruments and invokes the specified <i>script</i>. The
+<code>debugger_eval</code> command makes it possible for a program to explicitly
+instrument a block of code that otherwise might not be instrumented by the
+<a class="doc" href="Debugger.html">Tcl Dev Kit Debugger</a>. If the <i>script</i>
+is not currently connected to the debugger, <code>debugger_eval</code> simply
+evaluates the script argument. <p>You can wrap your whole script inside the
+<strong>debugger_eval</strong> block. Any scripts that you source within a
+<strong>debugger_eval</strong> block are also instrumented.</p>
+
+<p><strong>Note</strong>: The <strong>debugger_eval</strong> procedure behaves
+like the <strong>eval</strong> command if your application is not currently
+connected to the <a class="doc" href="Debugger.html">Tcl Dev Kit Debugger</a>.
+
+<p>Any initial arguments for <code>debugger_eval</code> that are preceded by a
+<strong>-</strong> are treated as switches. The <code>debugger_eval</code> command
+currently supports the <strong>-name</strong> switch, which is entered as:</p>
+
+<code>-name <i>myname</i></code><br/><br/>
+
+<p>When you associate a name with the script, the debugger stores breakpoint
+information as though the script had been sourced from the file of the given
+<i>myname</i>. This switch is especially useful for remote debugging, or for
+evaluating blocks of dynamically generated code that are used multiple times.
+By creating <code>debugger_eval</code> commands, each with a unique name for
+each block, you can set breakpoints that persist across invocations. Use
+<strong>- -</strong> to indicate the end of a switch. Doing so will cause the
+argument that follows to be treated as a <i>script</i>, even if it is preceded
+by a <strong>-</strong>.</p>
+
+
+<h3><a name="break">debugger_break ?<i>str</i>?</a></h3>
+
+<p>The <code>debugger_break</code> command causes a break to occur when it is
+executed. It is as if a breakpoint is set on the line containing the
+<code>debugger_break</code> command. The difference is that <i>str</i> is
+evaluated before the break occurs. When the break occurs, a dialog box is
+displayed. If the <i>str</i> argument is given and is not empty, the value of
+<i>str</i> is shown in the dialog box. If the script is not connected to the
+debugger, the <code>debugger_break</code> command has no effect.</p>
+
+<h3><a name="attached">debugger_attached</a></h3>
+
+<p>The <code>debugger_attached</code> command returns 1 if the script is connected
+to the <a class="doc" href="Debugger.html">Tcl Dev Kit Debugger</a>. Otherwise
+it returns 0.</p>
+
+
+<h2><a name="examples">Examples</a></h2>
+
+<p>The sample code below demonstrates the simplest way to establish a remote
+connection and debug an entire script remotely.</p>
+
+<blockquote>
+
+<code>package require tcldebugger_attach<br/>
+      if {[debugger_init remoteMachine 2576] == 0} {<br/>
+           &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return "cannot communicate with remoteMachine on port 2576"<br/>
+      }<br/>
+      source main.tcl</code>
+      
+</blockquote>
+
+<p>The connection is established between the local machine and
+<code>remoteMachine</code> via port 2576. The debugger is running on
+<code>remoteMachine</code> and is listening on the default remote
+debugging port, 2576. See
+<a class="doc" href="Debugger.html#ChangeProApp">Changing Project Application Settings</a>
+for more information on how to specify the port that the debugger listens on.
+The file main.tcl is then sourced, which will cause the contents of the file,
+and any subsequent sourced files, to become instrumented (unless the preferences
+set in the debugger indicate otherwise).</p>
+
+<p>The next example shows how to control exactly which commands become instrumented.
+Establish the connection the same as in the previous example. The commands that
+create the variables x, y and z will not be instrumented and the debugger will
+not step through these lines. The commands that create the variables a, b and
+c are inside <code>debugger_eval</code>. This causes these commands to be
+instrumented; the debugger will step through these commands.</p>
+
+<blockquote>
+
+<code>package require tcldebugger_attach<br/>
+      if {[debugger_init remoteMachine 2576] == 0} {<br/>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return "cannot communicate with remoteMachine on port 2576"<br/>
+      }<br/>
+      set x 1<br/>
+      set y 2<br/>
+      set z 3<br/>
+      debugger_eval{<br/>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;set a [expr {$x + 1}]<br/>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;set b [expr {$y + 1}]<br/>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;set c [expr {$z + 1}]<br/>
+      }</code>
+      
+</blockquote>
+
+<p>This example is especially relevant when debugging embedded scripts. Simply add
+the first two lines to the beginning of the script and wrap the existing script
+in a call to <code>debugger_eval</code>.</p>
+
+
+
+
+</BODY>
+
+</HTML>

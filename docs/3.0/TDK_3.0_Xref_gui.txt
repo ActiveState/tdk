@@ -1,0 +1,137 @@
+TDK Cross Reference Tool
+========================
+
+Command line / GUI tool
+
+Basic command line operations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+	tclxref -scan dbfile file1 file2...
+	tclxref -gui dbfile
+
+	The first form goes over the files file1, file2, etc. and
+	extract cross-reference data. This data is stored in the
+	database file 'dbfile'. The standard extension for 'dbfile' is
+	.txr (Tcl XRef)
+
+	The second form takes a crossreference database and opens the
+	GUI with it.
+
+	(I am leaving out the other command line options, because you have
+	them already)
+
+
+GUI
+~~~
+
+The main window of the GUI contains a notebook with several lists
+(actually trees) showing the main information. Each tree is on its own
+page.
+
+The data shown is:
+
+    List of Packages used/defined.
+
+    Tree of Files scanned. Under each file we find the namespaces,
+    commands, variables defined/used in that file.
+
+    Tree of Namespaces used/defined in the scanned code. Initially
+    shows only one entry for the global namespace '::'. Under that
+    entry we will the commands and variables used/defined for the
+    namespace, and all namespaces nested into it.
+
+    Tree of Commands used/defined in the scanned code. Under each
+    command we find the variables used/defined by it.
+
+    List of variables used/defined in the scanned code.
+
+    Each item in the tree has an icon associated with it. This icon
+    depends on the type of the item shown.
+
+    Above each list we find the at least two toolbar-like buttons.
+    To the left a looking glass. Use this to define filter conditions
+    on the list below. Filters are glob patterns, i.e. some like
+    *foo*. When set only element matching that pattern are shown.
+
+    NOTE: This filtering happens only for the toplevel elements of the
+    list/tree. Children of a toplevel element are not filtered !!
+
+    The column headers/titles in each list are clickable and allow the
+    user to sort the list/tree by the chosen column, ascending or
+    descending, as signaled by the little arrow to left? (or right) of
+    the label. There is only one sorting column. It is highlighted in
+    a very light pink tone.
+
+    To the right of the filter button is the 'open' button. Select an
+    item in the list/tree, then click this button. A window containing
+    detailed information about the item pops up. This window is _not_
+    a dialog. IOW the window does not preempt usage of the main
+    window.
+
+    An alternative way to open an item is to double-click on it.
+
+Packages
+--------
+
+	The detail window shows the locations where the package has
+	been provided or required (notebook, two lists).
+
+Files
+-----
+	Xref will use Komodo to display a file, if Komodo is present.
+	If Komodo is not present then a xref specific file window will
+	be used to show the file contents.
+
+Namespaces
+----------
+
+	The information show in the main window for a namespace is
+	show in the detail window too, but not as children of the node
+	in the tree. A notebook and separate lists are used.
+
+	Two lists show the locations where the namespace is defined or
+	used. Opening an item in such a list shows the file and
+	highlights the relevant region in it. Komodo is used if
+	present.
+
+	Above the notebook and its lists is a button to jump from the
+	namespace ::FOO::BAR to the detail window of its parent
+	namespace, ::FOO here. The global namespace :: has no parent.
+
+Commands
+--------
+
+	Same organization for the detail window.
+
+	The locations a command is used at implicitly define the
+	commands using this command. This information is not shown
+	directly. In the future we might do so.
+
+	Above the lists is a button to jump to the detail window of
+	the namespace the command belongs too (execution context).
+
+	If the command has been imported we also have a button to jump
+	to the definition used in that import. (This is in the list of
+	definitions, as there can be multiple definitions, imported
+	and not).
+
+
+Variables
+---------
+
+	Saqme organization as for namespaces and commands. A button is
+	present allowing the user to jump to the entity the variable
+	belongs to. This can be either a namespace or a command.
+
+
+GUI Menu
+---------
+
+from the menu we can load a database, replacing the currently shown one.
+or loading another database in a second window.
+
+also possible is the generation of a new database by scanning a set of
+files. the files are selected from the contents of tcl package definitions,
+tclapp project files, or komodo project files.
+
+

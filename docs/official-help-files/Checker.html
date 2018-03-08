@@ -1,0 +1,2968 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="STYLESHEET" href="aspn.css" type="text/css">
+<meta http-equiv="Content-Type" content=
+"text/html; charset=utf-8">
+<title>Tcl Dev Kit - TclChecker</title>
+</head>
+
+<body marginheight="5" topmargin="5" marginwidth="10" leftmargin="10">
+
+@header@
+
+<hr size="1" noshade width="100%">
+
+<a name="top"></a>
+
+<h1>TclChecker</h1>
+
+<p>The Tcl Dev Kit TclChecker is a <strong>command line tool</strong> which helps you find errors in a Tcl script quickly
+before you run the script. Using the Tcl Dev Kit TclChecker can help you find
+problems in new scripts, in scripts from older versions of
+Tcl/Tk, or in scripts that you have ported from another operating
+system. You can use the Tcl Dev Kit TclChecker to assess the quality of a
+body of Tcl code or to quickly examine large Tcl files. Tcl Dev Kit
+TclChecker also warns about potential incompatibilities to help you
+upgrade applications to the latest releases of Tcl, Tk, and [incr
+Tcl].</p>
+
+<h2><a name="versions">Supported Tcl Versions</a></h2>
+
+<p>By default, the Tcl Dev Kit TclChecker verifies scripts written for Tcl
+version 8.5. You can use the Tcl Dev Kit TclChecker with the packages and
+versions of Tcl, Tk, and [incr Tcl] listed.</p>
+
+<a name="PackagesTable"></a>
+
+<table border="1">
+<caption>Packages and Version Numbers</caption>
+
+<tr>
+<th>
+<p>Tcl</p>
+</th>
+<th>
+<p>Tk</p>
+</th>
+<th>
+<p>[incr Tcl]</p>
+</th>
+<th>
+<p>Expect</p>
+</th>
+<th>
+<p>TclX</p>
+</th>
+</tr>
+
+<tr>
+<td>
+<p>7.3</p>
+</td>
+<td>
+<p>3.6</p>
+</td>
+<td>
+<p>1.5</p>
+</td>
+<td>
+<p>n/a</p>
+</td>
+<td>
+<p>n/a</p>
+</td>
+</tr>
+
+<tr>
+<td>
+<p>7.4</p>
+</td>
+<td>
+<p>4.0</p>
+</td>
+<td>
+<p>2.0</p>
+</td>
+<td>
+<p>n/a</p>
+</td>
+<td>
+<p>n/a</p>
+</td>
+</tr>
+
+<tr>
+<td>
+<p>7.5</p>
+</td>
+<td>
+<p>4.1</p>
+</td>
+<td>
+<p>2.1</p>
+</td>
+<td>
+<p>n/a</p>
+</td>
+<td>
+<p>n/a</p>
+</td>
+</tr>
+
+<tr>
+<td>
+<p>7.6</p>
+</td>
+<td>
+<p>4.2</p>
+</td>
+<td>
+<p>2.2</p>
+</td>
+<td>
+<p>n/a</p>
+</td>
+<td>
+<p>n/a</p>
+</td>
+</tr>
+
+<tr>
+<td>
+<p>8.0</p>
+</td>
+<td>
+<p>8.0</p>
+</td>
+<td>
+<p>3.0</p>
+</td>
+<td>
+<p>5.28</p>
+</td>
+<td>
+<p>8.0</p>
+</td>
+</tr>
+
+<tr>
+<td>
+<p>8.1</p>
+</td>
+<td>
+<p>8.1</p>
+</td>
+<td>
+<p>n/a</p>
+</td>
+<td>
+<p>5.29 or 5.30</p>
+</td>
+<td>
+<p>8.1</p>
+</td>
+</tr>
+
+<tr>
+<td>
+<p>8.2</p>
+</td>
+<td>
+<p>8.2</p>
+</td>
+<td>
+<p>3.1</p>
+</td>
+<td>
+<p>5.31</p>
+</td>
+<td>
+<p>8.2</p>
+</td>
+</tr>
+
+<tr>
+<td>
+<p>8.3</p>
+</td>
+<td>
+<p>8.3</p>
+</td>
+<td>
+<p>3.1</p>
+</td>
+<td>
+<p>5.32 - 5.38</p>
+</td>
+<td>
+<p>8.2</p>
+</td>
+</tr>
+
+<tr>
+<td>
+<p>8.4</p>
+</td>
+<td>
+<p>8.4</p>
+</td>
+<td>
+<p>n/a</p>
+</td>
+<td>
+<p>n/a</p>
+</td>
+<td>
+<p>n/a</p>
+</td>
+</tr>
+
+<tr>
+<td>
+<p>8.5 (default)</p>
+</td>
+<td>
+<p>8.5</p>
+</td>
+<td>
+<p>n/a</p>
+</td>
+<td>
+<p>n/a</p>
+</td>
+<td>
+<p>n/a</p>
+</td>
+</tr>
+
+<tr>
+<td>
+<p>8.6</p>
+</td>
+<td>
+<p>8.5</p>
+</td>
+<td>
+<p>n/a</p>
+</td>
+<td>
+<p>n/a</p>
+</td>
+<td>
+<p>n/a</p>
+</td>
+</tr>
+</table>
+
+<p><strong>Note</strong>: Expect command names that "collide"
+with command names in the Tcl/Tk core (for example,
+<strong>send</strong>) can cause the Tcl Dev Kit TclChecker
+to misinterpret an Expect script, causing it to report syntax errors. To avoid
+this, use the <strong>exp_</strong> prefix for all such ambiguous
+commands (for example, use <strong>exp_send</strong> instead of
+<strong>send</strong>).</p>
+
+
+<p><strong>Note</strong>: The version numbers given for the packages
+should be considered as <strong>minimal</strong> versions and not as
+upper boundaries. The checker will still work even if the checked
+script uses newer versions of the packages, it will just not be able
+to recognize and check any newer features these versions may have.</p>
+
+
+
+<a class="topText" href="#top"><img src="images/top.gif" height=
+"11" width="11" border="0" alt=" " />Top</a>
+
+<h2><a name="using">Using the Tcl Dev Kit TclChecker</a></h2>
+
+<p>The TclChecker is only available as a command-line tool.
+To check a file using the Tcl Dev Kit TclChecker, enter
+<strong>tclchecker.exe</strong> (Windows) or
+<strong>tclchecker</strong> (Unix), followed by the file
+name you wish to check. For example:</p>
+
+<blockquote><code>tclchecker foo.tcl</code></blockquote>
+
+<p>If your code contains errors or warnings, the Tcl Dev Kit TclChecker
+provides feedback by default that looks similar to this:</p>
+
+<img src="images/checker_example2.gif" alt=" " />
+
+<p>You can specify multiple file names on the same line, for
+example:</p>
+
+<blockquote><code>tclchecker foo1.tcl foo2.tcl</code></blockquote>
+
+<p>To check all the files in a directory, use the asterisk ("*")
+with the <i>.tcl</i> file extension, for example:</p>
+
+<blockquote><code>tclchecker *.tcl</code></blockquote>
+
+<p>If you don't specify any files, <strong>tclchecker</strong>
+expects input from standard input.</p>
+
+<p>For other examples of output, see <a class="doc" href=
+"#CheckerEx">Examples of Output from the Tcl Dev Kit TclChecker</a>.</p>
+
+<p>To change the font size displayed in the TclChecker, use
+<code>Ctrl-plus</code> to increase the font size or <code>Ctrl-minus</code> to
+decrease the displayed font size. If you are using Windows with a mouse wheel,
+you can alternatively press the <code>Ctrl</code> key and then rotate the mouse
+wheel to increase or decrease the font size displayed in the TclChecker.</p>
+
+<a class="topText" href="#top"><img src="images/top.gif" height=
+"11" width="11" border="0" alt=" " />Top</a>
+
+<h2><a name="pass_number">One-Pass and Two-Pass Checking</a></h2>
+
+<p>By default, the Tcl Dev Kit TclChecker performs a two-pass scan of your
+scripts. The first pass accumulates information about
+user-defined procedures and user-defined [incr Tcl] classes. This
+information includes:</p>
+
+<ul>
+<li>the number of arguments for procedure definitions and [incr
+Tcl] constructor definitions</li>
+
+<li>the scope of procedures (namespace, protection level)</li>
+
+<li>redefinition of procedures using the Tcl
+<strong>rename</strong> command</li>
+
+<li>imports and exports of namespace procedures</li>
+
+<li>class structures of inherited [incr Tcl] classes</li>
+</ul>
+
+<p>The second pass uses this information to provide warnings and
+error messages concerning the usage of the user-defined
+procedures, including:</p>
+
+<ul>
+<li>calling a procedure with the wrong number of arguments</li>
+
+<li>calling an [incr Tcl] class constructor with the wrong number
+of arguments</li>
+
+<li>redefining existing procedures, by either the
+<strong>rename</strong> command or by defining a procedure or
+class with and identical name</li>
+
+<li>calling [incr Tcl] class procedures out of scope</li>
+
+<li>calling class procedures with invalid permissions (private or
+protected)</li>
+
+<li>variable usage (for example, attempting to use the value of
+an undefined variable or attempting to perform math operations on
+a list variable).</li>
+
+</ul>
+
+<p>The Tcl Dev Kit TclChecker properly handles all variations of user-defined
+procedures in namespaces.</p>
+
+<p><strong>Note</strong>:The Tcl Dev Kit TclChecker does not currently check
+the following:</p>
+
+<ul>
+
+<li>[incr Tcl] class methods</li>
+
+<li>argument types passed to user-defined procedures</li>
+
+<li>redefinition of built-in Tcl, Tk, or [incr Tcl] commands</li>
+</ul>
+
+<p>Also, if you define a procedure multiple times, the Tcl Dev Kit TclChecker
+generates a usage error when calling that procedure only if the
+call fails to match <i>any</i> of procedure definitions. Because
+of the dynamic nature of procedure definition and redefinition,
+the Tcl Dev Kit TclChecker can't determine which argument list is currently
+valid for the given procedure call.</p>
+
+<p>The Tcl Dev Kit TclChecker does not automatically scan scripts that are
+sourced by your script. Therefore, you must include on the
+command line all files that define user procedures and classes used by your script.</p>
+
+<p>For a quicker but less comprehensive check of your scripts,
+you can use the <strong>tclchecker -onepass</strong> option to
+force the Tcl Dev Kit TclChecker to perform a one-pass scan of your scripts.
+A one-pass scan does not check for any of the potential errors or
+misuses of user-defined procedures and [incr Tcl] classes
+described above.</p>
+
+<p>You can also use the <strong>tclchecker -verbose</strong> option
+to get a list of all commands used by the scripts you specify
+that are not defined in that collection of scripts. If you don't
+include the <strong>-verbose</strong> option, the Tcl Dev Kit TclChecker
+doesn't warn you about undefined procedures.</p>
+
+<a class="topText" href="#top"><img src="images/top.gif" height=
+"11" width="11" border="0" alt=" " />Top</a>
+
+<h2><a name="CheckerPragmas">Tcl Dev Kit TclChecker Pragmas</a></h2>
+
+<p>Basic syntax and semantics:</p>
+
+<pre>
+  #checker ?-scope line|global|local|block? include|exclude id...
+</pre>
+
+<p>The # is part of the syntax. The <code>-scope</code> defaults to
+'line'. <code>id</code> is the <a href="CheckerMessages.html">code</a>
+of a checker message.
+
+<dl>
+  <dt>include</dt><dd>activate output of messages with the given codes</dd>
+  <dt>exclude</dt><dd>deactivate output of ...</dd>
+</dl>
+</p>
+<br />
+<p><strong><code>-scope</code></strong> defines the region the setting has hold
+over.</p>
+
+<dl>
+  <dt>line</dt><dd>Setting is used for all commands starting in the
+  next line (ignoring comment lines and whitespace).</dd>
+  <dt>global</dt><dd>Setting is used from now to end of file.</dd>
+  <dt>local</dt><dd>Setting is used from now to end of procedure.
+  Outside of a procedure this is equivalent to global</dd>
+  <dt>block</dt><dd>Setting is used from now to end of current code
+  block (like a while-loop, if-branch, etc.). If used in the main
+  block of a procedure it is like local. Outside of a procedure it is
+  like global.</dd>
+</dl>
+
+
+<p>For the interaction of <a href="#CheckerPragmas">pragmas</a> with
+the command line options which control message filtering as well
+(-check, -suppress, and -Wx) see the section <a
+href="#PragmaCmdlineInteraction"> Interaction of pragmas and command
+line options</a>.
+
+
+
+<h2><a name="CheckerMess">Tcl Dev Kit TclChecker Messages</a></h2>
+
+<p>The Tcl Dev Kit TclChecker examines your code and displays a message
+describing each error or potential mistake that it detects.
+Depending on the type of script that you are checking, you may
+want to limit the types of problems that it reports rather than
+see the entire output from the Tcl Dev Kit TclChecker.</p>
+
+<p>Each message generated by the Tcl Dev Kit TclChecker lists the file and
+the line number where the error or warning occurred, a
+<i>messageID</i>, a description of the error or warning, and an
+error indicator, which is a caret ("^") that indicates the code
+fragment in which the error occurred. The messageID is the word
+in parentheses just after the file and line number information.
+It provides information about the type of problem that generated
+the error or warning, which are listed below. Using Tcl Dev Kit
+TclChecker you can specify types of errors and warning that you want
+to suppress, which allows you to focus to more strategic errors
+or warnings. The Tcl Dev Kit TclChecker provides suggestions, when possible,
+on ways to fix the problems that it indicates in the error or
+warning text.</p>
+
+<img src="images/checker_example3.gif" alt=" " />
+
+<p>You can limit output in the following ways:</p>
+
+<ul>
+<li>Limiting errors and warnings by type: an error is either a
+parsing or syntax error, and warnings indicate possible problems
+with platform portability, upgrade, performance, or usage issues.
+Warnings indicate code fragments where there may be an error, but
+the code fragment may be appropriate in its context.</li>
+
+<li>Specifying groups of messages to suppress, for example, you
+might want to suppress messages related to usage warnings.</li>
+</ul>
+
+<h3>Controlling Feedback on Errors and Warnings</h3>
+
+<p>Messages are grouped into two types of errors and four types
+of warnings.</p>
+
+<h4>Parsing Errors</h4>
+
+<p>The Tcl Dev Kit TclChecker generates a parsing error when it encounters
+commands that cannot be parsed by the Tcl parser, such as a
+missing curly brace or badly formed list. For example: the
+following code generates a parsing error because it is missing a
+quote at the end of the <strong>puts</strong> statement:</p>
+
+<blockquote><code>proc foo {} {<br>
+ puts "hello<br>
+}</code></blockquote>
+
+<p>In cases like this, the Tcl Dev Kit TclChecker attempts to move past the
+procedure where the parsing error was found, and continue to
+check additional commands after the parsing error.</p>
+
+<h4>Syntax Errors</h4>
+
+<p>The Tcl Dev Kit TclChecker generates a syntax error when it encounters any
+errors that will cause your script to fail, such as the wrong
+number of arguments or invalid types or options. For example, the
+following code generates a syntax error is because the wrong
+number of arguments are supplied:</p>
+
+<blockquote><code>set x 3 45</code></blockquote>
+
+<p>Only commands defined in Tcl, Tk, or [incr Tcl] are checked
+for syntax errors.</p>
+
+<h4>Platform Portability Warnings</h4>
+
+<p>The Tcl Dev Kit TclChecker generates warnings when a command is used that
+may be nonportable between various platforms.</p>
+
+<blockquote><code>set file [open $dir/$file
+r]</code></blockquote>
+
+<p>In this example, the <strong>file join</strong> command should
+be used so that the correct directory and file separator is used,
+that is, "\" on Windows.</p>
+
+<h4>Suggestion for Upgrading</h4>
+
+<p>Upgrade warnings indicate features that have changed in a
+later version.</p>
+
+<blockquote><code>namespace foo {<br>
+ variable bar 0<br>
+}</code></blockquote>
+
+<p>When [incr Tcl] was upgraded to 3.0, it inherited the Tcl
+namespace command. The syntax of defining a namespace has changed
+from older versions of [incr Tcl] because of this. With earlier
+versions of [incr Tcl], correct usage was:</p>
+
+<blockquote><code>namespace foo {body}</code></blockquote>
+
+<p>With [incr Tcl] 3.0 and later, correct usage is shown
+below:</p>
+
+<blockquote><code>namespace eval foo {body}</code></blockquote>
+
+<h4>Performance Warnings</h4>
+
+<p>The Tcl Dev Kit TclChecker generates a warning when a
+performance-optimization opportunity is detected. For example: if
+your code included:</p>
+
+<blockquote><code>set x [expr $x * $y]</code></blockquote>
+
+<p>it would generate a performance warning because performance is
+improved with curly braces, as shown below:</p>
+
+<blockquote><code>set x [expr {$x * $y}]</code></blockquote>
+
+<h4>Usage Warnings</h4>
+
+<p>The Tcl Dev Kit TclChecker generates a warning when a command is used in a
+manner that is possibly incorrect but is still syntactically
+legal. For example, the <strong>incr</strong> command expects a
+value and not a reference below:</p>
+
+<blockquote><code>incr $counter</code></blockquote>
+
+<h4>Style Warnings</h4>
+
+<p>The Tcl Dev Kit TclChecker generates a warning when a command is used in a
+manner that is correct but may lead to less readable code.
+</p>
+
+<h4>Command Order Warnings</h4>
+
+<p>The Tcl Dev Kit TclChecker can warnings when commands have to be
+used in a specific order and are not. This however requires
+appropriate ordering specifications in <a href="#pcx_api">PCX
+files</a>. The standard PCX files built into the checker have no such.
+</p>
+
+
+<h3>Warning and Error Flags</h3>
+
+<p>You can control which types of errors and warnings the Tcl Dev Kit TclChecker
+lists by specifying one of the <strong>-W</strong>
+flags on the command line.</p>
+
+<table border="1">
+<tr>
+<th>
+<p>Flag</p>
+</th>
+<th>
+<p>Description</p>
+</th>
+</tr>
+
+<tr>
+<td>
+<p><strong>-W0</strong></p>
+</td>
+<td>
+<p>Display nothing. Any message you wish to see has to be enabled
+explicitly via <a
+href="#overide_suppression"><strong>-check</strong></a>.</p>
+</td>
+</tr>
+
+<tr>
+<td>
+<p><strong>-W1</strong></p>
+</td>
+<td>
+<p>Display parsing and syntax errors.</p>
+</td>
+</tr>
+
+<tr>
+<td>
+<p><strong>-W2</strong></p>
+</td>
+<td>
+<p>Display parsing and syntax errors, and usage warnings.</p>
+</td>
+</tr>
+
+<tr>
+<td>
+<p><strong>-W3</strong></p>
+</td>
+<td>
+<p>All errors, all warnings except for 'upgrade' warnings. This is the
+default.</p>
+<td>
+</tr>
+
+<tr>
+<td>
+<p><strong>-W4</strong></p>
+</td>
+<td>
+<p>Display parsing and syntax errors, portability warnings,
+upgrade warnings, performance warnings, style warnings, and usage warnings.</p>
+</td>
+</tr>
+
+<tr>
+<td>
+<p><strong>-Wall</strong></p>
+</td>
+<td>
+<p>Alias for -W4</p>
+</td>
+</tr>
+</table>
+
+<p>As an example, the first time you check your script you might
+want to display only errors but not warnings. You might first run
+the Tcl Dev Kit TclChecker with the <strong>-W1</strong> flag, which only
+displays parsing and syntax errors, but does not display any
+warnings. After examining the output from running with the
+<strong>-W1</strong> flag and fixing any errors that were
+reported, you might run with the <strong>-W2</strong> flag to see
+a variety of additional warnings.</p>
+
+
+<p>For the interaction of <a href="#CheckerPragmas">pragmas</a> with
+these options see the section <a href="#PragmaCmdlineInteraction">
+Interaction of pragmas and command line options</a>.
+
+<h3>Suppressing Specific Messages</h3>
+
+<p>Each warning or error message has an associated messageID. You
+can filter out the display specific warnings or errors by
+specifying <strong>-suppress</strong> to prevent that type of
+messageID from being displayed. You might want to filter out
+certain messages because they point out items that do not apply
+to the script that you are checking, for example: if you are
+porting a script to only one platform, you do not care whether
+your script has portability issues.</p>
+
+<p>In the following example, the messageID is "nonPortCmd":</p>
+
+<blockquote><code>foo:tcl:53 (nonPortCmd) use of non-portable
+command<br>
+registry values $key<br>
+^</code></blockquote>
+
+<p>You can suppress this type of message by specifying
+<strong>-suppress nonPortCmd</strong> on the command line, for
+example:</p>
+
+<blockquote><code>tclchecker -suppress nonPortcmd
+foo.tcl</code></blockquote>
+
+<p><strong>Tip</strong>: You can suppress multiple messageID
+types at the same time by specifying <strong>-suppress</strong>
+with the multiple instances of messageIDs in quotation marks, for
+example:</p>
+
+<blockquote><code>tclchecker -suppress "nonLiteralExpr badOption"
+foo.tcl</code></blockquote>
+
+<p>You can also specify <strong>-suppress</strong> with the
+messageID for each instance of the message ID that you want to
+filter, for example:</p>
+
+<blockquote><code>tclchecker -suppress nonLiteralExpr -suppress
+badOption foo.tcl</code></blockquote>
+
+<p>For a complete list of all the messageIDs, see <a class="doc"
+href="CheckerMessages.html">Tcl Dev Kit TclChecker Messages</a>.</p>
+
+<p>For the interaction of <a href="#CheckerPragmas">pragmas</a> with
+this option see the section <a href="#PragmaCmdlineInteraction">
+Interaction of pragmas and command line options</a>.
+
+
+<a class="topText" href="#top"><img src="images/top.gif" height=
+"11" width="11" border="0" alt=" " />Top</a>
+
+<a name="overide_suppression">
+<h3>Overriding the Suppression of Specific Messages</h3>
+</a>
+
+<p>The complementary option to <strong>-suppress</strong> is
+<strong>-check</strong>. Using it disables the filtering of specific
+warnings or errors, to force that type of messageID to be displayed
+even if the general <strong>-Wx</strong> settings would prevent that.
+</p>
+
+
+<p>For the interaction of <a href="#CheckerPragmas">pragmas</a> with
+this option see the section <a href="#PragmaCmdlineInteraction">
+Interaction of pragmas and command line options</a>.
+
+
+<a class="topText" href="#top"><img src="images/top.gif" height=
+"11" width="11" border="0" alt=" " />Top</a>
+
+<h3>Suppression of Messages by Range of Lines</h3>
+
+<p>The option <strong>-range</strong> takes a comma-separated list of
+ranges as argument and allow the user to restrict the printing of
+messages to only those which fall into one of the specified
+ranges. Examples:</p>
+
+<p><dl>
+<dt><strong>-range 5-10</strong></dt>
+<dd>One range, going from lines 5 to 10, inclusive.</dd>
+<dt><strong>-range 5-</strong></dt>
+<dd>One range, going from line 5 to the end of the file,
+inclusive.</dd>
+<dt><strong>-range -10</strong></dt>
+<dd>One range, going from the beginning of the file to
+line 10, inclusive.</dd>
+<dt><strong>-range -5,10-</strong></dt>
+<dd>Two range, one going from the beginning of the file
+to line 5, inclusive, the second going from line 10,
+inclusive, to the end of the file</dd>
+</dl></p>
+
+<p>The option <strong>-ranges</strong> is an alias for
+<strong>-range</strong> taking the exact same argument.
+</p>
+
+<p><strong>Note</strong> that their use is most sensible if the
+checker is asked to process only a single file, because the range
+specification is applied identically to all files given to the
+checker.
+</p>
+
+<a class="topText" href="#top"><img src="images/top.gif" height=
+"11" width="11" border="0" alt=" " />Top</a>
+
+
+<h3>Defining your own options</h3>
+
+<p>The user is able specify and extend the checker with their own
+options, similar to how the user can extend it with more checker
+rules.</p>
+
+<p>A new user-option is specified in terms of both existing and other
+user-defined options. This means that during option processing the
+user-defined option will simply be replaced by the set of options
+which was specified for it.
+
+<strong>Note</strong> that it is an error to specify a user-defined
+option in terms of itself, be it directly or indirectly. Doing will
+cause the checker to abort with an error when processing the
+option.<p>
+
+<p>More information about this advanced feature can be found in the
+section about <a href="#pco_api">TclChecker Option Files (PCO Files)</a>.</p>
+
+
+<a class="topText" href="#top"><img src="images/top.gif" height=
+"11" width="11" border="0" alt=" " />Top</a>
+
+
+<h3><a name="PragmaCmdlineInteraction">Interaction of pragmas and command line options</h3>
+
+<p>The filtering of messages via <a href="#CheckerPragmas">pragmas</a>
+and command line options (-check, -suppress, -Wx) is done in the
+following order, from first to last.</p>
+
+<ol>
+<li>Line scope pragma</li>
+<li>Block scope pragma</li>
+<li>(Proc) local scope pragma</li>
+<li>Command line options -check, -suppress</li>
+<li>Global scope pragma</li>
+<li>Command line options -Wx</li>
+</ol>
+
+<p>If a setting is found at a specific level all settings from the
+levels coming after it have no effect.</p>
+
+<p>For example, using the -check and -suppress options overrides both
+-Wx, and global pragmas.</p>
+
+<p>Another example, all pragmas override the -Wx options.</p>
+
+<a class="topText" href="#top"><img src="images/top.gif" height= "11"
+width="11" border="0" alt=" " />Top</a>
+
+
+<h2><a name="CheckerEx">Examples of Output from the Tcl Dev Kit TclChecker</a></h2>
+
+<p>To provide examples of the Tcl Dev Kit TclChecker output, here is the
+sample script, <i>foo.tcl</i>, that is checked in the examples
+that follow:</p>
+
+<blockquote><code>set $y 3<br>
+set x [expr $y + 5]<br>
+set x y z<br>
+<br>
+if {$x &gt; 6}<br>
+{<br>
+ puts out "world"<br>
+}<br>
+<br>
+proc foo {args bar} {<br>
+ puts "hello, world"<br>
+}<br>
+<br>
+proc p {{a 0} b} {<br>
+ puts -nonew "hello"<br>
+}</code></blockquote>
+
+
+<a class="topText" href="#top"><img src="images/top.gif" height=
+"11" width="11" border="0" alt=" " />Top</a>
+
+<h2><a name="CheckerCmdline">Command line options</a></h2>
+
+<a name="outformat"><h3>Specifying the output format</h3></a>
+
+<p>You can specify one of three possible output formats via the
+<strong>-as</strong> option when you run the Tcl Dev Kit
+TclChecker:</p>
+<p>
+<dl>
+<dt><strong>-as overview</strong></dt>
+<dd><p>This is the default output format generated by all previous
+revisions of the TclChecker. An example is shown in the section about
+<a href="#verb_fb">Specifying Verbose Feedback</a>.
+</p>
+<p> The verbosity of this format can be further modified, as explained
+later, see <a href="#verb_fb">Specifying Verbose Feedback</a> and <a
+href="#quiet_fb">Specifying Quiet Feedback</a>.
+</p></dd>
+<dt><strong>-as dict</strong></dt>
+<dd><p>This is the first machine-readable format. In it the generated
+messages are printed as Tcl dictionaries, each starting on a new
+line. Note that each dictionary may span multiple lines, it is
+necessary to use <code>info complete</code> to detect and handle this.
+</p>
+<p>See section <a href="#msgdict">Message dictionaries</a> to learn
+about the keys and values of these dictionaries.
+</p></dd>
+<dt><strong>-as script</strong></dt>
+<dd><p>
+This second machine-readable format is similar to the format generated
+for <a>-as dict</a> in that it prints the same dictionaries. It
+differs in two respects however.
+</p>
+<p><ul>
+<li>First, each dictionary is not printed alone, but as the argument
+to a command (<code>message</code>). This means the overall output has
+the form of a Tcl script which can be directly and easily read, via
+<code>source</code>.
+</li>
+<li>Second, the dictionaries are formatted for readability by humans
+as well, spanning multiple lines, vertically aligning keys and keys,
+etc.
+</li>
+</ul>
+</p>
+<p>See section <a href="#msgdict">Message dictionaries</a> to learn
+about the keys and values of these dictionaries.
+</p></dd>
+</dl>
+</p>
+
+<a name="verb_fb"><h4>Specifying Verbose Feedback</h3></a>
+
+<p>You can specify the <strong>-verbose</strong> argument when you run
+the Tcl Dev Kit TclChecker. This option has an effect only when the
+<strong>regular</strong> output format is selected. When you specify
+<strong>-verbose</strong>, the Tcl Dev Kit TclChecker displays the
+error information in three lines and the version and summary
+information when the Tcl Dev Kit TclChecker exits, for example:</p>
+
+<blockquote><code>tclchecker -verbose foo.tcl</code></blockquote>
+
+<p>The feedback from the command line with
+<strong>-verbose</strong> specified looks similar to this:</p>
+
+<blockquote>
+<pre>
+scanning: C:/Tcl/jen/foo.tcl
+checking: C:/Tcl/jen/foo.tcl
+foo.tcl:6 (warnVarRef) variable reference used where variable name expected
+set $y 3
+    ^
+foo.tcl:7 (warnExpr) use curly braces to avoid double substitution
+expr $y + 5
+     ^
+foo.tcl:7 (undefinedVar) use of undefined variable "y"
+expr $y + 5
+      ^
+foo.tcl:7 (warnExpr) use curly braces to avoid double substitution
+expr $y + 5
+     ^
+foo.tcl:7 (undefinedVar) use of undefined variable "y"
+expr $y + 5
+      ^
+foo.tcl:8 (numArgs) wrong # args
+set x y z
+^
+foo.tcl:10 (noScript) missing a script after "if"
+if {$x &gt; 6}
+        ^
+foo.tcl:11 (warnUndefProc) undefined procedure:
+puts out "world"
+
+{
+^
+foo.tcl:15 (argAfterArgs) argument specified after "args"
+proc foo {args bar} {
+         ^
+foo.tcl:19 (nonDefAfterDef) non-default arg specified after default
+proc p {{a 0} b} {
+       ^
+
+Packages Checked | Version
+-----------------|--------
+blend              1.2
+tcl                8.4
+tk                 8.4
+expect             5.38
+[incr Tcl]         3.1
+oratcl             2.5
+sybtcl             3.0
+tclCom             1.0
+tclDomPro          1.0
+tclX               8.2
+xmlAct             1.0
+xmlGen             1.0
+xmlServer          1.0
+
+Number of Errors:   4
+Number of Warnings: 6
+
+Commands that were called but never defined:
+--------------------------------------------
+
+puts out "world"
+
+</pre>
+</blockquote>
+
+<a name="quiet_fb"><h4>Specifying Quiet Feedback</h3></a>
+
+<p>You can specify the <strong>-quiet</strong> argument when you
+run the Tcl Dev Kit TclChecker. When you specify <strong>-quiet</strong>,
+the Tcl Dev Kit TclChecker displays the basic error information on one line
+with the messageID, instead of the three-line output that
+includes the code body and the error indicator, for example:</p>
+
+<blockquote><code>tclchecker -quiet foo.tcl</code></blockquote>
+
+<p>The output with the <strong>-quiet</strong> argument appears
+as follows:</p>
+
+<blockquote>
+<pre>
+foo.tcl:6 (warnVarRef) variable reference used where variable name expected
+foo.tcl:7 (warnExpr) use curly braces to avoid double substitution
+foo.tcl:7 (undefinedVar) use of undefined variable "y"
+foo.tcl:7 (warnExpr) use curly braces to avoid double substitution
+foo.tcl:7 (undefinedVar) use of undefined variable "y"
+foo.tcl:8 (numArgs) wrong # args
+foo.tcl:10 (noScript) missing a script after "if"
+foo.tcl:11 (warnUndefProc) undefined procedure:
+puts out "world"
+
+foo.tcl:15 (argAfterArgs) argument specified after "args"
+foo.tcl:19 (nonDefAfterDef) non-default arg specified after default
+</pre>
+</blockquote>
+
+<a name="msgdict"><h4>Message dictionaries</h3></a>
+<p>
+The dictionaries written when one of the two machine-readable output
+formats was chosen (See section <a href="#outformat">Specifying the
+output format</a>), may contain the following keys, and associated
+values.
+</p>
+<p>
+<dl>
+<dt><strong><a name="mdk_badCommandLine">badCommandLine</a></strong></dt><dd>
+The value is an excerpt of the <a href="#mdk_file">file</a>, showing
+the command the message is about, per the <a
+href="#mdk_commandRange">commandRange</a>.
+</dd>
+<dt><strong><a name="mdk_badCommandMark">badCommandMark</a></strong></dt><dd>
+The value is a string, which, when printed underneath the string of <a
+href="#mdk_badCommandLine">badCommandLine</a> points to the
+problematic location in the command, per the
+<a href="#mdk_errorRange">errorRange</a>.
+</dd>
+<dt><strong><a name="mdk_clientData">clientData</a></strong></dt><dd>
+The value is a list of additional information about the problem, for
+insertion into the <a
+href="#mdk_messageTemplate">messageTemplate</a>. The list may be empty.
+</dd>
+<dt><strong><a name="mdk_commandLength">commandLength</a></strong></dt><dd>
+The value specifies the length of the command the message is about, in
+characters.
+</dd>
+<dt><strong><a name="mdk_commandRange">commandRange</a></strong></dt><dd>
+The value is a two-element list. It contains the values of
+<a href="#mdk_commandStart">commandStart</a> and
+<a href="#mdk_commandLength">commandLength</a>, in this order.
+</dd>
+<dt><strong><a name="mdk_commandStart">commandStart</a></strong></dt><dd>
+The value specifies the start of the command the message is about, as
+the number of characters since the beginning of the <a
+href="#mdk_file">file</a>. This offset is counted from
+<strong>zero</strong>.
+</dd>
+<dt><strong><a name="mdk_errorLength">errorLength</a></strong></dt><dd>
+The value specifies the length of the problematic range, in characters.
+</dd>
+<dt><strong><a name="mdk_errorRange">errorRange</a></strong></dt><dd>
+The value is a two-element list. It contains the values of
+<a href="#mdk_errorStart">errorStart</a> and
+<a href="#mdk_errorLength">errorLength</a>, in this order.
+</dd>
+<dt><strong><a name="mdk_errorStart">errorStart</a></strong></dt><dd>
+The value specifies the start of the problematic range, as the number
+of characters since the beginning of the <a
+href="#mdk_file">file</a>. This offset is counted from
+<strong>zero</strong>.
+</dd>
+<dt><strong><a name="mdk_file">file</a></strong></dt><dd>
+The value is the path of the file the message belongs to.
+See also <a href="#CheckerMess">Tcl Dev Kit TclChecker Messages</a>
+</dd>
+<dt><strong><a name="mdk_line">line</a></strong></dt><dd>
+The value is line in the file the message belongs to.
+Line numbers are counted from 1.
+See also <a href="#CheckerMess">Tcl Dev Kit TclChecker Messages</a>
+</dd>
+<dt><strong><a name="mdk_messageID">messageID</a></strong></dt><dd>
+The value is the id of the message. 
+See also <a href="#CheckerMess">Tcl Dev Kit TclChecker Messages</a>
+</dd>
+<dt><strong><a name="mdk_messageTemplate">messageTemplate</a></strong></dt><dd>
+The value is the text of the message intended for human
+consumption. It may contain placeholders of the form %1$, %2$, etc.,
+where the <a href="#mdk_clientData">clientData</a> will be filled
+in. The numbers in the placeholders are indices into the list of
+clientData items. The result of the formatting is accessible through
+<a href="#mdk_messageText">messageText</a>.
+</dd>
+<dt><strong><a name="mdk_messageText">messageText</a></strong></dt><dd>
+The value is the fully formatted text of the message, integrating the
+<a href="#mdk_clientData">clientData</a> with the <a
+href="#mdk_messageTemplate">messageTemplate</a>.
+</dd>
+<dt><strong><a name="mdk_suggestedCorrections">suggestedCorrections</a></strong></dt><dd>
+The value is a list of one or more possible corrections to fix the
+problem reported by the message. If the checker has no suggestions at
+all this key will not exist in the dictionary.
+</dd>
+<!-- <dt><strong><a name="mdk_"></a></strong></dt><dd></dd> -->
+</dl>
+</p>
+
+
+
+<h3>Specifying the Tcl or Tk Version</h4>
+
+<p>To specify that the application should check the input files
+against a version of Tcl or Tk other than the default, use the
+<strong>-use</strong> command line switch. For example, to check a
+file written for Tcl7.5 and Tk4.1, enter:</p>
+
+<blockquote>
+<code>tclchecker -use "Tcl7.5" -use "Tk4.1" foo.tcl</code>
+</blockquote>
+
+<p>Valid <strong>-use</strong> arguments are in general package names
+immediately followed by a version number, i.e. without a separator.
+
+Supported package names are "Tcl", "Tk", "Expect", "ITcl", "Tclx", and
+any other package for which a ".pcx" file is available.
+
+Option specifications for unsupported packages are ignored.
+
+See <a class="doc" href="#OverridingSpecifiedPackage">Overriding Specified
+Packages</a> below for further notes.
+
+
+<a class="doc" href="#PackagesTable">Packages and Version Numbers</a>
+lists the versions supported for each package. If you do not specify a
+version for a package, the Tcl Dev Kit TclChecker uses the first
+version of the package it locates.</p>
+
+<p>When specifying older versions of Tcl and any extension (including
+Tk), the versions of Tcl and any specified extension must be
+compatible, as listed in <a class="doc" href=
+"#PackagesTable">Packages and Version Numbers</a>. The following
+example includes incompatible versions and should not be used:</p>
+
+<blockquote>
+<code>tclchecker -use "Tcl7.5" -use "Tk4.0" foo.tcl</code>
+</blockquote>
+
+<p>The correct version pair is:</p>
+
+<blockquote>
+<code>tclchecker -use "Tcl7.5" -use "Tk4.1" foo.tcl</code>
+</blockquote>
+
+
+<h4><a name="OverridingSpecifiedPackage">Overriding Specified Packages</a></h4>
+
+<p>When determining the version of a package to check a script against
+the checker first and foremost relies on the information found in the
+<code>package require</code> statements found in the input files.
+
+In essence it will use the rules for the specified version of the
+package, if such was given, or the rules for the highest version it
+knows, if not, based on the first <code>package require</code>
+statement it encounters.</p>
+
+<p>As that may lead to problems if the scripts directly or indirectly
+request conflicting versions of the package, or of Tcl itself, the
+checker allows the user to overide and bypass its version selection
+process via the option <strong>-use</strong>.
+
+For example, specifying <code>-use Tk4.1</code> will force the
+application to check the code against version 4.1 of Tk, even if the
+<code>package require</code> statements found in the code specify a
+different version of Tk (or none).</p>
+
+<p><strong>Note</strong> that the specification of option
+<strong>-use</strong> does <strong>not</strong> cause the checker to
+actually activate the syntax rules of the named package. It
+<strong>only</strong> forces the use of a specific version of the
+rules should they be activated via the presence of <code>package
+require</code> for the package in one or more of the input files.
+
+When checking input files using a package FOO, but not using
+<code>package require FOO</code> anywhere the rules for FOO will not
+be activated, regardless of a specification of <strong>-use</strong>
+or not.</p>
+
+<p>This means that currently it is necessary to either explicitly
+specify <code>package require FOO</code> wherever the package is used,
+or to write a small helper input file containing only <code>package
+require FOO</code> to activate the rules for FOO.
+
+If a helper file is used it should be listed as early on the command
+line as possible, so that any scan phase rules for FOO are activated
+before any code using commands of FOO.</p>
+
+
+<h3>Error Checking</h4>
+
+<p>The command line in the following example requests
+<strong>-W1</strong> error checking, which includes only parsing
+and syntax errors:</p>
+
+<blockquote><code>tclchecker -W1 foo.tcl</code></blockquote>
+
+<p>The feedback from the command line with <strong>-W1</strong>
+specified looks similar to this:</p>
+
+<blockquote>
+<pre>
+scanning: C:/Tcl/jen/foo.tcl
+checking: C:/Tcl/jen/foo.tcl
+foo.tcl:8 (numArgs) wrong # args
+set x y z
+^
+foo.tcl:10 (noScript) missing a script after "if"
+if {$x &gt; 6}
+              ^
+foo.tcl:15 (argAfterArgs) argument specified after "args"
+proc foo {args bar} {
+         ^
+foo.tcl:19 (nonDefAfterDef) non-default arg specified after default
+proc p {{a 0} b} {
+       ^
+
+</pre>
+</blockquote>
+
+<h4>Error and Warning Checking</h4>
+
+<p>The command line in the following example requests
+<strong>-W2</strong> error checking, which includes parsing errors,
+syntax errors, upgrade warnings, and performance warnings.</p>
+
+<blockquote><code>tclchecker -W2 foo.tcl</code></blockquote>
+
+<p>The feedback from the command line with <strong>-W2</strong>
+specified looks similar to this:</p>
+
+<blockquote>
+
+<pre>
+
+scanning: C:/Tcl/jen/foo.tcl
+checking: C:/Tcl/jen/foo.tcl
+foo.tcl:8 (numArgs) wrong # args
+set x y z
+^
+foo.tcl:10 (noScript) missing a script after "if"
+if {$x &gt; 6}
+           ^
+foo.tcl:15 (argAfterArgs) argument specified after "args"
+proc foo {args bar} {
+         ^
+foo.tcl:19 (nonDefAfterDef) non-default arg specified after default
+proc p {{a 0} b} {
+       ^
+</pre>
+
+</blockquote>
+
+<h4>Checking for All Warnings and Errors</h4>
+
+<p>The command line in following example requests
+<strong>-W3</strong> error checking, which includes parsing
+errors, syntax errors, upgrade, portability, and performance
+warnings.</p>
+
+<blockquote><code>tclchecker -W3 foo.tcl</code></blockquote>
+
+<p>The feedback from the command line with <strong>-W3</strong>
+specified looks similar to this:</p>
+
+<blockquote>
+<pre>
+
+scanning: C:/Tcl/jen/foo.tcl
+checking: C:/Tcl/jen/foo.tcl
+foo.tcl:6 (warnVarRef) variable reference used where variable name expected
+set $y 3
+    ^
+foo.tcl:7 (warnExpr) use curly braces to avoid double substitution
+expr $y + 5
+     ^
+foo.tcl:7 (undefinedVar) use of undefined variable "y"
+expr $y + 5
+      ^
+foo.tcl:7 (warnExpr) use curly braces to avoid double substitution
+expr $y + 5
+     ^
+foo.tcl:7 (undefinedVar) use of undefined variable "y"
+expr $y + 5
+      ^
+foo.tcl:8 (numArgs) wrong # args
+set x y z
+^
+foo.tcl:10 (noScript) missing a script after "if"
+if {$x &gt; 6}
+           ^
+foo.tcl:11 (warnUndefProc) undefined procedure:
+puts out "world"
+
+{
+^
+foo.tcl:15 (argAfterArgs) argument specified after "args"
+proc foo {args bar} {
+         ^
+foo.tcl:19 (nonDefAfterDef) non-default arg specified after default
+proc p {{a 0} b} {
+       ^
+
+</pre>
+</blockquote>
+
+<h4>Miscellanea</h4>
+
+<p>The option <strong>-style-maxsleep</strong> takes an integer number
+as argument and sets it as the number of seconds above which the
+checker will issue an <strong>Expect::warnStyleSleep</strong> message
+when checking an <code>exp_sleep</code> command. The default is 5
+seconds. The option has no effect if the checking of Expect commands
+is disabled and/or warnings are filtered.
+</p>
+
+<p>The option <strong>-indent</strong> takes an integer number
+greater than two as argument and sets it as the number of characters
+(and multiples) to expect as indentation of commands. Deviations will
+cause the checker to issue <strong>warnStyleIndentCommand</strong>
+messages. The default is 4, matching the Tcl Style Guide. In other
+words, under normal circumstances there is no need to use this option
+at all.
+</p>
+
+<h4>Other modes</h4>
+
+<p>The command line in the following example requests checker to not
+perform any syntax checking, but to only collect the names of all
+packages found in <code>package require</code> statements in the input
+files, and to print this list after the scan has completed. Its use
+implies <strong>-onepass</strong> as well.</p>
+
+<blockquote><code>tclchecker -packages foo.tcl</code></blockquote>
+
+<p><a href="TclApp.html">TclApp</a> uses this mode to fill the list of
+packages with the packages directly required by the files to wrap. See
+the function <strong>Scan for required packages</strong> in the <a
+class="doc" href="TclApp.html#packages_tab">Packages Tab</a>.</p>
+
+
+<a class="topText" href="#top"><img src="images/top.gif" height=
+"11" width="11" border="0" alt=" " />Top</a>
+
+<h2><a name="pcx_api">TclChecker Definition Files (PCX Files)</a></h2>
+
+<h3>Overview</h3>
+
+<p>This section provides a general overview on TclChecker definition files,
+including how to name and load them for use with the <strong>tclchecker</strong>
+tool. Later, this document provides information for building custom
+TclChecker definition files using the <a class="doc" href="#using_pcx">PCX API</a>.</p>
+
+<p>TclChecker definition files are used with the <strong>tclchecker</strong>
+tool to analyze Tcl code for errors. TclChecker definition files have a ".pcx"
+extension. For each Tcl package you wish to analyze using
+<strong>tclchecker</strong>, there must be a corresponding ".pcx" file.
+This file declares the method by which the commands contained in the
+source Tcl package are checked. TclChecker definition files are written
+using the <a class="doc" href="#using_pcx">PCX API</a>.</p>
+
+<p><strong>Note:</strong> This document uses the terms
+"TclChecker definition file", "PCX file", and "checker package" to identify the
+file used by the <strong>tclchecker</strong> tool to check Tcl code.</p>
+
+<p>PCX files also contain definitions extending the rules used by
+<strong>tclchecker</strong> to analyze Tcl package sources.
+Fundamentally, each PCX file contains a Tcl script, which
+is executed by the <strong>tclchecker</strong> when the file is loaded.</p>
+
+<p><strong>Warning:</strong> Tcl code contained in PCX files
+is trusted. This means that PCX files are run directly by the Tcl
+interpreter and are not parsed with the <strong>tclchecker</strong> tool.
+When a PCX file is executed it should restrict itself to the
+<a class="doc" href="#using_pcx">PCX API</a>. Because this code is executed without
+restriction it can potentially redefine everything in the program being checked
+(including functions, variables etc.).</p>
+
+
+<h4>Embedded PCX Files</h4>
+
+<p>The Tcl Dev Kit TclChecker comes with embedded PCX files for
+standard Tcl packages. Examples include: 'Tk', 'Expect', and 'Blt'. To
+view an embedded PCX file, use the ActiveTcl Virtual Filesystem
+Explorer tool to navigate to the "<code>pcx</code>" directory
+(located, by default, in
+<code>&lt;installdir&gt;bin/tclchecker(.exe)/data/pcx</code>), and
+then save the PCX file to an existing folder.</p>
+
+
+<p>To use <strong>tclchecker</strong> on packages without an embedded
+PCX definition file, you must create a custom PCX file. For more
+information, see <a class="doc" href="#using_pcx">Using the PCX API</a>.</p>
+
+
+<h4>Naming PCX Files</h4>
+
+<p>When creating custom PCX files for use with a Tcl package, the name of the
+PCX file must match the Tcl package name exactly. For example, if a Tcl package
+is loaded using the command <code>package require FoO</code>, then the
+PCX file containing the checker definitions for this package must also be named
+<code>FoO.pcx</code> (case must match exactly).</p>
+
+<p>Underscores ("_") in the pcx filename are used to indicate a "::"
+in a package name. For example, a package called <code>Foo::Bar</code>
+would use a corresponding pcx file called <code>Foo_Bar.pcx</code>.
+
+<p><strong>Note:</strong> For platforms with case-insensitive filesystems
+(such as Windows), all package names must be unique. For example, filenames
+like 'expect.pcx' and 'Expect.pcx' should not be used
+as they are considered the same file.</p>
+
+<h4>Loading PCX Files</h4>
+
+<p>Tcl searches various paths for PCX files. These paths are determined on
+startup. The first time a PCX file is required in a package through the
+<strong>package require</strong> command, the paths are scanned and a
+list that maps package names to PCX files is created.
+
+<p><strong>Note:</strong> Subdirectories in the search path are not scanned
+as the checker does not search recursively.</p>
+
+<p>To disable the usage of all PCX files during Tcl Dev Kit TclChecker sessions,
+specify the option <strong>-nopcx</strong>. Otherwise, PCX files are loaded on
+demand as needed. A file is determined to be needed if the code scanned by the
+checker contains a valid <strong>require</strong> statement for that package.</p>
+
+<p>To specify additional locations where the Tcl Dev Kit TclChecker should look for
+PCX files, specify the option <strong>-pcx <em>directory</em></strong>.
+The Tcl Dev Kit TclChecker will look for PCX files in the following locations
+and order (unless the <strong>-nopcx</strong> option is specified):</p>
+
+<ol>
+  <li>PCX files (.pcx) wrapped in <code>tclchecker(.exe)</code>.</li>
+  <li>The <code>lib</code> directory of the Tcl Dev Kit installation.</li>
+  <li>In all package paths specified in the <a
+  href="TclApp.html#locating_custom_tap">TclApp Preferences</a>.</li>
+  <li>The directory specified by the environment variable
+      <code>TCLDEVKIT_LOCAL</code>.</li>
+  <li>The search paths specified with the <strong>-pcx <em>directory</em></strong>
+      command-line option.</li>
+</ol>
+
+<p><strong>Note:</strong> If multiple PCX files with the same name occur in more
+than one location, the last file encountered by the checker is loaded. If the
+files contain conflicting settings, the setting encountered in the last PCX
+file is used.</p>
+
+
+<h3><a name="using_pcx">Using the PCX API</a></h3>
+
+<p>This section outlines how to build a custom PCX file
+for use with the Tcl Dev Kit TclChecker. The PCX file for 'Tk' is used
+to demonstrate the format of a standard checker package.</p>
+
+
+<h3><a name="pcx_format">PCX File Format</a></h3>
+
+<p>A PCX file contains two types of declarations, these are:</p>
+
+<ul>
+  <li><strong><a name="general_declare">General Declarations</a>:</strong>
+  Execute when a file is loaded.</li>
+  <li><strong><a name="conditional_declare">Conditional Declarations</a>:</strong>
+  Only execute when definitions are activated for analysis.</li>
+</ul>
+
+<p>Every PCX file must begin and end with the following two
+<code>pcx::</code> declarations:</p>
+<ul>
+  <li> The <code>pcx::register</code> declaration must be the first
+  <code>pcx::</code> command called after loading the
+  <a class="doc" href="#appendix_A">PCX API</a>.
+  <li>The <code>pcx::complete</code> command must be the last command called
+  in the PCX file.</li>
+</ul>
+
+<p>Otherwise, declarations can be placed in any order
+within a PCX file. For readability purposes, however, it is recommended
+you separate PCX declarations into the following three sections:</p>
+
+<ol>
+  <li><strong><a class="doc" href="#manage_header">Management Header</a>:</strong>
+  The first part of a PCX file is the management header. This section
+  contains <a class="doc" href="#general_declare">general declarations</a> as the
+  information is declared through commands executed when loaded.</li>
+
+  <li><strong><a class="doc" href="#rule_define">Rule Definitions</a>:</strong>
+  The second part of a PCX file contains rule definitions.
+  Rule definitions map commands and variables to actions.
+  Rule definitions are <a class="doc" href="#conditional_declare">
+  conditional declarations</a>.</li>
+
+  <li><strong><a class="doc" href="#support_code">Supporting Code</a>:</strong>
+  The final part of a PCX file contains supporting code. This section contains
+  a set of procedures defined in the namespace declared by the
+  <code>pcx::register</code> command. These are checker commands used in
+  rule definitions and other arbitrary commands to support them.
+  These <a class="doc" href="#conditional_declare">conditional declarations</a>
+  are defined during loading and are used only after rule definitions are
+  activated.</li>
+</ol>
+
+
+
+<h4><a name="manage_header">Management Header</a></h4>
+<p>The PCX file management header contains the declarations that are
+global to the PCX checker package.</p>
+
+<p><strong>Tk Package Example:</strong> The PCX management header from the
+Tk package.</p>
+
+<blockquote><pre>
+  # ### ######### ###########################
+  ## Requisites
+
+  package require pcx      ; # PCX API
+  package require analyzer ; # Analyzer API (checker commands definitions).
+
+  # ### ######### ###########################
+  ## Tcl core version dependencies of the package this checker is for.
+
+  pcx::register coreTk Tk
+  pcx::tcldep   3.6 needs tcl 7.3
+  pcx::tcldep   4.0 needs tcl 7.4
+  pcx::tcldep   4.1 needs tcl 7.5
+  pcx::tcldep   4.2 needs tcl 7.6
+  pcx::tcldep   8.0 needs tcl 8.0
+  pcx::tcldep   8.1 needs tcl 8.1
+  pcx::tcldep   8.2 needs tcl 8.2
+  pcx::tcldep   8.3 needs tcl 8.3
+  pcx::tcldep   8.4 needs tcl 8.4
+
+  # ### ######### ###########################
+</pre></blockquote>
+
+<p><strong>Description:</strong></p>
+
+<ul>
+  <li>First, the <code>pcx</code> package is loaded to provide access to all
+  <strong>tclchecker</strong> APIs.</li>
+  <li>The <a class="doc" href="#using_analyzer_api"><strong>analyzer</strong></a> package
+  is then required. It is automatically loaded by the
+  <code>pcx::register</code> command. The <strong>analyzer</strong> package
+  loads the APIs used for custom TclChecker commands.
+  <strong>Note:</strong> The <strong>analyzer</strong> package is required in
+  this example for clarity. Because this package is automatically loaded, it
+  does not need to be specified in your custom PCX file. </li>
+
+  <li>The <code>pcx::register coreTk Tk</code> statement declares that this
+  PCX file uses the <code>::coreTk</code> namespace internally, and that
+  the Tk package is associated with this file.</li>
+
+  <li>A series of <code>pcx::tcldep</code> statements then declare
+  which version pairs of Tcl and Tk are supported by the PCX file.
+  The first column of numbers (second column from the left) declares which
+  Tk packages are supported. The last column of numbers (rightmost column)
+  declares the minimum Tcl version required to support the PCX file.
+  The text 'needs tcl' is required, and is checked. <strong>Note:</strong>
+  If no version pairs are declared then <strong>tclchecker</strong>
+  assumes the default version of Tcl.</li>
+</ul>
+
+
+
+
+<h4><a name="rule_define">Rule Definitions</a></h4>
+
+<p>Rule definitions comprise the second part of a PCX checker file.
+Rule definitions map commands and variables to actions. Rules are
+defined in PCX files and are associated with a function or variable
+in a corresponding source package. A rule executes an action when
+<strong>tclchecker</strong> encounters the variable or function in the Tcl
+source specified in the corresponding PCX file. Possible actions include:
+printing custom warning or error messages, or indicating incorrect usage of a
+variable or function. The latter example requires use of the
+<a class="doc" href="#using_analyzer_api">analyzer API</a> to write custom
+checker commands.</p>
+
+<p>There are two interfaces available for defining rules,
+<a class="doc" href="#simple_rules">simple</a> and
+<a class="doc" href="#advanced_rules">advanced</a>. The simple interface uses the
+<a class="doc" href="#simple_rules"><strong>pcx::init</strong></a> function to
+initialize rule definitions. The advanced interface provides
+greater flexibility for rule definition as all initialization must be done
+through a custom <strong>init</strong> procedure. Both have comparable APIs;
+the simple interface serves as a wrapper for the advanced interface.</p>
+
+<p>There are four types of rules in both the simple and advanced interfaces.
+These are:</p>
+
+<ul>
+  <li><strong>Scanning Rules:</strong> Define the commands that
+  are checked for generating the list of user-defined procedures,
+  namespaces, and class contexts. The <strong>tclchecker</strong> tool applies
+  scanning rules during the first phase of source file scanning.</li>
+
+  <li><strong><a name="analysis">Analysis Rules</a>:</strong> Check the
+  correctness of function and procedure arguments in the second phase of source
+  file scanning. Analysis rules run with <strong>tclchecker</strong>
+  in <strong>std</strong> mode.</li>
+
+  <li><strong>Variable Rules:</strong> Run when <strong>tclchecker</strong>
+  encounters a specified variable within a source file.</li>
+
+  <li><strong>Operator/Math Rules:</strong> Run when <strong>tclchecker</strong>
+  encounters a specified math function or operator within an expression.</li>
+</ul>
+
+<p>Three more types of rules have only a simple interface.
+These are:</p>
+
+<ul>
+  <li><strong>Per file:</strong> Define a command that is run before
+  and after the scan- and check phases, for each file. The command
+  will have access to the whole file and can perform checks and
+  initalizations which do not fit into the command based checking
+  paradigm the remainder of the checker follows.
+
+  <li><strong>Name Pattern Rules:</strong> Define a regular expression
+  pattern which matched against all procedure, variable,
+  etc. names. The type of name to match a pattern against is specified
+  in the rule.
+
+  <li><strong>Command ordering rules:</strong> Define the allowable
+  orders for using commands, via a set of context-free grammars. For
+  an example see '<a class="doc" href="#corder">Defining allowable command order</a>'.
+</ul>
+
+<h4><a name="simple_rules">Simple Rule Definition</a></h4>
+
+<p>The simple rule interface uses the <strong>pcx::init</strong> procedure
+to automatically load rules and package versions.
+The <strong>pcx::init</strong> function performs the calls into the advanced
+interface. The simple interface commands for defining the four types
+of rules are: <strong>pcx::scan</strong>, <strong>pcx::check</strong>,
+<strong>pcx::var</strong>, and <strong>pcx::mathop</strong>. See
+<a class="doc" href="#initializing_rules">Initializing Rules</a> for more
+information on the <strong>pcx::init</strong> command.</p>
+
+<p>The <strong>pcx::scan</strong> command defines <strong>tclchecker</strong>
+scanning rules. Command syntax follows:</p>
+
+<blockquote><pre>
+pcx::scan  [ver] [cmd] &lt;def&gt;
+</pre></blockquote>
+
+<ul>
+  <li><code>[ver]</code> is the package version the rule defines.</li>
+  <li><code>[cmd]</code> is the name of the command to be checked.</li>
+  <li><code>&lt;def&gt;</code> is the rule definition. This parameter is optional,
+  if not specified then the analysis command is used during scanning.</li>
+</ul>
+
+
+<p>The <strong>pcx::check</strong> command defines <strong>tclchecker</strong>
+analysis rules. Command syntax follows:</p>
+
+<blockquote><pre>
+pcx::check [ver] [mode] [cmd] [def]
+</pre></blockquote>
+
+<ul>
+  <li><code>[ver]</code> is the package version the rule defines.</li>
+  <li><code>[mode]</code> is always <strong>std</strong>.</li>
+  <li><code>[cmd]</code> is the name of the command to be checked.</li>
+  <li><code>[def]</code> is the rule definition.</li>
+</ul>
+
+<p>The <strong>pcx::var</strong> command defines variable (var) rules.
+Command syntax follows:</p>
+
+<blockquote><pre>
+pcx::var [ver] [varname]
+</pre></blockquote>
+
+<ul>
+  <li><code>[ver]</code> is the package version the rule defines.</li>
+  <li><code>[varname]</code> is the fully qualified name of the
+  variable. The full namespace must be included.</li>
+</ul>
+
+
+<p>The <strong>pcx::mathop</strong> command defines operator/math rules.
+Command syntax follows:</p>
+
+<blockquote><pre>
+pcx::mathop [ver] [opname] [oparity]
+</pre></blockquote>
+
+<ul>
+  <li><code>[ver]</code> is the package version the rule defines.</li>
+  <li><code>[opname]</code> is the name of the math function or operator.</li>
+  <li><code>[oparity]</code> is the number of arguments expected by the math function or operator.</li>
+</ul>
+
+<p>The <strong>pcx::perfile</strong> command defines per-file checkers.
+Command syntax follows:</p>
+
+<blockquote><pre>
+pcx::perfile [ver] [commandprefix]
+</pre></blockquote>
+
+<ul>
+  <li><code>[ver]</code> is the package version the rule defines.</li>
+  <li><code>[commandoprefix]</code> is the command prefix to run. When invoked a single argument is added to the command prefix, telling it when the invokation happened. The possible argument values are
+    <ul>
+      <li>begin</li>
+      <li>done</li>
+    </ul>
+    The command can use other API functions (analyzer::*) to determine
+    the active phase (scan, analysis), and access the script of the
+    current file. Note that while the checker does guards itself
+    against modifications of the script by the command it is not
+    recommended to perform such.
+ </li>
+</ul>
+
+<p>The <strong>pcx::nameStylePattern</strong> command defines name pattern rules.
+Command syntax follows:</p>
+
+<blockquote><pre>
+pcx::nameStylePattern [ver] [style] [pattern]
+</pre></blockquote>
+
+<ul>
+  <li><code>[ver]</code> is the package version the rule defines.</li>
+  <li><code>[style]</code> is the type of name to match the pattern against. Allowed codes are
+    <ul>
+      <li>package</li>
+      <li>namespace</li>
+      <li>proc</li>
+      <li>variable</li>
+    </ul>
+</li>
+  <li><code>[pattern]</code> is the regular expression to match the given names against.</li>
+</ul>
+
+<p>The <strong>pcx::order</strong> command defines command ordering rules.
+Command syntax follows:</p>
+
+<blockquote><pre>
+pcx::order [ver] [grammar]...
+</pre></blockquote>
+
+<ul>
+  <li><code>[ver]</code> is the package version the rule defines.</li>
+  <li><code>[grammar]</code> is one of the context-free grammars which define in which order we can use commands.</li>
+</ul>
+
+
+<h4>Versioning with the Simple Interface</h4>
+
+<p>Versioning with the simple interface is a less intensive method
+of defining the relationship between rules and package versions.
+This is because the <strong>pcx::init</strong> function scans for version
+number information and initializes the correct version of the rule with
+the corresponding package version. If <strong>pcx::init</strong> does not find
+a rule matching the provided package version, <strong>pcx::init</strong>
+then initializes the rule with the largest version number below the
+specified version. For example, if a PCX file contains rule definitions for
+package versions 8.0, 8.1, 8.2, 8.4 and the package being loaded has
+version 8.3, then the rule for version 8.2 is loaded.</p>
+
+<p><strong><a name="simple_limitation">Limitation:</a></strong>
+It is impossible to rename or delete commands and variables from a
+PCX file in future package versions using the simple interface.
+This is because once a rule is defined for a command and a package
+version, all future packages will load a rule for that command.
+For example, if package version 8.2 contains
+the command Foo with a matching 8.2 version rule defined in
+the PCX file, and this command is removed in version 8.3, then using that
+PCX file will still load rule 8.2 for the Foo command.
+To handle this limitation of the simple interface, the PCX
+developer must use the <a class="doc" href="#advanced_rules">advanced interface</a>
+described in the following section.</p>
+
+
+<h4><a name="advanced_rules">Advanced Rule Definition</a></h4>
+<p>The advanced rule interface uses a custom <strong>init</strong>
+procedure to define rules and package versions. The advanced interface
+commands <strong>pcx::checkers</strong>,
+<strong>pcx::scanners</strong>, <strong>pcx::variables</strong>, and
+<strong>pcx::mathoperators</strong> must be placed within the body of
+the <strong>init</strong> function to be correctly defined. Beyond
+this requirement, there are no restrictions on how definitions are
+stored.  Lastly, defining rules with the advanced interface handles
+the <a class="doc" href="#simple_limitation">limitation</a> of the
+simple interface where commands could not be renamed between package
+versions.  This is accomplished through using the version passed to
+the <strong>init</strong> function to ensure that the correct rule is
+activated.  See <a class="doc" href="#initializing_rules">Initializing
+Rules</a> for more information on custom <strong>init</strong>
+commands.</p>
+
+
+
+<ul>
+  <li>The <strong>pcx::scanners</strong> command accepts a serialized array
+  that maps command names to scanner definitions.</li>
+  <li>The <strong>pcx::checkers</strong> command accepts a serialized array
+  that maps command names to checker definitions.</li>
+  <li>The <strong>pcx::variables</strong> command takes a list of variables
+  to define.</li>
+  <li>The <strong>pcx::mathoperators</strong> command takes a list of math functions
+  to define, in the form [name]/[arity].</li>
+</ul>
+
+<p>See <a class="doc" href="#appendix_A">Appendix A: PCX API Commands</a>
+for the full advanced interface definition.</p>
+
+
+
+<h4><a name="#init">Defining Custom Messages and Initializing Rules </a></h4>
+<!--This is the init section-->
+<p>This section demonstrates, through the 'Tk' package, how to
+define custom messages and initialize rules.</p>
+
+<p><strong>Defining Custom Messages</strong></p>
+
+<p><strong>Tk Package Example:</strong> Defining new messages.</p>
+
+<blockquote><pre>
+# ### ######### ###########################
+## Package specific message types and their human-readable translations.
+
+pcx::message badColormap {invalid colormap "%1$s": must be "new" or a window name} err
+
+# ### ######### ###########################
+</pre></blockquote>
+
+<p><strong>Description:</strong></p>
+
+<ul>
+  <li>The <code>pcx::message</code> command defines new message codes
+  for the errors and warnings generated by the PCX file. The syntax is as
+  follows:</li>
+
+<blockquote> <pre>
+pcx::message [code] [text] [types]
+</pre> </blockquote>
+
+  <ul>
+      <li>The <code>[code]</code> parameter is the ID of the new message.<br>
+      <strong>Note:</strong> For the <code>pcx::message</code> command
+      the messageID must be specified without a namespace prefix.
+      This is because <code>pcx::message</code> automatically adds the name of
+      the checker package as a prefix to the messageID. However, when the
+      message ID is used to display a message with the <code>logError</code>
+      command the prefix has to be specified. For example,
+      <code>coreTk::badColorMap</code></li>
+
+      <li>The <code>[text]</code> parameter is the human readable
+      string displayed by <strong>tclchecker</strong>.
+      This string may contain placeholders of the form '%&lt;digit&gt;$s'.
+      When the message is displayed, these placeholders will be replaced with
+      the additional arguments given to the 'logError' call. The &lt;digit&gt;
+      placeholder specifies which argument to use starting from '1'.</li>
+
+      <li>The <code>[types]</code> parameter is a list of message types used by
+      message filtering mechanism in <strong>tclchecker</strong>.
+      Legal type codes are 'err', 'warn', or 'upgrade'.</li>
+  </ul>
+</ul>
+
+<p><strong><a name="initializing_rules">Initializing Rules</a></strong></p>
+
+<p><strong>Tk Package Example:</strong> Initializing rules in the PCX file.</p>
+<blockquote><pre>
+# ### ######### ###########################
+proc ::coreTk::init {ver} {
+    ::pcx::init coreTk $ver
+  }
+
+# ### ######### ###########################
+</pre></blockquote>
+
+
+<p><strong>Description:</strong></p>
+<ul>
+  <li>The namespace <code>::coreTk</code> is used to declare all messages
+  and rules. Rule definitions and messages must be declared
+  in the namespace reserved for the PCX checker definition. Namespaces are
+  defined in the <a class="doc" href="#manage_header">management header</a>.</li>
+
+  <li>The <code>init</code> command activates the rule definitions for the
+  specified version of the source package. If the PCX file
+  does not declare a custom <code>init</code> command,
+  <strong>tclchecker</strong> will define the command as shown
+  above. <strong>Important:</strong> The <code>pcx::init</code> command
+  should always be called from the <code>init</code> function to ensure
+  that <a class="doc" href="#simple_rules">simple rule definitions</a> are loaded.</li>
+</ul>
+
+
+<a name="corder"><h4>Defining allowable command order</h4></a>
+
+This section demonstrates how to specify the order of use for a set of
+commands. We are assuming that we have a package FOO exporting 3
+commands, <code>init</code>, <code>action</code>, and
+<code>cleanup</code>, which have to be used in this order, and
+<code>action</code> can be used zero or more times.
+
+<blockquote><pre>
+# ### ######### ###########################
+# Simple context-free grammar specifying the order of use for the
+# commands in this package FOO. The {} is the start-symbol. It has to
+# appear. Names used on the left side are non-terminal symbols. Every
+# other name is a terminal symbol, a name for a command whose order of
+# use is specified. Names using '$$$' as prefix are reserved and must
+# not be used.
+
+pxc::order 1.0 {
+     {}        {init ACTIONS cleanup}
+     {ACTIONS} {}
+     {ACTIONS} {action ACTIONS}
+}
+
+# Now define the syntax rules for the commands as usual, and tag them
+# using 'checkOrderOf'. The '...' is the place holder for the regular
+# syntax checking commands. Note how the tags used in 'checkOrderOf'
+# match up with the terminal symbols of the grammar above. That is the
+# only requirement. They do not have to match the actual command names.
+# It is a good idea to do so, and recommended, required it is not.
+
+pcx::check 1.0 std FOO::init    checkOrderOf FOO init    {...}
+pcx::check 1.0 std FOO::action  checkOrderOf FOO action  {...}
+pcx::check 1.0 std FOO::cleanup checkOrderOf FOO cleanup {...}
+
+# ### ######### ###########################
+</pre></blockquote>
+
+<p>This is the most simple example possible. In a more complex example
+the package FOO would define commands which provide new control
+structures, either loops or branching. To handle these we will need
+the commands <code>checkOrderLoop</code>,
+<code>checkOrderBranches</code>, and
+<code>checkOrderBranch</code>. See <a class="doc"
+href="#appendix_B">Appendix B: Analyzer API Commands</a> for their
+definition.</p>
+</p>
+
+
+<h4>PCX API Summary</h4>
+
+<table border="1" cellpadding="2">
+  <tr>
+      <td><strong>Simple API:</strong></td>
+      <td><strong>Advanced API:</strong></td>
+      <td><strong>Rule Type:</strong></td>
+      <td><strong>Definition:</strong></td>
+      <td><strong>Notes:</strong></td>
+  </tr>
+  <tr>
+      <td><strong>pcx::scan</strong></td>
+      <td><strong>pcx::scanners</strong></td>
+      <td>Scanning</td>
+      <td>Scan command rules.</td>
+      <td>Always taken.</td>
+  </tr>
+  <tr>
+      <td><strong>pcx::check</strong></td>
+      <td><strong>pcx::checkers</strong></td>
+      <td>Analysis in <strong>std</strong> mode.</td>
+      <td>Analysis command rules.</td>
+      <td>Always taken.</td>
+  </tr>
+  <tr>
+      <td><strong>pcx::var</strong></td>
+      <td><strong>pcx::variables</strong></td>
+      <td>Variable</td>
+      <td>Variables declared by the package.</td>
+      <td>Always taken.</td>
+  </tr>
+  <tr>
+      <td><strong>pcx::mathop</strong></td>
+      <td><strong>pcx::mathoperators</strong></td>
+      <td>Variable</td>
+      <td>Math functions declared by the package.</td>
+      <td>Always taken.</td>
+  </tr>
+  <tr>
+      <td><strong>pcx::perfile</strong></td>
+      <td>&nbsp;</td>
+      <td>Per file</td>
+      <td>Checkers run on the whole file</td>
+      <td>Always taken.</td>
+  </tr>
+  <tr>
+      <td><strong>pcx::nameStylePattern</strong></td>
+      <td>&nbsp;</td>
+      <td>Name Patterns</td>
+      <td>Patterns to match names against.</td>
+      <td>Always taken.</td>
+  </tr>
+  <tr>
+      <td><strong>pcx::order</strong></td>
+      <td>&nbsp;</td>
+      <td>Allowable command order</td>
+      <td>One or more context-free grammars</td>
+      <td>Always taken.</td>
+  </tr>
+</table>
+
+
+
+
+<h4><a name="support_code">Supporting Code</a></h4>
+
+<p>The final section of a PCX checker package contains supporting code.
+Supporting code consists of a series of procedure and variable definitions
+for more complicated rule definitions. All supporting code must be defined in
+the namespace reserved for the PCX checker package. A procedure can be a custom
+checker command, or a regular command supporting checker commands.
+Checker commands must follow additional restrictions for correct interoperation
+with <strong>tclchecker</strong>.</p>
+
+<p>See <a class="doc" href="#using_analyzer_api">Using the
+Analyzer API</a> for information on checker command syntax.</p>
+
+<p>For information on available checker commands, see
+<a class="doc" href="#appendix_B">Appendix B: Analyzer API Commands</a>.</p>
+
+
+<br>
+
+<h3><a name="using_analyzer_api">Using the Analyzer API</a></h3>
+
+<p>The Analyzer API is used to write custom checker commands.
+A checker command is a fundamental building block for checking a Tcl
+source file command. Checker commands ensure that arguments passed to a
+function in the Tcl source file are correct. Whenever
+<strong>tclchecker</strong> files check the invocation of a command, they
+consult an internal database that maps command names to checker commands.
+The <strong>tclchecker</strong> tool retrieves the checker command
+associated with the command that occurs in the source package and evaluates
+it according to the configuration in the checker package (PCX file).
+The database does not directly map to a command, but rather to the command
+prefix. This means it is possible to use a single generic checker command for
+many commands, with suitable parameterization.</p>
+
+<p>Checker commands take at least two arguments. The first arguments are
+user-defined. The second-last argument is a list containing the arguments
+passed to the function being checked. The last argument is the index of
+the current argument being checked. The interface for a checker command
+is as follows:</p>
+
+<blockquote><code>proc checkFoo {... token index} {body}</code></blockquote>
+
+
+<p><strong>Description:</strong></p>
+
+<ul>
+  <li>It is convention to name the checker command after the function it checks,
+  prefixed with the word 'check'. For example, <code>checkFoo</code> is a
+  checker command for a 'Foo' function.</li>
+  <li>The <code>token</code> parameter is the list of arguments from the
+  function being checked. This list describes the command and its
+  components in detail, as generated by the parser package.</li>
+  <li>The <code>index</code> parameter indicates which item in the
+  <code>token</code> list is currently being checked.</li>
+  <li>The <code>body</code> is the checker command code. Generally, checker
+  command code will contain calls into the analyzer interface to process the
+  argument list.</li>
+</ul>
+
+<p>For information on available checker commands, see
+<a class="doc" href="#appendix_B">Appendix B: Analyzer API Commands</a>.</p>
+
+
+<h4>Chaining and Grouping Checker Commands</h4>
+
+<p>The checker command interface can be used to write generic checker commands,
+as well as checker commands which call other checker commands to perform the
+actual task. The latter usage requires the chaining or grouping of checker
+commands.</p>
+
+<p><strong>Chaining: </strong> A primary checker command performs some
+tasks, and then passes the remaining tasks to a subsequent checker command. The
+subsequent command is explicitly specified as an argument to the primary
+checker command. Other subsequent checker commands may follow.</p>
+
+<p><strong>Grouping:</strong> A primary checker command has several other
+checker commands as arguments. The primary command then calls the subsequent
+commands in various patterns.</p>
+
+
+<h2><a name="pco_api">TclChecker Option Files (PCO Files)</a></h2>
+
+<h3>Overview</h3>
+
+<p>This section provides a general overview on TclChecker option
+files, including how to name and load them for use with the
+<strong>tclchecker</strong> tool. Later, this document provides
+information for building custom TclChecker option files using the <a
+class="doc" href="#using_pco">PCO API</a>.</p>
+
+<p>TclChecker option files are used with the
+<strong>tclchecker</strong> tool to specify user-defined custom
+options. TclChecker option files have a ".pco" extension. Each file
+declares one or more user-defined options and their replacements
+(other options). TclChecker option files are written using the <a
+class="doc" href="#using_pco">PCO API</a>.</p>
+
+<p><strong>Note:</strong> This document uses the terms "TclChecker
+option file", and "PCO file" interchangeably to identify the file used
+by the <strong>tclchecker</strong> tool to specify user-defined
+options.</p>
+
+<p><strong>Warning:</strong> Tcl code contained in PCO files is
+trusted. This means that PCO files are run directly by the Tcl
+interpreter and are not parsed with the <strong>tclchecker</strong>
+tool.  When a PCO file is executed it should restrict itself to the <a
+class="doc" href="#using_pco">PCO API</a>. Because this code is
+executed without restriction it can potentially redefine everything in
+the <strong>tclchecker</strong> tool.</p>
+
+<h4>Embedded PCO Files</h4>
+
+<p>In contrast to <a href="pcx_api">PCX files</a> the Tcl Dev Kit
+TclChecker does not come with embedded PCO files.</p>
+
+<p>It is therefore always necessary to create custom PCO files. For
+more information, see <a class="doc" href="#using_pco">Using the PCO
+API</a>.</p>
+
+
+<h4>Naming PCO Files</h4>
+
+<p>When creating custom PCO files the name of the PCO file is
+irrelevant as there are no other entities associated with it. The only
+exception is that it has to have the extension <code>.pco</code>. This
+is in contrast to <a href="pcx_api">PCX files</a> whose names have to
+match the names of the Tcl packages they belong to.
+
+
+<h4>Loading PCO Files</h4>
+
+<p>Tcl searches various paths for PCO files. These paths are
+determined on startup, before the <strong>tclchecker</strong> tool
+starts processing its command line.</p>
+
+<p><strong>Note:</strong> Subdirectories in the search path are not
+scanned as the checker does not search recursively.</p>
+
+<p>The Tcl Dev Kit TclChecker will look for PCO files in the following
+locations and order:</p>
+
+<ol>
+  <li>PCO files (.pco) wrapped in <code>tclchecker(.exe)</code>.</li>
+  <li>The <code>lib</code> directory of the Tcl Dev Kit installation.</li>
+  <li>In all package paths specified in the <a
+  href="TclApp.html#locating_custom_tap">TclApp Preferences</a>.</li>
+  <li>The directory specified by the environment variable
+      <code>TCLDEVKIT_LOCAL</code>.</li>
+  <li>The search paths specified with the <strong>-pcx <em>directory</em></strong>
+      command-line option.</li>
+</ol>
+
+<p>The first item is present to enable us to distribute embedded PCO
+files in the future, should we wish to. The last item means that
+<strong>tclchecker</strong> will search for PCO files in all the
+places the user wants it to look for PCX files as well.</p>
+
+<p><strong>Note:</strong> If multiple PCO files defining the same
+option occur in more than one location, the last file and definition
+encountered by the checker is loaded.</p>
+
+
+<h3><a name="using_pco">Using the PCO API</a></h3>
+
+<p>This section outlines how to build a custom PCO file for use with
+the Tcl Dev Kit TclChecker.</p>
+
+<p>A PCO file contains one or more of a single type of
+declarations. Each declaration names a new option and specifies a list
+of options to replace it with when found on the command line. All
+declarations are executed when the PCO file containing them is
+loaded.</p>
+
+<p>Example of an option definition:
+<blockquote><pre>
+  # -*- tcl -*-
+  # TDK Checker PCO file
+  #
+  checkerCmdline::Def Wats {
+    add -check warnStyleError
+    add -check warnStyleExit
+    add -check warnStyleSleep
+    add -suppress warnStylePlainWord
+  }
+</pre></blockquote>
+</p>
+
+<h4><a name="appendix_C">PCO API Commands</a></h4>
+
+The API contains only two commands, <code>checkerCmdline::Def</code>,
+and <code>checkerCmdline::DefList</code>, with syntax:
+
+<blockquote><pre>
+  checkerCmdline::Def option script
+</pre></blockquote>
+
+<p>This defines a new option and uses a script to specifies the list
+of words to replace it with when the option is encountered on the
+command line. The command to add words to the replacement list is
+<code>add</code>. It accepts one or more arguments, each a new word
+which is appended to the list.
+</p><p>
+The option name can be specified as either <code>-foo</code> or
+<code>foo</code>, in both cases the new option is <code>-foo</code>.
+Note that option names are case-sensitive.
+</p>
+
+<blockquote><pre>
+  checkerCmdline::DefList option replacement
+</pre></blockquote>
+
+<p>This defines a new option and specifies a list of words to replace
+it with when the option is encountered on the command line.
+
+The option name can be specified as either <code>-foo</code> or
+<code>foo</code>, in both cases the new option is <code>-foo</code>.
+Note that option names are case-sensitive.
+</p>
+
+
+<h2><a name="appendix_A">Appendix A: PCX API Commands</a></h2>
+
+<dl>
+  <dt><strong>register &lt;namespace&gt; ?&lt;pkg&gt;?</strong></dt>
+  <dd>
+  <p>Reserves <strong>&lt;namespace&gt;</strong> for PCX definitions
+  of package <strong>&lt;pkg&gt;</strong>. Defines
+  <strong>&lt;namespace&gt;</strong> as the name of the new checker
+  package. If <strong>&lt;pkg&gt;</strong> is missing,
+  <strong>&lt;namespace&gt;</strong> replaces it.</p>
+  </dd>
+
+  <dt><strong>tcldep &lt;version&gt; needs tcl &lt;tclver&gt;</strong></dt>
+  <dd>
+  <p>Declares that <strong>&lt;version&gt;</strong> of the current
+  checker package requires version <strong>?&lt;tclver&gt;?</strong>
+  of the Tcl core for proper checking.</p>
+  </dd>
+
+  <dt><strong>load &lt;pkg&gt;</strong></dt>
+  <dd>
+  <p>Ensures presence of a PCX file for the package in memory.
+  Use when a PCX file uses a definition of another file. For example,
+  Blt asks for Tk.</p>
+  </dd>
+
+  <dt><strong>scanners {&lt;cmd&gt; &lt;def&gt;  ...}</strong></dt>
+  <dd>
+  <p>Advanced API. Accepts a serialized
+  array that maps command names to scanner definitions.</p>
+  </dd>
+
+  <dt><strong>checkers {&lt;cmd&gt; &lt;def&gt;  ...}</strong></dt>
+  <dd>
+  <p>Advanced API. Activates the checker
+  definitions for the listed commands. Accepts a serialized array
+  that maps command names to checker definitions.</p>
+  </dd>
+
+  <dt><strong>variables {&lt;var&gt;  ...}</strong></dt>
+  <dd>
+  <p>Advanced API. Activates variable
+  definitions in the checker. Takes a list of variables to define.</p>
+  </dd>
+
+  <dt><strong>mathoperators {&lt;op&gt;  ...}</strong></dt>
+  <dd>
+  <p>Advanced API. Activates operator/math
+  definitions in the checker. Takes a list of math functions to define,
+   each in the form &lt;opname&gt;/&lt;oparity&gt;.</p>
+  </dd>
+
+  <dt><strong>topDefinition &lt;cmd&gt;</strong></dt>
+  <dd>
+  <p>Returns the current scanner/checker definition for the command.
+  Empty if there is no definition for the command.
+  Used by checker packages to conditionally define commands,
+  and to copy an existing definition for use in a new one.</p>
+  </dd>
+
+  <dt><strong>init &lt;namespace&gt; &lt;ver&gt;</strong></dt>
+  <dd>
+  <p>Common setup command for definitions. Uses checkers, scanners,
+  and variables to activate definitions stored
+  <strong>&lt;namespace&gt;</strong> variables in. Activates the
+  definitions of version <strong>&lt;ver&gt;</strong>.</p>
+  </dd>
+
+  <dt><strong>scan &lt;ver&gt; &lt;cmd&gt; ?&lt;def&gt;?</strong></dt>
+  <dd>
+  <p>Simple API. Defines
+  <strong>tclchecker</strong> scanning rules.</p>
+  </dd>
+
+  <dt><strong>check &lt;ver&gt; &lt;mode&gt; &lt;cmd&gt; &lt;def&gt;</strong></dt>
+  <dd>
+  <p>Simple API. Defines
+  <strong>tclchecker</strong> analysis rules.</p>
+  </dd>
+
+  <dt><strong>var &lt;ver&gt; &lt;varname&gt;</strong></dt>
+  <dd>
+  <p>Simple API. Defines variable rules.</p>
+  </dd>
+
+  <dt><strong>mathop &lt;ver&gt; &lt;opname&gt; &lt;oparity&gt;</strong></dt>
+  <dd>
+  <p>Simple API. Defines operator/math rules.</p>
+  </dd>
+
+  <dt><strong>perfile &lt;ver&gt; &lt;command-prefix&gt;</strong></dt>
+  <dd>
+  <p>Simple API. Defines per-file rules.</p>
+  </dd>
+
+  <dt><strong>nameStylePattern &lt;ver&gt; &lt;style&gt; &lt;pattern&gt;</strong></dt>
+  <dd>
+  <p>Simple API. Defines name pattern rules.</p>
+  </dd>
+
+  <dt><strong>isActive &lt;namespace&gt; &lt;vervar&gt;</strong></dt>
+  <dd>
+  <p>Tests if the checker package in <strong>&lt;namespace&gt;</strong>
+  has active definitions. Returns a boolean: 'true' if active,
+  'false' otherwise. The active version is stored in the second argument,
+  a variable name.</p>
+  </dd>
+
+  <dt><strong>getCheckVersion &lt;pkg&gt;</strong></dt>
+  <dd>
+  <p>Returns the version of the checked package <strong>&lt;pkg&gt;</strong>,
+  or '-1' if the package is not checked. Used in new checker commands
+  to place conditions on checks.</p>
+  </dd>
+
+  <dt><strong>order &lt;ver&gt; &lt;grammar&gt;...</strong></dt>
+  <dd>
+  <p>Specifies one or more grammars which define the allowable orders in which commands of the package can be used.</p>
+  <p>Each grammar is a dictionary mapping from a non-terminal symbol
+  to a list of symbols allowed as expansion of the non-terminal
+  (right-hand-side). All symbols which are used on some
+  right-hand-side but never as a key are terminal symbols. The '{}'
+  non-terminal symbol has to occur, it is the hardwired start-symbol
+  of the grammar. No symbol may <em>$$$</em> as prefix for its name,
+  symbols doing so are reserved for <em>internal use</em>. The
+  terminal symbols have to match the tags used as arguments for
+  <code>checkOrderOf</code> calls.</p>
+  </dd>
+</dl>
+
+
+<h2><a name="appendix_B">Appendix B: Analyzer API Commands</a></h2>
+
+<p>Use the Analyzer API to build custom checker commands.</p>
+<br>
+
+<dl>
+  <dt><strong>checkContext cIndex strip chainCmd</strong></dt>
+  <dd>
+  <p>Pushes a context on the context stack, then calls the chained checker.</p>
+
+ <p><strong>cIndex</strong>: Index of the word containing the context information.</p>
+ <p><strong>strip</strong>: Boolean, set if word containing context name has
+  to have the head stripped off.</p>
+
+ <p>For scan commands.</p>
+  </dd>
+
+  <dt><strong>checkUserProc pInfo</strong></dt>
+  <dd>
+  <p>Checks a "proc" for the correct number of arguments.</p>
+
+  <p><strong>pInfo</strong>: Proc declaration (argument lists)</p>
+  </dd>
+
+  <dt><strong>checkRedefined</strong></dt>
+  <dd>
+  <p>Checks if the procedure in the word to check is
+ defined more than once.</p>
+  </dd>
+
+  <dt><strong>checkBody</strong></dt>
+  <dd>
+  <p>Check a script in a single word (procedure body,
+ control commands).</p>
+  </dd>
+
+  <dt><strong>checkWord</strong></dt>
+  <dd>
+  <p>Check if the word contains subcommands, etc. and invokes
+ their checker commands.</p>
+  </dd>
+
+  <dt><strong>checkExpr</strong></dt>
+  <dd>
+  <p>Check the expression for subcommands, etc.</p>
+  </dd>
+
+  <dt><strong>checkCommand</strong></dt>
+  <dd>
+  <p>Checks each word (checkWord) in the command.</p>
+  </dd>
+
+  <dt><strong>checkSequence checkers</strong></dt>
+  <dd>
+  <p>A primitive grouping operation which simply invokes the chained
+  checkers in sequence without additional checks, like number of
+  arguments.</p>
+  </dd>
+
+  <dt><strong>checkSimpleArgs min max checkers</strong></dt>
+  <dd>
+  <p>Checks that the number of arguments is between min and max. If
+ that is not the case we default to <code>checkCommand</code> to check
+ all words. If the number of words is in the specified range we go
+ through the list of checkers and execute them. Each checker is
+ started where its predecessor left off. If there are words left to
+ check after the last checker was executed the execution of the last
+ checker is repeated until there are no words left.</p>
+
+  <p>A value of -1 for max means that the number of arguments has
+ no finite upper bound.</p>
+
+ <p>This is the basic sequential composition operator.</p>
+  </dd>
+
+  <dt><strong>checkAtEnd</strong></dt>
+  <dd>
+  <p>A more convenient form of <code>checkSimpleArgs 0 0 {}</code>.
+  I.e. this checks that we have consumed all arguments.</p>
+  </dd>
+
+  <dt><strong>checkTailArgs head tail backup</strong></dt>
+  <dd>
+  <p>Similar to the previous checker, but not quite. "backup" is the
+ number of fixed tail arguments for the command. These are
+ checked through the execution of tailCmd. All other arguments
+ are checked with headCmd. The head arguments are checked
+ before the tail arguments.</p>
+
+  <p>If the head checker did not process an argument,
+ <code>checkWord</code> will be used instead. This happens until all
+ head arguments are processed.</p>
+ </dd>
+
+  <dt><strong>checkTailArgsFirst head tail backup</strong></dt>
+  <dd>
+  <p>See <code>checkTailArgs</code>, but the tail arguments are checked before
+ the head arguments.</p>
+  </dd>
+
+  <dt><strong>checkSwitchArg switch min num cmds</strong></dt>
+  <dd>
+  <p>This command checks switch arguments similar to the
+ <code>checkSimpleArgs</code> checker.  It checks to see if the minimum
+ number of words can be found in the current command, and then
+ checks "num" args.  This checker is designed to be used inside
+ custom checkers to assist checking switch arguments (e.g., the
+ "expect" command.)</p>
+  </dd>
+
+  <dt><strong>checkOption optionTable default</strong></dt>
+  <dd>
+  <p>This is the primary composition operator for handling of
+ subcommands (here called "options").</p>
+
+ <p>The optionTable is a list of 2-tuples mapping from subcommand
+ names to checkers for the arguments after the subcommand.</p>
+
+ <p>If none of the options match, the 'default' checker is used.
+ If the default is empty an error will be generated for that
+ case.</p>
+
+ <p>Defaults to <code>checkCommand</code> if the subcommand word is not literal.</p>
+  </dd>
+
+  <dt><strong>checkWidgetOptions allowsingle commonopts widgetopts</strong></dt>
+  <dd>
+  <p>Convenience wrapper to <code>checkConfigure</code>, see below.</p>
+  </dd>
+
+  <dt><strong>checkKeyword exact keywords</strong></dt>
+  <dd>
+  <p>Checks that the next word is on the list of allowed
+  keywords. If exact is not set, unique abbreviations of the
+  keywords are allowed too. Falls back to <code>checkWord</code> for
+  non-literals.</p>
+  </dd>
+
+  <dt><strong>checkSwitches exact switches chain</strong></dt>
+  <dd>
+  <p>Similar to <code>checkKeyword</code>. Differences:</p>
+
+  <ul>
+    <li>switches is a list of switch/action pairs. If a switch
+    does not take an argument the action can be empty.
+    "--" is a terminator.
+    <p>If a switch with an action is found the checker in the
+    action is executed for the switch argument.</p></li>
+    <li>After processing the switches the chained checker is
+    called to process the arguments after the switches
+    (if a checker to chain to was specified).</li>
+  </ul>
+  <br>
+  </dd>
+
+  <dt><strong>checkHeadSwitches exact backup switches chaincmd</strong></dt>
+  <dd>
+  <p>Similar to <code>checkSwitches</code>. Does not check for switches beyond the
+  'backup' tail arguments of the command. Ignores arguments behind the switches.</p>
+  </dd>
+
+  <dt><strong>checkHeadSwitches exact backup switches chaincmd</strong></dt>
+  <dd>
+  <p>Similar to <code>checkSwitches</code>. Does not check for switches beyond the
+  'backup' tail arguments of the command. Ignores arguments behind the switches.</p>
+  </dd>
+
+  <dt><strong>checkSwitchesArg exact switches chain</strong></dt>
+  <dd>
+  <p>Similar to <code>checkSwitches</code>. Difference: Decouples the execution of checkers
+  for a switch from the notion that a switch takes an argument. This allows
+  for switches without arguments, yet needing a checker, for
+  example to warn about portability problems with said switch.</p>
+  </dd>
+
+  <dt><strong>checkConfigure allowsingle options</strong></dt>
+  <dd>
+  <p>Options is a list of switch/action pairs. If allowsingle is
+  set, a single argument is ok. Otherwise an error is
+  generated. Checks the arguments for options and values as
+  defined in the table.</p>
+  </dd>
+
+  <dt><strong>checkFloatConfigure</strong></dt>
+  <dd>
+  <p>See <code>checkConfigure</code> above, but does not check the option
+  values.</p>
+  </dd>
+
+  <dt><strong>checkExtensibleConfigure</strong></dt>
+  <dd>
+  <p>See <code>checkConfigure</code> above, but unknown options do not cause the
+  generation of errors, only warnings. This is for commands whose set
+  of understood options is extensible (like the builtin 'return'
+  command in Tcl 8.5).</p> </dd>
+
+
+  <dt><strong>checkNOP</strong></dt>
+  <dd>
+  <p>This checker does nothing. It is useful as default checker for
+  <code>checkSwitches</code> to force them to return their current position instead of
+  trying to check the non-switch arguments coming behind them.</p>
+  </dd>
+
+  <dt><strong>checkNumArgs chainlist</strong></dt>
+  <dd>
+  <p>A list of 2-tuples. First element of a tuple is the number of
+  arguments triggering the checker specified as the second
+  element of that tuple.</p>
+  </dd>
+
+  <dt><strong>checkListValues min max checkers</strong></dt>
+  <dd>
+  <p>Same basic behavior as <code>checkSimpleArgs</code>, but for checking a list,
+  not a command.</p>
+  </dd>
+
+  <dt><strong>checkListValuesModNk min max n k checkers</strong></dt>
+  <dd>
+  <p>Basic behavior as <code>checkListValues</code>, but the expected list length
+  is further constrained to be k modulo n.</p>
+  </dd>
+
+  <dt><strong>checkDictValues min keychecker valuechecker</strong></dt>
+  <dd>
+  <p>Basic behavior as <code>checkListValues</code>, but the list has to be a
+  dictionary with minimum length min (multiple of 2). They keys and
+  values are validated with their respective checkers.</p>
+  </dd>
+
+  <dt><strong>checkLevel chaincmd</strong></dt>
+  <dd>
+  <p>Checks that next word is a valid level designator (#n, n)
+  and then invokes the chained checker.</p>
+  </dd>
+
+  <dt><strong>checkIndexAt idx chaincmd</strong></dt>
+  <dd>
+  <p>Invokes the chained checker if the checking is at word 'idx' when
+  this checker was invoked. Words are counted from zero.</p>
+  </dd>
+
+  <dt><strong>checkArgsOrList chaincmd</strong></dt>
+  <dd>
+  <p>This checker assumes that the remainder of the words falls into
+  one of the following three cases:
+  <ol>
+  <li>one argument, which is not a list.</li>
+  <li>one argument, which is a list.</li>
+  <li>multiple arguments.</li>
+  </ol>
+  In cases 1 and 3 the chained checker is invoked for each remaining
+  argument. In case 2 the chained checker is invoked for each word in
+  the list.</p>
+  </dd>
+
+  <dt><strong>checkProcCall argstoadd</strong></dt>
+  <dd>
+  <p>Checks procedure calls where a number of fixed arguments is
+  appended implicitly to the command. I.e. this is for checking
+  literal command prefixes used as callback command. checking is
+  limited to known user-defined procedures.</p>
+  </dd>
+
+  <dt><strong>checkEvalArgs</strong></dt>
+  <dd>
+  <p>See <code>checkBody</code>, but script is distributed over a list of arguments
+  (examples: eval, after, ...).</p>
+  </dd>
+
+  <dt><strong>checkRestrictedSwitches exact switches chain</strong></dt>
+  <dd>
+  <p>See <code>checkSwitches</code> for basic behavior.
+  Difference: Stops at first unrecognized switch, and
+  does not log unrecognized switches as error.</p>
+  </dd>
+
+  <dt><strong>checkDynLit offset dynamicchecker literalchecker</strong></dt>
+  <dd>
+  <p>Checks if the specified word is a literal or not and invokes the
+  respective chained checker. The word is specified as offset relative
+  to the current word.</p><p>Example of use is the builtin
+  <code>proc</code> command. If the body is dynamic using the scope
+  and context machinery is contraindicated.</p>
+  </dd>
+
+  <dt><strong>checkAll chains</strong></dt>
+  <dd>
+  <p>Invokes all chains specified, all are started at the current
+  index. Generated messages accumulate. This allows the execution of
+  preparatory commands before running the actual checker. Like a
+  mini-scan mode even if 2-pass scanning is off.</p>
+  </dd>
+
+  <dt><strong>checkDoubleDash chain</strong></dt>
+  <dd>
+  <p>Invokes the chained checker of testing if the current word is
+  dynamic or not. A message is generated if so, and if the previous
+  word is not a "--".</p>
+  </dd>
+
+  <dt><strong>checkVarName<br>
+  checkArrayVarName<br>
+  checkVarNameSyntax<br>
+  checkVarNameRdAll<br>
+  checkVarNameWrite<br>
+  checkVarNameDecl</strong><br>
+  </dt>
+
+  <dd>
+  <p>These commands check the validity of variable names.</p>
+
+  <ul>
+    <li><strong>checkVarName</strong> assumes that the command is reading the
+    variable in scalar mode.</li>
+    <li><strong>checkVarNameRdAll</strong> is like <strong>checkVarName</strong>
+    with the scalar mode disabled, thereby including arrays.</li>
+    <li><strong>checkVarNameWrite</strong> checks that the variable can be
+    written.</li>
+    <li><strong>checkVarNameDecl</strong> checks for the portability and
+    supported status of the variable name (the checks done by
+    <strong>checkVarNameDecl</strong> are done by all
+    <strong>checkVarName</strong> functions).</li>
+    <li><strong>checkVarNameSyntax</strong> checks just the syntax of
+    the variable name, does not assume either reading or writing (The
+    builtin <code>info exists</code> is an example of a command needing
+    this).</li>
+    <li><strong>checkArrayVarName</strong> assumes that the command is
+    reading an array variable as a whole. (Example: <code>parray</code>)</li>
+  </ul>
+  </dd>
+
+  <br>
+
+
+  <dt><strong>checkBoolean, checkInt, checkFloat, checkWholeNum,
+checkNatNum, checkIndex, checkIndexExpr, checkExtendedIndexExpr,
+checkByteNum, checkList, checkDict, checkListModNk, checkProcName,
+checkFileName, checkChannelID, checkArgList, checkNamespace,
+checkNamespacePattern, checkExportPattern, checkPattern, checkRegexp,
+checkAccessMode, checkAccessModeB, checkResourceType, checkVersion,
+checkExtVersion, checkRequirement, checkWinName, checkColor,
+checkPixels, checkCursor, checkRelief</strong></dt> <dd>
+  <p>Checking that the next words is of a specific type:</p>
+
+  <ul>
+    <li><strong>Boolean</strong> === 'string is boolean'</li>
+    <li><strong>Int</strong> === integer, any value </li>
+    <li><strong>Float</strong> === floating point number</li>
+    <li><strong>WholeNum</strong> === integer &gt;= 0</li>
+    <li><strong>NatNum</strong> === integer &gt; 0</li>
+    <li><strong>Index</strong> === integer, or "end"</li>
+    <li><strong>IndexExpr</strong> === integer, or "end", or "end"-integer</li>
+    <li><strong>ExtendedIndexExpr</strong> === integer, or "end",
+    "end"-integer, "end"+integer, integer-integer, or
+    integer+integer</li>
+    <li><strong>ByteNum</strong>   === integer, in range 0 ... 255</li>
+    <li><strong>List</strong> === parsable by list command</li>
+    <li><strong>Dict</strong> === parsable by dict command</li>
+    <li><strong>ListModNk n k</strong> === parsable by list command,
+    length is k modulo n</li>
+    <li><strong>ProcName</strong> === word is name of builtin command,
+    user-defined procedure known to the checker, or widget
+    command.</li>
+    <li><strong>FileName</strong> === word is a file path.</li>
+    <li><strong>ChannelID</strong> === word is a channel handle.</li>
+    <li><strong>ArgList</strong>   === List, nothing after 'args', no
+    non-default args after defaulted args, 'args' not defaulted</li>
+    <li><strong>Namespace</strong> === word is a namespace name</li>
+    <li><strong>NamespacePattern</strong> === word is a pattern
+    accepted by <code>namespace forget</code>.</li>
+    <li><strong>ExportPattern</strong> === word is a pattern
+    accepted by <code>namespace export</code>.</li>
+    <li><strong>Pattern</strong> === word is a glob pattern.</li>
+    <li><strong>Regexp</strong> === word is a regexp pattern.</li>
+    <li><strong>AccessMode</strong> === word is file access mode as
+    accepted by <code>open</code> (up to Tcl 8.4)</li>
+    <li><strong>AccessModeB</strong> === word is file access mode as
+    accepted by <code>open</code> (since Tcl 8.5)</li>
+    <li><strong>ResourceType</strong> === word is a mac resource type
+    (4 chars)</li>
+    <li><strong>Version</strong> === word is a plain version number
+    (x.y).</li>
+    <li><strong>ExtVersion</strong> === word is an extended version
+    number (aN, bN are allowed).</li>
+    <li><strong>Requirement</strong> === word is a version requirement
+    (version, version-, or version-version).</li>
+    <li><strong>WinName</strong> === word is a widget name.</li>
+    <li><strong>Color</strong> === word is color specification.</li>
+    <li><strong>Pixels</strong> === word is a pixel specification as
+    accepted by <code>winfo pixels</code>.</li>
+    <li><strong>Cursor</strong> === word is a widget cursor
+    specification.</li>
+    <li><strong>Relief</strong> === word is a widget relief
+    specification.</li>
+  </ul>
+  <br>
+  </dd>
+
+
+  <dt><strong>checkConstrained chain</strong></dt>
+  <dd>
+
+  <p>Initializes an environment for dispatch on complex conditions,
+  then invoke the chained checker. such environments do <strong>not
+  nest</strong>. Starting an inner environment will clear the
+  outer.</p>
+  </dd>
+
+  <dt><strong>checkSetConstraint name chain</strong></dt>
+  <dd>
+  <p>Puts the named constraint into the environment and then invokes
+  the chained checker. Effects are undefined if
+  <code>checkConstrained</code> was not used before.</p>
+  </dd>
+
+  <dt><strong>checkResetConstraint name chain</strong></dt>
+  <dd>
+  <p>Removes the named constraint from the environment and then
+  invokes the chained checker. Effects are undefined if
+  <code>checkConstrained</code> was not used before.</p>
+  </dd>
+
+  <dt><strong>checkSetConstraints names chain</strong></dt>
+  <dd>
+  <p>Set and resets the constraints in the environment and then
+  invokes the chained checker. Effects are undefined if
+  <code>checkConstrained</code> was not used before.</p>
+  <p>Constraint names are normally set into the environment. If the
+  name is however prefixed with an '!' (exclamation mark) it will be
+  removed from the environment. Removing an unknown name is possible
+  and simply does nothing.</p>
+  </dd>
+
+  <dt><strong>checkConstraint chains default</strong></dt>
+  <dd>
+
+  <p>Queries the constraint environment and dispatches to chained
+  checkers based on the results. The chains are a list of tuples, with
+  each tuple a 2-element list of condition and chained checker. We
+  invoke the chained checker of the first item whose condition
+  evaluates to true in the current constraint environment.</p>
+  <p>If no condition is true the default checker is invoked, if
+  specified. Nothing is done if there is no default.</p>
+  <p>Conditions have the form as accepted by the
+  <code>tcltest::test</code> command, except for full fledged Tcl
+  expressions, such are not allowed.</p>
+  </dd>
+
+  <dt><strong>checkConstraintAll chains default</strong></dt>
+  <dd>
+
+  <p>Queries the constraint environment and dispatches to chained
+  checkers based on the results. The chains are a list of tuples, with
+  each tuple a 2-element list of condition and chained checker. We
+  invoke the chained checkers of alls item whose condition evaluates
+  to true in the current constraint environment. All checkers start at
+  the word the system was at when it invoked checkConstraintAll.</p>
+  <p>The default checker is invoked as well, if specified. Nothing is
+  done if there is no default.</p>
+
+  <p>If a default checker was specified the system will return its
+  index as its own. Otherwise it will return the index of the last
+  checker in chains which was actually invoked.</p>
+  </dd>
+
+  <dt><strong>checkOrderOf package tag chain</strong></dt>
+  <dd>
+
+  <p>Looks into the current ordering scope, aka timeline and checks
+  that the named command <code>tag</code> for the <code>package</code>
+  is satisfies the ordering constraints defined for it.</p>
+
+  <p>Note that the PCX rules for the package have to be active and
+  contain a <code>pcx::order</code> specification, and that the tag
+  has to occur as a terminal symbol in one of the grammars thus
+  specified. Internal errors are thrown if that is not the case, as
+  then the PCX specification itself is in error.</p>
+
+  <p>After the check the <code>chain</code>ed checker is invoked at
+  the same position, to perform the regular syntax checks. The chain
+  is allowed to be empty, in that case nothing else is done.</p>
+
+
+  <dt><strong>checkOrderLoop chain</strong></dt>
+  <dd>
+
+  <p>Tags the words processed by the <code>chain</code>'ed checker as a
+  loop body. Use this in custom loop control structures to make them
+  visible to the facilities checking the order commands are used in.
+  </p>
+
+  <p>Example, using the builtin <code>while</code> command:
+<pre>
+pcx::check 7.3 std while \
+    {checkSimpleArgs 2 2 {
+	checkExpr
+	{checkOrderLoop checkBody}
+    }}
+</pre>
+  </p>
+  </dd>
+
+  <dt><strong>checkOrderBranches chain</strong></dt>
+  <dd>
+  <p>Tags the words processed by the <code>chain</code>'ed checker as a
+  set of branches. Use this in custom branching control structures to
+  make it visible to the facilities checking the order commands are
+  used in. This has to be used in conjunction with
+  <code>checkOrderBranch</code> to tag the words of a single branch.
+  </p>
+  </dd>
+
+  <dt><strong>checkOrderBranch chain</strong></dt>
+  <dd>
+  <p>Tags the words processed by the <code>chain</code>'ed checker as a
+  branch. Use this in custom branching control structures to make each
+  branch of execution visible to the facilities checking the order
+  commands are used in. This has to be used in conjunction with
+  <code>checkOrderBranches</code> to tag the words of all branches.
+  </p>
+  </dd>
+
+  <dt><strong>checkOrdering chains</strong></dt>
+  <dd>
+
+  <p>The checking of allowable command order is based on the concept
+  of <em>timelines</em>, also called <em>ordering scopes</em>. The
+  standard timelines used by the checker are the toplevel commands of
+  each checked file, and the commands in procedure (and method)
+  bodies.</p>
+
+  <p>However as packages may define commands taking script argument
+  where it makes sense to treat them as their own timeline this
+  command here is provided to allow the user to tag where to open a
+  new timeline. All the chained checkers, and the command order checks
+  reachable through that are executed within the new timeline. The
+  timeline is removed afterward.</p>
+
+  <p>An example of a user-command needing its own timeline would a
+  command to specify testcases, where the commands in the test script
+  have to follow some order of use.</p>
+  </dd>
+
+  <dt><strong>warn mid detail chain</strong></dt>
+  <dd>
+  <p>Generates an error/warn message and then invokes the chained
+  checker.</p>
+  </dd>
+
+  <dt><strong>getTokenType &lt;word&gt;</strong></dt>
+  <dd>
+  <p>Type of token.</p>
+  </dd>
+
+  <dt><strong>getTokenChildren &lt;word&gt;</strong></dt>
+  <dd>
+  <p>A list of tokens.</p>
+  </dd>
+
+  <dt><strong>getTokenNumChildren &lt;word&gt;</strong></dt>
+  <dd>
+  <p>Length of the token list.</p>
+  </dd>
+
+  <dt><strong>getTokenString &lt;word&gt;</strong></dt>
+  <dd>
+  <p>String in the script for the token.</p>
+  </dd>
+
+  <dt><strong>isLiteral &lt;word&gt;</strong></dt>
+  <dd>
+  <p>Tests if the word is literal and without any substitutions.</p>
+  </dd>
+
+  <dt><strong>getLiteral &lt;word&gt; &lt;varname&gt;</strong></dt>
+  <dd>
+  <p>If a literal word, the exact literal value of the token.
+  The value is stored in the named variable.</p>
+  </dd>
+
+  <dt><strong>getLiteralPos &lt;word&gt; &lt;pos&gt;</strong></dt>
+  <dd>
+  <p>Returns offset in the script for the position in the word.</p>
+  </dd>
+
+  <dt><strong>getLiteralRange &lt;word&gt; &lt;r&gt;</strong></dt>
+  <dd>
+  <p>Extended to a range, where range = {start size}</p>
+  </dd>
+</dl>
+
+
+
+<a class="topText" href="#top"><img src="images/top.gif" height=
+"11" width="11" border="0" alt=" " />Top</a>
+
+</body>
+</html>
+

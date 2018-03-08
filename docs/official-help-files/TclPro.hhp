@@ -1,0 +1,36 @@
+[OPTIONS]
+Compatibility=1.1 or later
+Compiled file=TclDevKit.chm
+Contents file=TclProTOC.hhc
+Default topic=Welcome.html
+Display compile progress=No
+Full-text search=Yes
+Language=0x409 English (United States)
+Title=Tcl Dev Kit User Guide
+
+
+[FILES]
+Checker.html
+Cmd_Debugger.html
+Compiler.html
+Contact.html
+Debugger.html
+Demos.html
+FAQ.html
+Inspector.html
+Installation.html
+TEA_Apps.html
+Package.html
+README_csv.html
+README_mult.html
+README_spawn.html
+Release.html
+Resources.html
+ServMgr.html
+TclApp.html
+Xref.html
+Welcome.html
+tdk.index.html
+
+[INFOTYPES]
+

@@ -1,0 +1,53 @@
+= A Litany of Woes =
+
+Things suspected or known not to work - an embryonic bug tracker.
+
+== 29Apr05 ==
+
+For some reason I can't yet fathom, files are truncated by one (the final) character.
+	''Solved'': we were sending out an extra \n after the header, this screwed up the character count and violated the spec.
+
+TODO: Caching - the code is there, but it's not hooked in.
+
+ We have to work out a sane mapping from URL -> cache directory
+ such that it doesn't assume too much about the domain.
+ Possibly use [file join $cache $dir ...] to cache [file join $root $dir ...]
+ In any case, that mapping isn't written or decided yet.
+ ATM the cache and checkCache commands require $path to be set to
+ the cache path, but this isn't right and won't work
+
+== 3Jun05 ==
+
+The API is far too complicated for a web server which is supposed to support and encourage customisation.
+
+I started to simplify it by renaming and refactoring, after trying to write API docs and finding even *I* was confused.
+
+To that end I'm simplifying it, per domain/docs/dataflow.html.
+
+=== Done ===
+
+Refactored Request functionality into two objects: Http and Request:
+
+;Http: to handle socket connection, pipelining and HTTP protocol parsing
+;Request: to be the main-thread interface between worker tasks (if any - remember we're trying not to hardwire any choices) and the connection
+
+* Refactored connection tracking functionality (and association with Http transactions, for the purpose of http protocol response) away from Host/Domain and into Http/Request.  Now Http can map from caller $self to the relevant transaction, so the Request object doesn't even need to know its transaction.  This needed some upvar magic, but I think the overhead and complexity in processing is warranted, as it saves complexity in interface.
+
+* Refactored thread and domain/ functionality to be more in the Request object.  This abstracts away the backend handling of requests, presenting a hopefully unified interface (facade) behind which any processing architectural decisions can be made.
+
+* renamed ''mime'' variable to ''headers'' and made it a dict not an array - the term ''mime'' is thoroughly confusing, as HTTP doesn't actually use MIME.
+
+=== TODO ===
+
+# Host/Domain objects are going to be combined - the Http object passes off a parsed request to a Host object and receives a Request object name.  Domain is completely hidden, and needn't be there
+
+# complete rewriting of the domain/ code to use the new Request interface - now all calls to anywhere should be mediated by the thread's associated Request.  It's a better-controlled interface.
+
+# clean up Logging.
+
+# complete conversion of mime to headers variable name
+
+# make the API for each object use a Connect protocol - rename all of the various Dispatch/Decode etc commands into Connect.
+
+# use error -code for error returns via a command [http error]
+

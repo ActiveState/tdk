@@ -1,0 +1,32 @@
+
+Specification of option widget for compiler
+===========================================
+
+Refs:	WrapUI_spec.txt,	ui_cto
+	WrapCode_spec.txt,	tclpro::wrapper::wrapOptsWidget
+
+API
+	Options
+		-variable	Variable to store the information
+				gathered by the UI into.
+		-foreground	(-fg) Forground color.
+		-background	(-bg) Backgrund color.
+		-errorbackground
+				Background color for error states.
+				Default = "coral"
+		-font		Font for internal widgets
+
+	Methods
+		/NONE/
+
+	Keys used in linked variable (variable is accessed as array!)
+
+	     code	(-code)		String
+	     args	(-arguments)	List of strings.
+
+Internals
+	Widgets
+
+	Placement
+
+	Other information

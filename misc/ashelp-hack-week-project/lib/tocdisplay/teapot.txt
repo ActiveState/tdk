@@ -1,0 +1,15 @@
+Package hv3::astoc 0.1
+Meta entrysource hv3astoc.tcl
+Meta included    hv3astoc.tcl
+Meta platform    tcl
+Meta category Megawidget 
+Meta subject ashelp hv3 tree toc {table of contents}
+Meta summary Table Of Contents of AS Help-Viewer
+Meta description Provides a tree-based table of contents.
+Meta description Uses the hv <-> ashelp glue support package
+Meta description to get at the TOC to show.
+Meta require     widget::scrolledwindow
+Meta require     hv3::ashelp
+Meta require     snit
+Meta require     treectrl
+

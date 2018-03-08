@@ -1,0 +1,579 @@
+2003-06-06  Andreas Kupries  <andreask@activestate.com>
+
+	* coreTk.tcl: [Bugzilla 25528].
+	  8.4 spinbox - Added missing aliases (-bd, -bg, -fg).
+	  8.4 panedwindow - Added missing aliases (-bd, -bg).
+	  8.4 entry - Added missing option (-readonlybackground, -disabledbackground, -disabledforeground)
+	  8.4 entry - Added missing new -state 'readonly'.
+	  8.3 label - Added missing options (-disabledforeground).
+
+2002-07-12  Andreas Kupries  <andreask@activestate.com>
+
+	* All changes below belong to the fix for Bugzilla 19847. Instead
+	  of using a complex signaling mechanism to tell if a variable,
+	  provided via its name, is written by a command we use three
+	  checker commands, one knowing that the variable is only read
+	  (original command), a second one knowing that the variable is
+	  written, and the last one knowing that the variable is not
+	  touched at all, just declared. All commands checking a variable
+	  name were looked at and updated to use the correct variant of
+	  the checker command.
+
+	* xmlGen.pcx:
+	* tclX.tcl: 
+	* tclDomPro.pcx: 
+	* tclCom.pcx: 
+	* sybtcl.pcx:
+	* incrTcl.tcl: 
+	* coreTk.tcl: 
+	* coreTcl.tcl:
+	* blt.tcl: Changed some appearances of 'checkVarName' to
+	  'checkVarNameWrite', for the commands who do write variables.
+
+	* analyzer.tcl: Reverted 'checkVarName' to 'read' mode and
+	  introduced 'checkVarNameWrite'. The latter assumes that the
+	  variable is written.
+
+2002-06-28  Andreas Kupries  <andreask@activestate.com>
+
+	* coreTcl.tcl (trace, 8.4): Subcommand 'list' is 'info'. See TIP
+	  #102.
+
+	* coreTcl.tcl (file, 8.4): New subcommand 'link'. See TIP #99.
+
+	* coreTk.tcl (tk, 8.4): New subcommand 'caret'. See TIP #96.
+
+	* coreTk.tcl (wm, 8.4): New subcommand 'attributes'. See TIP #95.
+
+	* coreTk.tcl (listbox, 8.4): Added option -activestyle, see TIP
+	  #94.
+
+	* Update to TIP #93 not possible, subcommands of widgets not
+	  checkable (right now). (Needs more type inference to know the
+	  type of a fixed word or of the content of a variable.
+
+	* analyzer.tcl: Added -offrelief to the list of standard
+	  options. See TIP #82.
+
+	* coreTk.tcl (checkbutton, radiobutton, 8.4): Added option
+	  -offrelief. See TIP #82.
+
+2002-06-27  Andreas Kupries  <andreask@activestate.com>
+
+	* coreTk.tcl: Added declarations which warn that 'labelframe',
+	  'panedwindow' and 'spinbox' are reserved in Tk 8.4. Bugzilla
+	  entry 19507.
+
+2002-06-04  Andreas Kupries  <andreask@activestate.com>
+
+	* analyzer.tcl: tcl_platform is portable, just usage implies
+	  no-portable code. Removed the warning in 'analyzer::checkVariable'.
+
+2002-05-28  Andreas Kupries  <andreask@activestate.com>
+
+	* coreTk.tcl: Added code to [checkBindBody] so that it:
+	
+	  - checks validity of %-placeholders.
+
+	  - deals with the %-placeholders in such a way that the existing
+	    checkers can check a bind-script containing them without
+	    change. This is done by replacing them with either a lone %
+	    (%%) or a variable (%A -> $A, etc.). Additional code in
+	    analyzer.tcl ensures that the error messages still report the
+	    unmangled code (if there are warnings and errors).
+
+	* coreTcl.tcl: Extended [fconfigure] with recognition of read-only
+	  option "-error" from version 8.0 and above.
+
+	* coreTcl.tcl (checkBinaryFmt): Extended to accept an empty string
+	  of specifiers.
+
+	* coreTk.tcl: Fixed definition of listbox. The option is
+	  -listvariable, not -listvar.
+
+	* coreTcl.tcl: Added missing [string is] keywords: control, graph,
+	  print, punct, and xdigit.
+
+2002-05-27  Andreas Kupries  <andreask@activestate.com>
+
+	* coreTcl.tcl (checkFormatFmt, checkScanFmt): Better handling of
+	  %% in [format], and added handling of %% to [scan].
+
+	* coreTcl (trace (4.1)): Allowing abbreviations for subcommands.
+
+	* coreTk: grid rowconfigure -minsize. Switched to
+	  [checkPixels]. The command allows screen units, not only
+	  integers.
+
+	* coreTk.tcl (checkSticky): Checker has to accept the empty
+	  string. Changed message for "coreTk::badSticky" too, to reflect
+	  that an empty string is allowed.
+
+	* coreTk.tcl (place window): Accept abbreviations for -anchor. Did
+	  so for [place configure window], but not for the [place window]
+	  syntax. Fixed.
+
+	* coreTk.tcl (grid slaves): Accepts both -row and -column
+	  simultaneously.
+
+2002-04-09  Andreas Kupries  <andreask@activestate.com>
+
+	* blt.tcl: Changed 'checkSwitches2' to 'checkSwitches'. The former
+	  checker does not exist.
+
+	* coreTk.tcl: Changed the code dealing with the move of
+	  "tk[A-Z].*" functions to the tk namespace. Added functions I
+	  missed because they are part of bindings and thus not autoloaded
+	  during startup. Added code to make the mapping between old and
+	  new names more automtic, added code for the complicated cases of
+	  mapping.
+
+	* coreTcl.tcl: Fixed 8.4 definition of [array names] checker.
+
+	* analyzer.tcl (checkOption): Calls default checker if present and
+	  first word is not a literal.
+
+2002-04-05  Andreas Kupries  <andreask@activestate.com>
+
+	* Completed an update to handle 8.3.1 to 8.3.4, and 8.4. Added a
+	  number of additional checks which were not done before. For now
+	  see file 'Udates' for a complete list of the changes.
+
+2001-4-11 Brent Welch <welch@panasas.com>
+
+	* checkerCmdline.tcl:
+	Fixed usage string.
+
+2001-3-13 Brent Welch <welch@panasas.com>
+
+	* configure.tcl:
+	Switched order of .pcx file loading so that built-ins come
+	first and user-supplied ones come later.  (For Synopsis)
+
+2001-2-26 Brent Welch <brent.welch@interwoven.com>
+
+	* configure.in:
+	* Makefile.in:
+	Turned off use of the .tbc files
+
+2001-2-8 Brent Welch <brent.welch@interwoven.com>
+
+	* checkerCmdline.tcl: Made printing the Copyright not the default.
+	Replaced -nologo cmd line arg with -logo.
+
+2000-10-24  Melissa Chawla  <hershey@scriptics.com>
+
+	* coreTcl.tcl: added new auto_* and tcl_findLibrary procs for Tcl8.0.
+	Fix the bad auto_load entry for Tcl7.3.
+
+2000-10-09  Sven Delmas  <sven@scriptics.com>
+
+	* tests/checker.test: Fixed the test suite to handle the changed
+	error string result (I removed the line number from the returned
+	string). 
+
+2000-09-07  Sven Delmas  <sven@scriptics.com>
+
+	* message.tcl: Removed the leading line number in the returned
+	error messages as requested by bug # 5670.
+
+2000-08-28  Brent Welch	 <welch@ajubasolutions.com>
+
+	* checkerCmdline.tcl: Made sure the license is released in error cases.
+
+2000-06-23  Brent Welch	 <welch@ajubasolutions.com>
+
+	* checkerCmdline.tcl: fixed to always check license.
+
+2000-06-13  Melissa Chawla  <hershey@scriptics.com>
+
+	* analyzer.tcl: fixed bug 5466 by adding a procedure
+	CheckExtraCloseChar to check for trailing \}'s as well as \]'s in
+	all words.
+
+	* coreTcl.tcl: fixed bug 5737 by making the scan command only have
+	2 required args.  Fixed bug 3976 by making return -errorCode take
+	any argument.
+
+	* coreTcl.tk: fixed bug 5332 by allowing "" as well as program and
+	user (and their abbreviations) as arguments for "wm sizefrom".
+
+2000-05-09  Melissa Chawla  <hershey@scriptics.com>
+
+	* tclDomPro.pcx: fixed bug 4772 by updating the TclDomPro checker
+	table to match its changes.
+
+2000-03-23  Melissa Chawla  <hershey@scriptics.com>
+
+	* xmlGen.pcx: fixed bug 4150 by relaxing incorrect list structure
+	requirements for startElement, endElement, and element procs.
+
+	* xmlAct.pcx: fixed bug 4149 by updating table to include create,
+	delete, and process procedures.
+
+	* tclCom.pcx: updated to add new -implicitreleasemodel option to
+	configure command.
+
+2000-03-18  Melissa Chawla  <hershey@scriptics.com>
+
+	* coreTk.tcl: added table entries for Tcl8.3.
+	* coreTk.tcl: added table entries for Tk8.3.
+
+2000-02-09  Melissa Chawla  <hershey@scriptics.com>
+
+	* analyzer.tcl: changed return value for checkProcCall--in the
+	case where implicit args were added to the procedure call, the
+	wrong index was returned. (RFE 883)
+
+1999-12-09  Melissa Chawla  <hershey@scriptics.com>
+
+	* xmlGen.pcx (checker): updated xmlgen table to add new -pretty
+	option to the startDocument proc.
+
+1999-12-02  Melissa Chawla  <hershey@nutella.scriptics.com>
+
+	* xmlGen.pcx (checker): fixed checker table for startDocument and
+	text commands.  bug 3641.
+
+1999-11-24  Melissa Chawla  <hershey@nutella.scriptics.com>
+
+	* checker.tcl
+	* checkerCmdline.tcl
+	* configure.tcl
+	* coreTcl.tcl: modified startup code to gracefully merge pcx with
+	built-in extensions.  Updated previously existing command-line arg
+	tests.
+
+1999-11-23  Melissa Chawla  <hershey@nutella.scriptics.com>
+
+	* configure.tcl: now uses projectInfo variables to specify default
+	pcx packages and pcx lib dir.
+
+	* checkerCmdline.tcl: added to implement checker commandline
+	options.
+
+	* checker.tcl: added checkerCmdline.tcl to checker package.
+	Nolonger need to set message::displayProc to message::collectMsg,
+	as this is the new default.
+
+	* message.tcl: changed the default value of message::displayProc
+	from message::displayTTY to message::collectMsg.
+
+1999-11-12  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* coreTcl.tcl: fixed bug 3594 by adding a coreTcl::checkUplevelCmd
+	proc--now the uplevel script gets checked if it is 1 literal
+	argument (same support as the eval command).
+
+1999-11-01  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* tclCom.pcx (checker): updated foreachitem table entry to accept
+	either 3 or 4 arguments, where the last args is always a script.
+
+	* analyzer.tcl: 
+	added a "checkTailArgsFirst" procedure to check commands with a
+	fixed number of tail args and a variable number of head args.  The
+	existing "checkTailArgs" procedure only applies when checking
+	preceeding switches.
+
+1999-10-28  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* analyzer.tcl: fixed bug 2230 by adding a state var that
+	disallows multiple nonDefAfterDef and argAfterArgs errors in the
+	same arg list.
+
+1999-10-26  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* Makefile.in
+	* configure.tcl: removed scwizards package from checker--wizard
+	code is not getting checked.
+
+1999-10-25  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* scwizards.pcx (checker): removed calculateLocation and
+	emitCheckerCode from the table--they are nolonger defined.  Added
+	checkPattern and modified addMenu procs per API change.
+
+	* blend.pcx
+	* scwizards.pcx
+	* tclCom.pcx
+	* tclDomPro.pcx
+	* xmlGen.pcx: added <nmspc>::<proc> elements to the scan commands
+	list so that the bodies of control structures will be checked for
+	fully qualified proc calls. (bug 2585)
+
+	* analyzer.tcl: changed a regexp to properly strip leading "::"s
+	off a fully qualified proc name (when looking for proc bodies to
+	scan).  (bug 2585)
+
+1999-10-22  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* coreTk.tcl: Fixed bug 377 by using checkOption instead of
+	checkSwitches for the -display option to the "winfo interps"
+	command.
+
+	* incrTcl.tcl: New checkFindObjs proc was added to fix bug 2510.
+	Incr Tcl find command nolonger gives errors with nonliteral options.  
+
+	* tclCom.pcx (checker): added tclcom::configure command to checker
+	table.
+
+1999-10-19  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* tclCom.pcx: added tclcom::foreachitem command to checker table.
+
+1999-10-15  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* analyzer.tcl: Fixed checkProcCall to append the correct number
+	of implicit args to the procedure call--nolonger gives spurious
+	warnings.  (RFE 883)
+
+1999-10-11  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* Makefile.in:
+	* configure.tcl:
+	* xmlServer.pcx: Fixed bug 3041 by adding code to check the xmld
+	extension.
+
+1999-09-03  Scott Stanton  <stanton@scriptics.com>
+
+	* coreTcl.tcl: Fixed lindex, linsert, lrange, and lreplace so they
+	use checkIndexExpr for 8.1 and later versions. [Bug: 2692]
+
+1999-08-19  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* tclCom.pcx: added Cehcker support for TclCom.
+
+	* message.tcl
+	* analyzer.tcl: added new message ID:  numListElts to flag errors
+	where a proc was called with a list containing the wrong number of
+	elements.
+
+	* configure.tcl: added code to source wrapped pcx files.
+
+1999-08-06  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* blend.pcx: added Checker support for Tcl Blend.
+	* oratcl.pcx: added Checker support for OraTcl.
+
+1999-08-03  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* analyzer.tcl
+	* coreTcl.tcl: improved fix for bug 743 by changing
+	analyzer::checkForeachCmd to check for varRef warning in lists of
+	variable names.
+
+	* analyzer.tcl: fixed bug 2231 by adding a check for reference
+	vars (list elements beginning with a '$') in proc's arg list.
+
+	* coreTcl.tcl: fixed bug 743 by changing coreTcl::checkForeachCmd
+	to check for a variable name in all odd args except the last arg.
+
+	* analyzer.tcl: fixed bug 2485 by changing analyzer::checkVarName
+	to complain if the 1st elt of 1st elt of subtokens is "variable"
+	regardless of the size of the subtoken list.
+
+1999-08-01  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* configure.tcl: fixed bug that caused the -W1 and -W2 flags to be
+	ignored.
+
+1999-07-29  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* blt.tcl:
+	* configure.tcl:
+	* coreTcl.tcl:
+	* coreTk.tcl:
+	* expect.tcl:
+	* incrTcl.tcl:
+	* tclX.tcl: fixed bug that caused check to crash when built in
+	procs are redefined.  The fix was to use the fully qualified
+	procedure name ::analyzer::warn instead of "warn".
+
+1999-07-27  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* analyzer.tcl: fixed bug that caused checker not to read from
+	stdin if -onepass flag is used.
+
+	* message.tcl: added new message ID "obsoleteCmd".
+
+	* expect.tcl: upgraded to work with Expect 5.31.  exp_interact
+	called with -eof, -timeout, or -timestamp give obsoleteCmd error.
+	expect (and other similar commands) called with -timestamp or
+	-iwrite give a "use -gl" warning and the flags are interpreted as
+	pattern arguments, as of Expect 5.31.  exp_interpreter can be
+	called with the "-eof script" option as of Expect 5.31.
+
+	* coreTcl.tcl: added checking support for debugger_break and new
+	options for debugger_eval.
+
+	* coreTk.tcl: tkerror command gives the obsoleteCmd error as of
+	Tk8.0.
+
+1999-07-26  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* configure.tcl: fixed crashing checker bug when run with -use
+	Tcl7.3 -use TclX.  Now the check catches the error and prints a
+	message telling the user there is not compatible TclX version for
+	Tcl7.3.
+
+1999-07-22  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* configure.tcl: added -pcx command line option (rfe 2238)
+
+1999-06-25  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* coreTk.tcl:
+	* coreTcl.tcl: added tcl8.1 and tk8.1 tables.  The "regsub"
+	command is the only one that changed.
+
+	* tclX.tcl: added missing "have_symlink" option to table entry for
+	"infox" tclX command.
+
+1999-06-23  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* expect.tcl: Fixed bug 2118.  Changed exp_sleep table entry to
+	check argument with checkFloat rather than checkInt.  Added
+	"break" in option parsing loop when "--" is encountered in the
+	exp_send command.  Fixed un-logged bug that caused the argument
+	of the -brace option to be re-checked.  
+
+1999-06-22  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* analyzer.tcl:
+	* message.tcl: Fixed bug 1314 by adding new message id
+	"warnUndefProc".  In addition to listing the undefined procedures
+	at the end if -verbose is specified, now the warning is triggered
+	for the first use of the undefined proc on the line where it occurs
+	regardless of the -verbose flag.
+
+	* tclX.tcl: Fixed bug 984 by adding have_signal_restart and
+	have_fchown options to TclX table entry for the infox command.
+	Fixed bug 1124 by removing the "warn nonPortCmd" call from the
+	TclX table entry for the dup command.
+
+1999-06-21  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* coreTk.tcl: Fixed bug 459.  Changed table entry for the "event
+	generate" command--now calls checkWidgetOptions instead of
+	checkSwitches.  Removed the checkEventGenerate command, as it is
+	nolonger called.
+
+1999-06-18  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* coreTk.tcl: Fixed bugs 522 and 1140.  Changed Tk table entries
+	for tk_bindForTraversal and tk_menuBar to give warnUnsupported
+	message with instruction to the the "menu" command instead.
+	Replaced default "checkBody" call for "scale -command" with
+	"checkWord" because the scale command appends args the -command's
+	argument.
+
+1999-06-17  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* tclX.tcl: Fixed bug 1749.  Changed tclX::checkLIndex to allow
+	indices "len-<integer>" and "end-<integer>".
+
+	* coreTcl.tcl: added new 8.1 switches for regexp and regsub.
+
+1999-06-16  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* coreTcl.tcl: Fixed bug 2134:  checker did not accept new
+	startIndex aruments for the string first and string last
+	commands.  Also added checking for the new -nocase option to the
+	string match command.
+
+1999-05-06    <stanton@scriptics.com>
+
+	* coreTk.tcl: 
+	* coreTcl.tcl: 
+	* configure.tcl: Added 8.1 support (string and encoding).
+
+	* analyzer.tcl: Added analyzer::checkIndexExpr
+
+1999-02-20    <surles@YODA>
+
+	* context.tcl: The context::head API was always returning :: even
+	if the original context was not a fully qualified path.  The fix
+	was to return :: only if the context is fully qualified, otherwise
+	return an empty  string. [Bug: 983]
+
+	* userproc.tcl:  uproc::isRedefined tries to determine how
+	the user proc was redefined.  Two procs w/ the same name, two
+	classes w/ the same name, a proc and a class w/ the same name,
+	etc.  The bug was that it would skip the first user proc with an
+	identical signature, hoping to find a better message by looking at
+	the next user proc on the list.  In the example above, the
+	signatures are identical, so only one user proc was defined.  The
+	skip happened, but there were no more user procs on the list.
+	Thus the error was never logged.  The fix was to skip only if the
+	signature were identical, a skip had not already been found, AND
+	to see if there are more user procs on the list. [Bug: 1038]
+
+1999-02-19    <surles@YODA>
+
+	* configure.tcl: Fixed bug where the -verbose flag was reporting
+	the wrong version of expect.
+
+	* incrTcl.tcl: Fixed bug where the itcl:: aliases were only being
+	made for version 3.0+ but should be done for 2.0+.
+
+1999-02-17    <surles@YODA>
+
+	* incrTcl.tcl: Added checkers for itcl::* commands so they are
+	aliased to the corresponding commands. [Bug: 1214]
+
+
+1999-01-20    <stanton@GASPODE>
+
+	* coreTk.tcl: Fixed so unknown keysyms are always reported as
+	nonportable instead of as bad events. [Bug: 267]
+
+1999-01-08    <stanton@GASPODE>
+
+	* expect.tcl: Added checkers for non exp* commands so they are
+	lower priority than other extensions' checkers [Bug: 980]
+
+1998-12-29    <surles@YODA>
+
+	* analyzer.tcl: Moved generic widget checker from coreTk to
+	analyzer.  Added new API to register generic widget configuration
+	options.  Added a checkSwitches2 API that is identical to the 
+	original checkSwitches, accept that it does not log errors if
+	there are remaining args.  This is used in conjunction with the
+	new checkTailArgs checker, that fixes the problems with checking
+	lsort, lsearch, etc.
+
+1999-01-06    <stanton@GASPODE>
+
+	* coreTcl.tcl: Changed SCCS string to RCS string.
+
+	* analyzer.tcl: Fixed minor typos and removed an overly
+	complicated regular expression.
+
+1998-12-01    <surles@YODA>
+
+	* coreTk.tcl: The bind command was checking for events not event
+	sequences. [#886:bug fix]
+
+1998-11-18    <surles@YODA>
+
+	* analyzer.tcl: Merged the scan and checker tables so data is not
+	repeated in the two tables.  The scan table now has a flag that
+	indicates that a command should be scanned, then the checker in
+	the checker table is used to scan the command.  [#837:bug fix]
+
+1998-11-16    <surles@YODA>
+
+	* tclX.tcl: Filled in tables of TclX commands to be scanned and
+	checked. [#828:new feature]
+
+	* message.tcl: Added new message IDs: badByteNum and
+	mismatchedOptions [new feature]
+
+	* expect.tcl: Added comands that need to be scanned when checking
+	Expect bodies. [#829: bug fix]
+
+	* analyzer.tcl: (analyzer::checkByteNum) Added checker that
+	verifies the word is an integer between 0 and 255.  This is used
+	by TclX, but I thought it was generic enough. [#828:new checker]
+

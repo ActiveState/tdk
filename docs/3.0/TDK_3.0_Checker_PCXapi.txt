@@ -1,0 +1,24 @@
+TDK 3.0 Checker pcx API Notes
+=============================
+
+1.	More rigity (bracketing commands):
+2.	No direct hacking of analyzer internals,
+	more API commands for that.
+
+...	Message interface ...
+
+
+On basic initialization ...
+	=	Start declarations (for package FOO)
+	=	Declare which versions of FOO need which version of tcl.
+	=	
+	=	Complete declarations.
+
+On loading
+	=	Begin checker/scan decls
+	=	Declare the checker and scan commands.
+		(May remove commands used in one
+		version, but not the next)
+	=	Declare exported commands.
+	=	Declare created (defined) namespaces.
+	=	Commit the declared commands.

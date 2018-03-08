@@ -1,0 +1,52 @@
+#!/bin/sh
+# -*- tcl -*- \
+exec tclsh "$0" ${1+"$@"}
+lappend auto_path [file dirname [file dirname [info script]]]/lib
+
+# argv = file
+
+# ### ### ### ######### ######### #########
+##
+
+proc usage {} {
+    global argv0
+    puts stderr "usage: $argv0 file"
+    exit 1
+}
+
+proc log {text} {
+    puts stdout $text
+}
+
+proc ping {} {
+    puts -nonewline .
+    flush stdout
+}
+
+# ### ### ### ######### ######### #########
+##
+
+proc cmdline {} {
+    global argc argv location
+
+    if {$argc != 1} usage;
+
+    set location [lindex $argv 0]
+    return
+}
+
+# ### ### ### ######### ######### #########
+##
+
+proc main {} {
+    global location
+    cmdline
+    package require ashelp
+    puts [ashelp getTitle $location]
+    return
+}
+
+# ### ### ### ######### ######### #########
+##
+
+main

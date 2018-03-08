@@ -1,0 +1,42 @@
+
+Specification of file seelction widget for compiler
+===================================================
+
+Refs:	compiler/UI_spec.txt,	ui_cto
+	compiler/Code_spec.txt,	tclpro::compiler::fileWidget
+
+API
+	Options
+		-variable	Variable to store the information
+				gathered by the UI into.
+		-foreground	(-fg) Forground color.
+		-background	(-bg) Backgrund color.
+		-errorbackground
+				Background color for error states.
+				Default = "coral"
+		-font		Font for internal widgets
+
+	Methods
+		/NONE/
+
+	Linked variable is list
+
+Internals
+	Widgets
+
+	.add	Button		"+",	Add entry to listbox
+	.rem	Button		"-",	Remove selected item from listbox.
+	.browse	Button		"...",	Invoke tk_getOpenFile, implies 'add'.
+	.file	Entry		Path of file to add to list.
+	.f	ScrolledWindow	Container for list
+	.f.list	Listbox		List of files to compile.
+
+	Placement (Grid)
+
+		.browse .file
+		.add	.f
+		.rem	|
+
+	Other information
+		Entry ok	iff (empty | (exists & file & readable)
+		Entry useable	iff !empty & ok

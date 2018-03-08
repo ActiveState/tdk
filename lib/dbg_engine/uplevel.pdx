@@ -1,0 +1,50 @@
+# blend.pdx --
+#
+#	This file implements the TclPro Debugger extension for the
+#	TclBlend extension.
+#
+# Copyright (c) 1998-2000 Ajuba Solutions
+# Copyright (c) 2001-2006 ActiveState Software Inc.
+#
+# All rights reserved.
+# 
+# RCS: @(#) $Id: uplevel.pdx,v 1.2 2000/05/30 22:54:54 hershey Exp $
+
+# Register the 'uplevel' extension
+
+instrument::addExtension 2.0 {parseUplevel}
+
+namespace eval parseUplevel {}
+
+# Register handler for the core 'uplevel' command
+
+instrument::addCommand uplevel {parseSimpleArgs 1 -1 parseUplevel::parseUplevelCmd}
+
+# parseUplevel::parseUplevelCmd --
+#
+#	This routine wraps the foobar command.
+#	Parse args of the pattern:
+#		?catch exception_pair script ... ? ?finally script?
+#
+# Arguments:
+#	tokens		The list of word tokens for the current command.
+#	index		The index of the next word to be parsed.
+#
+# Results:
+#	Returns the index of the last token + 1 (all have been parsed).
+
+proc parseUplevel::parseUplevelCmd {tokens index} {
+    set  argc [expr {[llength $tokens] - $index}]
+    if {$argc == 1} {
+	return [instrument::parseSimpleArgs 1 1 {parseBody} $tokens $index]
+    } elseif {$argc == 2} {
+	instrument::getLiteral [lindex $tokens $index] literal
+	if {[regexp {^#?[0-9]+$} $literal]} {
+	    # If there's a literal level arg, call parseWord on it.
+
+	    return [instrument::parseSimpleArgs 2 2 {parseWord parseBody} \
+		    $tokens $index]
+	}
+    }
+    return [instrument::parseSimpleArgs 1 -1 {parseWord} $tokens $index]
+}

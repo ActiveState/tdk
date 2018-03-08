@@ -1,0 +1,22 @@
+# oratcl.pdx --
+#
+#	This file implements the Tcl Dev Kit Debugger extension for OraTcl.
+#
+# Copyright (c) 1998-2000 Ajuba Solutions
+# Copyright (c) 2001-2008 ActiveState Software Inc.
+#
+# All rights reserved.
+#
+# RCS: @(#) $Id: oratcl.pdx,v 1.3 2000/05/30 22:54:42 hershey Exp $
+
+# Register the Oratcl extension
+
+instrument::addExtension 2.0 {OraTcl}
+
+# Register handlers for each of the Oratcl commands
+
+# oratcl v2.5 - outdated
+#instrument::addCommand orafetch	{parseSimpleArgs 1 -1 {parseWord parseBody parseWord}}
+
+# oratcl v4.4
+# orafetch has nothing special requiring instrumentation.

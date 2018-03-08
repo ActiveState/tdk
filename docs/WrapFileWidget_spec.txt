@@ -1,0 +1,65 @@
+
+Specification of file seelction widget for wrapper
+===================================================
+
+Refs:	WrapUI_spec.txt,	ui_cto
+	WrapCode_spec.txt,	tclpro::wrapper::fileWidget
+
+API
+	Options
+		-foreground	(-fg) Forground color.
+		-background	(-bg) Backgrund color.
+		-font		Font for internal widgets
+
+	Methods
+		/NONE/
+
+Internals
+
+	Nothing selected in tree
+	=>	Entry widget is for level 0
+		=     files, directories, patterns
+		      relative to pwd, or absolute.
+		"Add" depends on pattern
+		"Rem" disable
+		"Broswe" ok
+		"startup" disable
+
+	More than on item selected
+	=    Disable entry, disable all buttons.
+
+	One item selected in tree
+	    Files, Pattern
+	    =>	   Disable entry
+
+	    Directory
+	    =>	  Entry widget is for level 1
+		  = Files, directories
+
+
+
+
+
+
+
+
+
+
+	Widgets
+
+	.add	Button		"+",	Add entry to listbox
+	.rem	Button		"-",	Remove selected item from listbox.
+	.browse	Button		"...",	Invoke tk_getOpenFile, implies 'add'.
+	.file	Entry		Path of file to add to list.
+	.f	ScrolledWindow	Container for list
+	.f.list	Listbox		List of files to compile.
+
+	Placement (Grid)
+
+		.browse .file
+		.add	.f
+		.rem	|
+
+	Other information
+		Entry ok	iff (empty | (exists & file & readable)
+		Entry useable	iff !empty & ok

@@ -1,0 +1,681 @@
+# -*- tcl -*- XOTcl.pcx --
+#
+#	This file implements the TclPro Checker extension for the XML
+#	Server API.
+#
+# Copyright (c) 2008 ActiveState Software Inc.
+# All rights reserved.
+# 
+# RCS: @(#) $Id: XOTcl.pcx,v 1.3 2000/05/30 22:28:59 wart Exp $
+
+# ### ######### ###########################
+## Requisites
+
+package require pcx          ; # PCX API
+
+# ### ######### ###########################
+## Tcl core version dependencies of the package this checker is for.
+
+pcx::register XOTcl
+pcx::tcldep   1.6.0 needs tcl 8.4
+
+# ### ######### ###########################
+
+namespace eval XOTcl {
+    # info methods, class
+    variable classInfo {
+	{classchildren {checkSimpleArgs 0 1 {
+	    checkPattern
+	}}}
+	{classparent {checkAtEnd}}
+	{heritage {checkSimpleArgs 0 1 {
+	    checkPattern
+	}}}
+	{instances {checkSimpleArgs 0 -1 {
+	    {checkSwitches exact {
+		-closure
+	    } {checkSimpleArgs 1 1 {
+		checkPattern
+	    }}}
+	}}}
+	{instargs {checkSimpleArgs 1 1 {
+	    XOTcl::checkXOTclMethodNameUse
+	}}}
+	{instbody {checkSimpleArgs 1 1 {
+	    XOTcl::checkXOTclMethodNameUse
+	}}}
+	{instcommands {checkSimpleArgs 0 1 {
+	    checkPattern
+	}}}
+	{instdefault {checkSimpleArgs 3 3 {
+	    XOTcl::checkXOTclMethodNameUse
+	    XOTcl::checkXOTclMethodArgumentNameUse
+	    checkVarNameWrite
+	}}}
+	{instfilter {checkSimpleArgs 0 -1 {
+	    {checkSwitches exact {
+		-guards
+	    } {checkAtEnd}}
+	}}}
+	{instfilterguard {checkSimpleArgs 1 1 {
+	    XOTcl::checkXOTclInstFilterGuardNameUse
+	}}}
+	{instinvar {checkAtEnd}}
+	{instmixin {checkSimpleArgs 0 1 {
+	    checkPattern
+	}}}
+	{instmixinof {checkSimpleArgs 0 -1 {
+	    {checkSwitches exact {
+		-closure
+	    } {checkSimpleArgs 1 1 {
+		checkPattern
+	    }}}
+	}}}
+	{instnonposargs {checkSimpleArgs 1 1 {
+	    XOTcl::checkXOTclMethodNameUse
+	}}}
+	{instpost {checkSimpleArgs 1 1 {
+	    XOTcl::checkXOTclMethodNameUse
+	}}}
+	{instpre {checkSimpleArgs 1 1 {
+	    XOTcl::checkXOTclMethodNameUse
+	}}}
+	{instprocs {checkSimpleArgs 0 1 {
+	    checkPattern
+	}}}
+	{mixinof {checkSimpleArgs 0 1 {
+	    checkPattern
+	}}}
+	{parameter {checkAtEnd}}
+	{subclass {checkSimpleArgs 0 -1 {
+	    {checkSwitches exact {
+		-closure
+	    } {checkSimpleArgs 1 1 {
+		checkPattern
+	    }}}
+	}}}
+	{superclass {checkSimpleArgs 0 -1 {
+	    {checkSwitches exact {
+		-closure
+	    } {checkSimpleArgs 1 1 {
+		XOTcl::checkXOTclClassNameUse
+	    }}}
+	}}}
+    }
+
+    # info methods, object
+    variable objInfo {
+	{args {checkSimpleArgs 1 1 {
+	    XOTcl::checkXOTclMethodNameUse
+	}}}
+	{body {checkSimpleArgs 1 1 {
+	    XOTcl::checkXOTclMethodNameUse
+	}}}
+	{class {checkSimpleArgs 0 1 {
+	    XOTcl::checkXOTclClassNameUse
+	}}}
+	{children {checkSimpleArgs 0 1 {
+	    checkPattern
+	}}}
+	{commands {checkSimpleArgs 0 1 {
+	    checkPattern
+	}}}
+	{default {checkSimpleArgs 3 3 {
+	    XOTcl::checkXOTclMethodNameUse
+	    XOTcl::checkXOTclMethodArgumentNameUse
+	    checkVarNameWrite
+	}}}
+	{filter {checkSimpleArgs 0 -1 {
+	    {checkSwitches exact {
+		-guards
+		-order
+	    } {checkAtEnd}}
+	}}}
+	{filterguard {checkSimpleArgs 1 1 {
+	    XOTcl::checkXOTclFilterGuardNameUse
+	}}}
+	{hasNamespace {checkAtEnd}}
+	{info {checkAtEnd}}
+	{invar {checkAtEnd}}
+	{methods {checkSimpleArgs 1 -1 {
+	    {checkSwitches exact {
+		-nocmds
+		-nomixins
+		-noprocs
+	    } {checkAtEnd}}
+	}}}
+	{mixin {checkSimpleArgs 1 -1 {
+	    {checkSwitches exact {
+		-order
+		-guard
+	    } {checkSimpleArgs 1 1 {
+		checkPattern
+	    }}}
+	}}}
+	{nonposargs {checkSimpleArgs 1 1 {
+	    XOTcl::checkXOTclMethodNameUse
+	}}}
+	{parent {checkAtEnd}}
+	{post {checkSimpleArgs 1 1 {
+	    XOTcl::checkXOTclMethodNameUse
+	}}}
+	{pre {checkSimpleArgs 1 1 {
+	    XOTcl::checkXOTclMethodNameUse
+	}}}
+	{procs {checkSimpleArgs 0 1 {
+	    checkPattern
+	}}}
+	{precedence {checkSimpleArgs 0 1 {
+	    checkPattern
+	}}}
+	{vars {checkSimpleArgs 0 1 {
+	    checkPattern
+	}}}
+    }
+
+    # info method, class, and object merged
+    variable coInfoCmds [string map [list \
+	 @classinfo@ $classInfo \
+	 @objinfo@   $objInfo   \
+	] {
+	    {info {checkSimpleArgs 1 -1 {
+		{checkOption {
+		    @classinfo@
+		    @objinfo@
+		} {}}
+	    }}}
+	}]
+
+    # class commands, except for info
+    variable classCommands {
+	{alloc {checkSimpleArgs 1 -1 {
+	    XOTcl::checkXOTclClassNameDef
+	    checkWord
+	}}}
+	{allinstances {checkAtEnd}}
+	{create {checkSimpleArgs 1 -1 {
+	    XOTcl::checkXOTclClassNameDef
+	    XOTcl::checkXOTclClassSwitches
+	}}}
+	{instdestroy {checkSimpleArgs 1 -1 {
+	    XOTcl::checkXOTclClassNameUse
+	    checkWord
+	}}}
+	{instfilter {checkSimpleArgs 0 -1 {
+	    {XOTcl::checkXOTclSystemSlotQueryUpdate XOTcl::checkXOTclInstFilterNameUse}
+	}}}
+	{instfilterguard {checkSimpleArgs 2 2 {
+	    XOTcl::checkXOTclInstFilterNameUse
+	    {checkListValues 1 -1 {checkExpr}}
+	}}}
+	{instforward {checkSimpleArgs 1 -1 {
+	    XOTcl::checkXOTclMethodNameUse
+	    {checkSwitches exact {
+		-objscope
+		{-methodprefix checkWord}
+		{-default {checkListValues 1 -1 checkWord}}
+		-earlybinding
+		-verbose
+	    } {checkSimpleArgs 0 -1 {
+		XOTcl::checkXOTclCallee
+		checkWords
+	    }}}
+	}}}
+	{instinvar {checkSimpleArgs 1 1 {
+	    {checkListValues 1 -1 {XOTcl::checkXOTclInvariant}}
+	}}}
+	{instmixin {checkSimpleArgs 0 -1 {
+	    {XOTcl::checkXOTclSystemSlotQueryUpdate XOTcl::checkXOTclInstFilterNameUse}
+	}}}
+	{instparametercmd {checkSimpleArgs 1 1 {
+	    XOTcl::checkXOTclInstvarNameUse
+	}}}
+	{instproc {checkSimpleArgs 3 5 {
+	    XOTcl::checkXOTclMethodNameDef
+	    {checkListValues 0 -1 XOTcl::checkXOTclMethodArgumentNameDef}
+	    XOTcl::checkXOTclMethodBody
+	    {checkListValues 0 -1 XOTcl::checkXOTclInvariant}
+	    {checkListValues 0 -1 XOTcl::checkXOTclInvariant}
+	}}}
+	{parameter {checkSimpleArgs 1 1 {
+	    {checkListValues 1 -1 {
+		XOTcl::checkXOTclInstvarNameDef
+	    }}
+	}}}
+	{parameterclass {checkSimpleArgs 1 1 {
+	    XOTcl::checkXOTclClassNameUse
+	}}}
+	{recreate {checkSimpleArgs 1 -1 {
+	    XOTcl::checkXOTclObjectNameUse
+	    checkWord
+	}}}
+	{superclass {checkSimpleArgs 1 1 {
+	    {checkListValues 1 -1 {
+		XOTcl::checkXOTclClassNameUse
+	    }}
+	}}}
+	{unknown {checkSimpleArgs 0 -1 {checkWord}}}
+	{__unknown {checkSimpleArgs 1 1 {
+	    XOTcl::checkXOTclClassNameDef
+	}}}
+	{new {checkSimpleArgs 0 -1 {
+	    {checkSwitches exact {
+		{-childof XOTcl::checkXOTclObjectNameUse}
+	    } {checkSimpleArgs 0 -1 {
+		checkWord
+	    }}}
+	}}}
+    }
+
+    # object commands, except for info
+    variable objectCommands {
+	{abstract {checkSimpleArgs 3 3 {
+	    {checkKeyword exact {instproc proc}}
+	    XOTcl::checkXOTclMethodNameDef
+	    {checkListValues 0 -1 XOTcl::checkXOTclMethodArgumentNameDef}
+	}}}
+	{append {checkSimpleArgs 1 -1 {
+	    checkVarNameWrite
+	    checkWord
+	}}}
+	{array {checkSimpleArgs 2 4 {
+	    {checkOption {
+		{anymore {checkSimpleArgs 2 2 {
+		    checkVarName
+		    checkWord
+		}}}
+		{donesearch {checkSimpleArgs 2 2 {
+		    checkVarName
+		    checkWord
+		}}}
+		{exists {checkSimpleArgs 1 1 {
+		    checkVarName
+		}}}
+		{get {checkSimpleArgs 1 2 {
+		    checkVarName
+		    checkPattern
+		}}}
+		{names {checkNumArgs {
+		    {1 {checkSimpleArgs 1 1 {
+			checkVarName
+		    }}}
+		    {2 {checkSimpleArgs 2 2 {
+			checkVarName
+			checkPattern
+		    }}}
+		    {3 {checkSimpleArgs 3 3 {
+			checkVarName
+			{checkKeyword exact {
+			    -exact
+			    -glob
+			    -regexp
+			}}
+			checkPattern
+		    }}}
+		}}}
+		{nextelement {checkSimpleArgs 2 2 {
+		    checkVarName
+		    checkWord
+		}}}
+		{set {checkSimpleArgs 2 2 {
+		    checkVarNameWrite
+		    checkDict
+		}}}
+		{size {checkSimpleArgs 1 1 {
+		    checkVarName
+		}}}
+		{startsearch {checkSimpleArgs 1 1 {
+		    checkVarName
+		}}}
+		{unset {checkSimpleArgs 1 2 {
+		    checkVarNameWrite
+		    checkPattern
+		}}}
+		{statistics {checkSimpleArgs 1 1 {
+		    checkVarName
+		}}}
+	    } {}}
+	}}}
+	{autoname {checkSimpleArgs 1 2 {
+	    {checkOption {
+		{-instance checkAtEnd}
+		{-reset {checkSimpleArgs 1 1 checkWord}}
+	    } {}}
+	}}}
+	{check {checkSimpleArgs 1 1 {
+	    {checkListValues 0 -1 {
+		{checkKeyword exact {
+		    none all pre post invar instinvar
+		}}
+	    }}
+	}}}
+	{class {checkSimpleArgs 1 1 {
+	    XOTcl::checkXOTclClassNameUse
+	}}}
+	{cleanup {checkSimpleArgs 0 -1 {checkWord}}}
+	{configure {}}
+	{contains {checkSimpleArgs 1 -1 {
+	    {checkSwitches exact {
+		{-withnew checkBoolean}
+		{-object  XOTcl::checkXOTclObjectNameUse}
+		{-class   XOTcl::checkXOTclClassNameUse}
+	    } {checkBody}}
+	}}}
+	{copy {checkSimpleArgs 1 1 {
+	    XOTcl::checkXOTclObjectNameDef
+	}}}
+	{destroy {checkSimpleArgs 0 -1 {
+	    checkWord
+	}}}
+	{eval {checkEvalArgs}}
+	{extractConfigureArg {checkSimpleArgs 2 3 {
+	    checkVarNameWrite
+	    XOTcl::checkXOTclIsSwitch
+	    checkBoolean
+	}}}
+	{exists {checkSimpleArgs 1 1 {
+	    checkVarName
+	}}}
+	{filter {checkSimpleArgs 0 -1 {
+	    {XOTcl::checkXOTclSystemSlotQueryUpdate XOTcl::checkXOTclFilterNameUse}
+	}}}
+	{filterguard {checkSimpleArgs 2 2 {
+	    XOTcl::checkXOTclInstFilterNameUse
+	    {checkListValues 1 -1 {checkExpr}}
+	}}}
+	{filtersearch {checkSimpleArgs 1 1 {
+	    XOTcl::checkXOTclMethodNameUse
+	}}}
+	{forward {checkSimpleArgs 1 -1 {
+	    XOTcl::checkXOTclMethodNameUse
+	    {checkSwitches exact {
+		-objscope
+		{-methodprefix checkWord}
+		{-default {checkListValues 1 -1 checkWord}}
+		-earlybinding
+		-verbose
+	    } {checkSimpleArgs 0 -1 {
+		XOTcl::checkXOTclCallee
+		checkWords
+	    }}}
+	}}}
+	{hasclass {checkSimpleArgs 0 1 {
+	    XOTcl::checkXOTclClassNameUse
+	}}}
+	{incr {checkSimpleArgs 1  2 {
+	    checkVarNameWrite
+	    checkInt
+	}}}
+	{info {checkSimpleArgs 1 -1 {
+	    {checkOption {
+		@classinfo@
+		@objinfo@
+	    } {}}
+	}}}
+	{instvar {checkSimpleArgs 1 -1 {
+	    checkVarNameDef
+	}}}
+	{invar {checkSimpleArgs 1 1 {
+	    {checkListValues 1 -1 {XOTcl::checkXOTclInvariant}}
+	}}}
+	{isclass {checkSimpleArgs 0 1 {
+	    XOTcl::checkXOTclClassNameUse
+	}}}
+	{ismetaclass {checkSimpleArgs 0 1 {
+	    XOTcl::checkXOTclMetaClassNameUse
+	}}}
+	{ismixin {checkSimpleArgs 0 1 {
+	    XOTcl::checkXOTclClassNameUse
+	}}}
+	{isobject {checkSimpleArgs 1 1 {
+	    XOTcl::checkXOTclObjectNameUse
+	}}}
+	{istype {checkSimpleArgs 1 1 {
+	    XOTcl::checkXOTclClassNameUse
+	}}}
+	{lappend {checkSimpleArgs 1 -1 {
+	    checkVarNameWrite
+	    checkWord
+	}}}
+	{mixin {checkSimpleArgs 0 -1 {
+	    {XOTcl::checkXOTclSystemSlotQueryUpdate XOTcl::checkXOTclClassNameUse}
+	}}}
+	{move {checkSimpleArgs 1 1 {
+	    XOTcl::checkXOTclObjectNameDef
+	}}}
+	{parametercmd {checkSimpleArgs 1 1 {
+	    XOTcl::checkXOTclInstvarNameUse
+	}}}
+	{noinit {checkAtEnd}}
+	{proc {checkSimpleArgs 3 5 {
+	    XOTcl::checkXOTclMethodNameDef
+	    {checkListValues 0 -1 XOTcl::checkXOTclMethodArgumentNameDef}
+	    XOTcl::checkXOTclMethodBody
+	    {checkListValues 0 -1 XOTcl::checkXOTclInvariant}
+	    {checkListValues 0 -1 XOTcl::checkXOTclInvariant}
+	}}}
+	{procsearch {checkSimpleArgs 1 1 {
+	    checkWord
+	}}}
+	{requireNamespace {checkAtEnd}}
+	{set {checkNumArgs {
+	    {1 {checkSimpleArgs 1 1 {
+		checkVarName
+	    }}}
+	    {2 {checkSimpleArgs 2 2 {
+		checkVarNameWrite
+		checkWord
+	    }}}
+	}}}
+	{subst {checkSimpleArgs 1 -1 {
+	    {checkSwitches abbrev {
+		-nobackslashes
+		-nocommands
+		-novariables
+	    } {checkSimpleArgs 1 1 {
+		checkWord
+	    }}}
+	}}}
+	{trace {checkSimpleArgs 1 1 {
+	    checkVarName
+	}}}
+	{unset {checkRestrictedSwitches 1 {
+	    -nocomplain
+	} {checkSimpleArgs 1 -1 {
+	    checkVarNameWrite
+	}}}}
+	{uplevel {checkLevel {
+	    checkSimpleArgs 1 -1 {checkEvalArgs}
+	}}}
+	{upvar {checkLevel {
+	    coreTcl::checkUpvarCmd
+	}}}
+	{vwait {checkSimpleArgs 1 1 {
+	    checkVarNameWrite
+	}}}
+	{volatile {checkAtEnd}}
+	{getExitHandler {checkAtEnd}}
+	{setExitHandler {checkSimpleArgs 1 1 {
+	    checkBody
+	}}}
+    }
+}
+
+# ### ######### ###########################
+## Package specific message types and their human-readable
+## translations.
+
+## None
+
+# ### ######### ###########################
+# scanCmdsX.X --
+# Define the set of commands that need to be recursed into when 
+# generating a list of user defined procs, namespace and Class 
+# contexts and procedure name resolutions info.
+
+#pcx::scan 1.6.0 xotcl::Class {}
+
+# ### ######### ###########################
+# Define the set of command-specific checkers used by this package.
+
+pcx::check 1.6.0 std xotcl::Class \
+    [string map [list \
+	     @classcommands@ $XOTcl::classCommands  \
+	     @objcommands@   $XOTcl::objectCommands \
+	     @coinfocmds@    $XOTcl::coInfoCmds     \
+    ] {checkSimpleArgs 1 -1 {
+	{checkOption {
+	    @classcommands@
+	    @objcommands@
+	    @coinfocmds@
+	} {checkSimpleArgs 1 -1 {
+	    XOTcl::checkXOTclClassNameDef
+	    XOTcl::checkXOTclClassSwitches
+	}}}
+    }}]
+
+pcx::check 1.6.0 std xotcl::Object \
+    [string map [list \
+	     @classcommands@ $XOTcl::classCommands  \
+	     @objcommands@   $XOTcl::objectCommands \
+	     @coinfocmds@    $XOTcl::coInfoCmds     \
+    ] {checkSimpleArgs 1 -1 {
+	{checkOption {
+	    @objcommands@
+	    @classcommands@
+	    @coinfocmds@
+	} {checkSimpleArgs 1 -1 {
+	    XOTcl::checkXOTclObjectNameDef
+	    checkWord
+	}}}
+    }}]
+
+
+# ### ######### ###########################
+
+proc XOTcl::checkXOTclCallee {t i} {
+    return [checkWord $t $i]
+
+    #TODO
+
+    set word [lindex $tokens $index]
+    # no validation of non-literal words
+    if {![getLiteral $word literal]} {
+	return [checkWord $tokens $index]
+    }
+
+    # The check is done by removing all legal patterns and then
+    # checking if there are %-signs left over.
+
+    if {[string match *%* [string map {
+	%proc
+	%self
+	%1
+	%%
+	{%@POS VALUE}
+	{%argclindex LIST}
+	%tcl-command
+
+	####### very complex ###### read tutorial before going further.
+    } $literal]]} {
+	logError xotcl::badUsingFmt [getTokenRange $word] $literal
+    }
+
+    return [incr index]
+}
+
+proc XOTcl::checkXOTclInvariant {t i} {
+    # no validation of non-literal words
+    if {![getLiteral $word literal]} {
+	return [checkWord $tokens $index]
+    }
+    if {[string match "#*" $literal]} {
+	# informal invariant, nothing to check
+	return [incr index]
+    }
+    return [checkExpr $t $i]
+}
+
+proc XOTcl::checkXOTclIsSwitch {t i} {
+    # no validation of non-literal words
+    if {![getLiteral $word literal]} {
+	return [checkWord $tokens $index]
+    }
+    if {![string match "-*" $literal]} {
+	logError xotcl::badOption [getTokenRange $word]
+    }
+    return [incr index]
+}
+
+proc XOTcl::checkXOTclInstFilterGuardNameUse    {t i} {checkWord $t $i}
+proc XOTcl::checkXOTclInstFilterNameUse         {t i} {checkWord $t $i}
+proc XOTcl::checkXOTclInstFilterNameUseAbsolute {t i} {checkWord $t $i}
+
+proc XOTcl::checkXOTclFilterGuardNameUse    {t i} {checkWord $t $i}
+proc XOTcl::checkXOTclFilterNameUse         {t i} {checkWord $t $i}
+proc XOTcl::checkXOTclFilterNameUseAbsolute {t i} {checkWord $t $i}
+
+proc XOTcl::checkXOTclMethodArgumentNameUse {t i} {checkWord $t $i}
+proc XOTcl::checkXOTclMethodArgumentNameDef {t i} {
+    #... pos arguments: -name syntax, -name:opt1,opt2,..., {-name default}
+    checkWord $t $i
+}
+
+proc XOTcl::checkXOTclMethodBody {t i} {checkScript $t $i}
+
+proc XOTcl::checkXOTclMethodNameUse {t i} {checkSetStyle procname checkWord $t $i}
+proc XOTcl::checkXOTclMethodNameDef {t i} {checkSetStyle procname checkWord $t $i}
+
+proc XOTcl::checkXOTclObjectNameDef {t i} {checkWord $t $i}
+proc XOTcl::checkXOTclObjectNameUse {t i} {checkWord $t $i}
+
+proc XOTcl::checkXOTclClassNameDef         {t i} {checkSetStyle nsname checkWord $t $i}
+proc XOTcl::checkXOTclClassNameUse         {t i} {checkSetStyle nsname checkWord $t $i}
+proc XOTcl::checkXOTclClassNameUseAbsolute {t i} {checkWord $t $i}
+proc XOTcl::checkXOTclClassSwitches {t i} {
+    checkSwitches exact {
+	{-init}
+	{-parameter {checkListValues 1 -1 {
+	    xotcl::checkXOTclInstvarNameDef
+	}}}
+    } {checkAtEnd} $t $i
+}
+
+proc XOTcl::checkXOTclMetaClassNameUse {t i} {checkWord $t $i}
+
+proc XOTcl::checkXOTclInstvarNameDef {t i} {checkWord $t $i}
+proc XOTcl::checkXOTclInstvarNameUse {t i} {checkWord $t $i}
+
+proc XOTcl::checkXOTclSystemSlotQueryUpdate {chain t i} {
+    set argc [expr {[llength $t] - $i}]
+    if {$argc == 1} {
+	return [checkListValues 1 -1 $chain $t $i]
+    } else {
+	return [checkOption [string map [list @ $chain] {
+	    {assign {checkSimpleArgs 1 1 {
+		{checkListValues 1 -1 @}
+	    }}}
+	    {add {checkSimpleArgs 1 2 {
+		@
+		checkIndexExpr
+	    }}}
+	    {delete {checkSimpleArgs 1 -1 {
+		@Absolute
+		{checkSwitches exact {
+		    -nocomplain
+		} {checkAtEnd}}
+	    }}}
+	    {get {checkAtEnd}}
+	}] {} $t $i]
+    }
+}
+
+# ### ######### ###########################
+
+namespace eval XOTcl {}
+
+# ### ######### ###########################
+## Initialization
+
+# ### ######### ###########################
+pcx::complete

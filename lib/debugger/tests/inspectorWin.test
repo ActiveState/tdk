@@ -1,0 +1,82 @@
+# inspectorWin.test --
+#
+# This file contains tests for the inspectorWin.tcl file.
+#
+# Copyright (c) 1998-2000 by Ajuba Solutions
+# All rights reserved.
+#
+# RCS: @(#) $Id: inspectorWin.test,v 1.5 2001/10/17 19:04:05 andreas_kupries Exp $
+
+
+if {[string compare test [info procs test]] == 1} {
+    lappend auto_path [file join [file dirname [info script]] ..]
+    package require protest
+    namespace import ::protest::*
+}
+
+# Make sure the parse package is available.
+
+catch {parse} parseMsg
+if {[regexp "invalid command" $parseMsg]} {
+    package require parser
+}
+
+# Load the gui helper procedures.
+
+if {[string compare testGui [info procs testGui]] == 1} {
+    source [file join [pwd] [file dirname [info script]] guiLaunch.tcl]
+}
+
+test inspectorWin-1.1 {basic data display window test} {
+    testGui {
+	# the 1st command will trigger an error, setting the errorInfo var.
+	set
+	exit
+    } {
+	# stop after the 1st command and wait for user action
+	gui::run dbg::step
+	waitForApp
+
+	# User action: show the data display window for the errorInfo var.
+	inspector::showVariable errorInfo 0
+
+	# Test result is the text displayed in the data display window
+	$inspector::varText get 1.0 end
+    }
+} {wrong # args: should be "set varName ?newValue?"
+    while executing
+"set"
+}
+
+test inspectorWin-1.2 {open data display twice on same var (bug 2703)} {} {
+    testGui {
+	# the 1st command will trigger an error, setting the errorInfo var.
+	set
+	exit
+    } {
+	# stop after the 1st command and wait for user action
+	gui::run dbg::step
+	waitForApp
+
+	# User action: show the data display window for the errorInfo var.
+	inspector::showVariable errorInfo 0
+
+	# User action: close the data display window.
+	destroy $gui::gui(dataDbgWin)
+
+	# User action: show the data display window for the errorInfo var.
+	inspector::showVariable errorInfo 0
+
+	# Test result is the text displayed in the data display window
+	$inspector::varText get 1.0 end
+    }
+} {wrong # args: should be "set varName ?newValue?"
+    while executing
+"set"
+}
+
+cleanupTests
+
+if {[info exists tk_version] && !$tcl_interactive} {
+    exit
+}

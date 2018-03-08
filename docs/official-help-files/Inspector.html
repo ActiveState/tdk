@@ -1,0 +1,469 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<HTML>
+<HEAD>
+<LINK REL="STYLESHEET" HREF="aspn.css" CHARSET="ISO-8859-1" TYPE="text/css">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<TITLE>Tcl Dev Kit - Inspector</TITLE>
+</HEAD>
+
+
+<body marginheight="5" topmargin="5" marginwidth="10" leftmargin="10">
+
+@header@
+
+<hr size="1" noshade width="100%">
+
+<a name="top"></a>
+
+<h1>Inspector</H1>
+
+<p>The Tcl Dev Kit <strong>Inspector</strong> analyzes a running Tcl or Tk 
+application and provides an interface for viewing the program's components. 
+It is based on Tkinspect, a Tk program browser originally written by Sam 
+Shen at LBL. When you attach to a running application via a comm port, or 
+via Tk's <tt>send</tt> command, components within the application are organized 
+and displayed according to the component type.</p> 
+
+<p>The <a class="doc" href="#value">Value Window</a> displays the configuration of 
+a component; click a specific component in a <a class="doc" href="#lists">list</a> 
+to display its value. The configuration of a component can be changed in the 
+<strong>Value</strong> window, and the change sent to the running application 
+by clicking the <strong>Send</strong> button.</p>
+
+<p>Tcl commands can be sent to the attached application using the
+<strong>Command</strong> field.</p>
+
+<h2><a name="startup">Invoking the Inspector</a></h2>
+
+<p>Invoke the <strong>Inspector</strong> by selecting
+<strong>Tcl Dev Kit Inspector</strong> from the Tcl Dev Kit program group on the
+Windows Start menu.</p>
+
+<p>Alternatively, you can launch the <strong>Inspector</strong> from the command
+line. On Windows systems, enter <code>tclinspector.exe</code> at the command
+prompt. On Unix systems, enter <code>tclinspector</code> at the shell prompt.</p>
+
+<p>To invoke a new <strong>Inspector</strong> session, or to close an existing 
+session, use the options on the <strong>File</strong> menu. If the 
+<strong>Inspector</strong> session was invoked from another 
+<strong>Inspector</strong> session (via the <strong>File | New Window</strong> 
+option), the <strong>Close Window</strong> 
+option will only close the spawned window. The <strong>Exit</strong> option 
+will close all <strong>Inspector</strong> sessions.</p>
+
+<h3>Attaching to an Application via a Comm Port</h3>
+
+<p>The <strong>Inspector</strong> can interface with Tcl and Tk applications 
+loaded via <code>tkcon</code> or via a Tcl or Wish shell. For example, to 
+load an application via <code>tkcon</code>, load the desired application in 
+<code>tkcon</code>, then enter the following commands:</p>
+
+
+<pre>
+    source <i>application_name</i>
+    package require comm
+    comm::comm self
+</pre>
+
+
+<p>The last command will return the port number on which the program is 
+running.</p>
+
+<p>From the <strong>File</strong> menu in the <strong>Inspector</strong>, 
+select <strong>Connect to comm port</strong>, and enter the port number 
+reported by <code>tkcon</code>.</p>
+
+<p>The <strong>Inspector</strong> can be connected to multiple ports at 
+once. To display the ports to which the <strong>Inspector</strong> is connected, 
+or to select an alternative port for display, select <strong>File | Attach to 
+Interp (comm)</strong>. Connections will be displayed by the port number and the 
+method by which the application is loaded. For example, if <code>tkcon</code> 
+reported that the application was running on port 2824, the 
+<strong>Attach to Interp (comm)</strong> menu option would display an entry 
+reading "2824 (tkcon.tcl)".</p>
+
+<p>In addition to any manual connections, the <strong>Inspector</strong> is 
+always connected to itself; the <strong>Inspector</strong> connection is 
+described as "self" in the <strong>Attach to Interp (comm)</strong> menu.</p>
+
+<!--<h4>Attaching to an Application on a Remote Machine</h4>-->
+
+<h3>Attaching to an Application via "send"</h3>
+
+<p>Attaching via <code>send</code> (<strong>File | Attach to Interp 
+(send)</strong> makes use of the Unix X-based mechanism. 
+It is supported by the <strong>Inspector</strong>, but because of inherent 
+security issues (described in the <code>send</code> manpage), the 
+<code>comm</code> method described above is the preferred connection method.</p>
+
+
+<!--<h3>Attaching to an Application via a Socket</h3>-->
+
+
+
+<a class="topText" href="#top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+<h2><a name="interface">Inspector Interface</a></h2>
+
+<p>The <strong>Inspector</strong> interface consists of the following 
+components:</p>
+
+<img src="images/inspector.gif"><br>
+
+<p>To disable (or re-enable) the pop-up tooltips that describe components 
+of the interface, select <strong>Help | Show Tooltips</strong>.</p>
+
+<p>To change the font size displayed in the Inspector, press
+<code>Ctrl-plus</code> to increase the font size or <code>Ctrl-minus</code> to
+decrease the displayed font size. If using Windows with a mouse wheel, you can
+alternatively press the <code>Ctrl</code> key and then rotate the mouse wheel to
+increase or decrease the font size displayed in the Inspector.</p>
+
+
+<a class="topText" href="#top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+<h2><a name="lists">Component Lists</a></h2>
+
+<p>"Lists" are program components grouped by component type. They are 
+displayed in columns beneath the menu bar. By default, the 
+<strong>Namespaces</strong>, <strong>Procs</strong> and <strong>Globals</strong> 
+lists are displayed when the Inspector is invoked. Use the <strong>View</strong> 
+menu to enable or disable the display of individual lists.</p>
+
+<p>Items are analyzed recursively. Items in packages referenced in the original 
+application will be included.</p>
+
+<p>The following list types are available:</p>
+
+
+<ul>
+  <li><a class="doc" href="#namespaces">Namespaces</a>: Items in the application 
+  declared using the <code>namespace</code> command.</li>
+  
+  <li><a class="doc" href="#procs">Procs</a>: Items in the application 
+  declared using the <code>procs</code> command.</li>
+       
+  <li><a class="doc" href="#globals">Globals</a>: Items in the application 
+  declared using the <code>global</code> command.</li>
+  
+  <li><a class="doc" href="#classes">Classes</a>: [incr Tcl] classes contained 
+  in the application.</li>
+  
+  <li><a class="doc" href="#objects">Objects</a>: [incr Tcl] objects contained 
+  in the application.</li>
+  
+  <li><a class="doc" href="#windows">Windows</a>: Items in the application 
+  that generate a GUI component, such as menus, buttons, etc.</li>
+  
+  <li><a class="doc" href="#images">Images</a>: Items in the application 
+  declared using the <code>image</code> command.</li>
+  
+  <li> <a class="doc" href="#menus">Menus</a>: Items in the application 
+  declared using the <code>menu</code> command.</li>
+  
+  <li><a class="doc" href="#canvases">Canvases</a>: Items in the 
+  application declared using the <code>canvas</code> command.</li>
+  
+  <li><a class="doc" href="#afters">Afters</a>: Items in the application 
+  declared using the <code>after</code> command.</li>
+  
+</ul>
+
+<p>When a list is selected for display, an entry will be added to the 
+<strong>Windows</strong> menu that contains options for the list. The menu 
+contains a set of standard operations, followed by list-specific operations 
+(if any are available). The operations menu can also be accessed by 
+right-clicking within the list. Standard list operations include:</p>
+
+<ul>
+  <li><strong>Show a <i>item</i>...</strong>: This option displays a dialog 
+  used for selecting a specific item in the list. The dialog contains a listbox 
+  where all items of the specified type are listed. After selecting an item,  
+  details about the item are displayed in the 
+  <a class="doc" href="#value">Value Window</a>.</li><br>
+       
+  <li><strong>Edit Filter...</strong>: This option displays a dialog that is 
+  used to configure a filter for the list contents. Multiple patterns can be 
+  defined; the filter can be configured to either include or exclude items 
+  that match the specified patterns. The default configuration varies for 
+  each list type.</li>
+       
+  <li><strong>Find <i>items</i>...</strong>: 
+  <img src="images/inspect_find_butt.gif"> This option displays a dialog 
+  that is used to search the list for one or more items matching the specified 
+  search criteria. The search can be configured to find exact matches, to 
+  perform glob-style matching (using the asterisk (*) to match any sequence 
+  of characters and a question mark (?) to match any single character), or to 
+  perform regular expression pattern matching.</li>
+  
+ <li><strong>Refresh</strong>: 
+ <img src="images/inspect_ref_butt.gif"> This option regenerates the list 
+ display. To regenerate the display of all lists, use the 
+ <strong>View | Refresh All</strong> drop-down menu option.</li>
+ 
+ <li><strong>Remove</strong>: 
+ <img src="images/inspect_del_butt.gif"> This option removes the list from the Inspector 
+ display. Lists can also be removed by clicking (and thus de-selecting) the 
+ list name in the <strong>View</strong> drop-down menu.</li>
+ 
+</ul>
+
+<p>Operations that are specific to the list type are described in the 
+pertinent sections below. For example, the <strong>Globals</strong> list has 
+an additional option called "Trace Variable" that is described in the 
+Globals section below.</p>
+
+<a class="topText" href="#top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+<h3><a name="namespaces">Namespaces List</a></h3>
+
+<p>The <strong>Namespaces List</strong> contains a list of the namespaces 
+defined in the application via the <code>namespace</code> command. This list 
+has no list-specific operations. There is no default filter on the list.</p>
+
+
+<a class="topText" href="#top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+<h3><a name="procs">Procs List</a></h3>
+
+<P>The <strong>Procs List</strong> contains a list of procedures defined in 
+the application via the <code>proc</code> command. This list has no 
+list-specific operations. The default filter on the list is configured to 
+exclude the following patterns:</P>
+
+<pre>
+    ^auto_.*
+    ^tk[A-Z].*
+</pre>
+
+
+<a class="topText" href="#top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+
+<h3><a name="globals">Globals List</a></h3>
+
+<p>The <strong>Globals List</strong> contains a list of the global variables 
+defined in the application via the <code>global</code> command. This list 
+has one list-specific operation: <strong>Trace Variable</strong>
+creates a new toplevel window that will display "set" statements
+that write to the variable.  (The trace window will display the last 50 
+"set" statements.) <strong>Trace Variable</strong> handles both
+scalars and arrays.</p>
+
+<p>For an interesting example of how this works, try the following:</p>
+
+<ul>
+  <li>From the <strong>Attach | Interpreter (comm)</strong> menu, select 
+  the Inspector application (which will be identified as "self").</li>
+  
+  <li>In the <strong>Globals List</strong>, select <code>tk::Priv</code>.</li>
+  
+  <li>From the <strong>Globals</strong> menu, select 
+  <strong>Trace Variable</strong>.</li>
+  
+</ul>
+
+<p>A trace window will be displayed that tracks the <tt>tk::Priv</tt> array.</p>
+
+<p>The default filter on the list is configured to exclude the following 
+patterns:</p>
+
+<pre>
+    ^auto_.*
+    ^tkPriv.*
+    ^tk_.*
+</pre>
+
+<a class="topText" href="#top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+<h3><a name="classes">Classes List</a></h3>
+
+<p>The <strong>Classes List</strong> contains a list of the 
+<code>[incr Tcl]</code> classes defined in the application. The 
+<strong>Inspector</strong> uses the <code>[incr Tcl]</code> 
+<strong>info</strong> command to reconstruct the class definition, showing 
+the member variable definitions and the class method code. This list 
+has no list-specific operations. There is no default filter on the list.</p>
+
+
+<a class="topText" href="#top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+<h3><a name="objects">Objects List</a></h3>
+
+<p>The <strong>Objects List</strong> contains a list of the 
+<code>[incr Tcl]</code> objects defined in the application. The 
+<strong>Inspector</strong> uses the <code>[incr Tcl]</code>
+<strong>info</strong> command to reconstruct the class definition, showing 
+the member variable definitions and the class method code. This list 
+has no list-specific operations. There is no default filter on the list.</p>
+
+<a class="topText" href="#top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+<h3><a name="windows">Windows List</a></h3>
+
+<p>The <strong>Windows List</strong> contains a list of the items in the 
+application that generate a GUI component, such as menus, buttons, etc. 
+There is no default filter on the list.</p> 
+
+<p>The <strong>Windows List</strong> is the <strong>Inspector's</strong> 
+most complicated list. In addition to the 
+<a class="doc" href="#lists">standard list operations</a>, the
+<strong>Windows</strong> menu contains a group of options that determine 
+the type of information that is displayed in the <strong>Value</strong> 
+window. The options are exclusive; that is, only one option can be selected 
+at a time. The options include:</p>
+
+<ul>
+  <li><strong>Window Configuration</strong>: Displays the configuration of 
+  the window.</li>
+  
+  <li><strong>Window Geometry</strong>: Displays the <code>pack</code> and / or 
+  <code>grid</code> settings for the window.</li>
+  
+  <li><strong>Slave Window Geometry</strong>:Displays the <code>pack</code> 
+  and / or <code>grid</code> settings for slaves of the window.</li>
+  
+  <li><strong>Window Bindtags &amp; Bindings</strong>: Displays the current
+  bindtag order, along with the bindings of each of the tags.</li>
+  
+  <li><strong>Window Bindtags</strong>: Displays the current bindtag order of 
+  the window.</li>
+  
+  <li><strong>Window Bindings</strong>: Displays the bindings for the 
+  window.</li>
+  
+  <li><strong>Window Class Bindings</strong>: Displays the bindings for the
+  window's class.</li>
+  
+</ul>
+
+<p>The following options avoid common pitfalls in sending back window
+values. All of these options can be enabled at the same time.</p>
+
+<ul>
+
+  <li><strong>Filter Setting of Empty Window Options</strong>: Removes the 
+  display of options that would be empty when sent. Enabled by default.</li>
+       
+  <li><strong>Filter Setting of Window -class Options</strong>: Removes 
+  <code>-class</code> options from values that are displayed.  Setting the 
+  window class of <code>frame</code> and <code>toplevel</code> after they've 
+  been created is an error.  Enabled by default.</li>
+  
+  <li><strong>Filter Setting of Pack -in Options</strong>: Removes 
+  <code>-in</code> options from values that are displayed. Enabled by 
+  default.</li>
+  
+</ul>
+
+<p>The following option controls how windows are retrieved:</p>
+
+<ul>
+  <li><strong>Get Window Information</strong>: If this option is enabled (the 
+  default), window information is retrieved when an interpreter is selected 
+  via the <strong>Attach</strong> menu, or when the Window list is 
+  refreshed. If this option is not enabled, window information is not 
+  retrieved. Disable this option if the list of windows takes a long time 
+  to retrieve.</li>
+
+</ul>
+
+<p>The default filter on the list is configured to exclude the pattern 
+<code>^\.#.*</code>. </p>
+
+
+
+<a class="topText" href="#top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+
+<h3><a name="images">Images List</a></h3>
+
+<p>The <strong>Images List</strong> contains a list of the images defined in 
+the application via Tk's <code>image</code> command.  The list has one 
+list-specific operation: <strong>Display Image</strong> sends a command to the 
+application to create a new toplevel window containing the selected image. 
+There is no default filter on the list.</p>
+
+<a class="topText" href="#top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+
+<h3><a name="menus">Menus List</a></h3>
+
+<p>The <strong>Menus List</strong> contains a list of the menus defined in 
+the application via Tk's <code>menu</code> command. This list has no 
+list-specific operations. There is no default filter on the list.</p>
+
+<a class="topText" href="#top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+<h3><a name="canvases">Canvases List</a></h3>
+
+<p>The <strong>Canvases List</strong> contains a list of the canvases defined 
+in the application via Tk's <code>canvas</code> command. This list has no 
+list-specific operations. There is no default filter on the list.</p>
+
+<a class="topText" href="#top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+
+<h3><a name="afters">Afters List</a></h3>
+
+<p>The <strong>Afters List</strong> contains a list of the items defined in 
+the application via the <code>after</code> command. This list has no 
+list-specific operations. There is no default filter on the list.</p>
+
+<a class="topText" href="#top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+
+<h2><a name="value">Value Window</a></h2>
+
+<p>The Value Window is an editable <strong>Tk</strong> text window that
+displays details of the most-recently selected item from a list. Configuration 
+items can be changed and sent back to the application by clicking the 
+<strong>Send</strong> button.</p>
+
+<p>The most recent 15 items that were selected from the lists can be displayed 
+by clicking in the area above the <strong>Value</strong> window. Select an item 
+from the list to re-display the value.</p>
+
+
+<p>The <strong>Value</strong> menu item in the main menu bar contains a number 
+of options. These options can also be displayed by right-clicking in the 
+<strong>Value</strong> window:</p>
+
+<ul>
+  <li><strong>Send Value</strong>: Sends the contents of the 
+  <strong>Value</strong> window back to the application.</li>
+  
+  <li><strong>Find...</strong>: Displays a dialog box used for searching 
+  the contents of the <strong>Value</strong> window.</li>
+  
+  <li><strong>Save Value...</strong>: Displays a dialog box used for saving 
+  the contents of the <strong>Value</strong> window to a file.</li>
+  
+  <li><strong>Load Value...</strong>: Displays a dialog box used for selecting 
+  a file that contains content you want inserted in the <strong>Value</strong> 
+  window. The current contents of the window will be replaced by the contents 
+  of the file.</li>
+
+  <li><strong>Detach Window</strong>: Creates a new <strong>Inspector</strong> 
+  window that contains the contents of the <strong>Value</strong> window 
+  from the original <strong>Inspector</strong> session.</li>
+</ul>
+
+<p>The following shortcut key strokes are supported:</p>
+
+<ul>
+  <li><strong>Control+x Control+s</strong>: Sends the value back to the
+       selected interpreter.</li>
+
+  <li><strong>Control+s</strong>: Displays the <strong>Find...</strong> 
+  dialog.</li>
+
+</ul>
+
+<a class="topText" href="#top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+
+</BODY>
+</HTML>
+

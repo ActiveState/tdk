@@ -1,0 +1,344 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+<head>
+<title>Tcl Dev Kit - FAQ</title>
+<link rel="stylesheet" type="text/css" href="aspn.css">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head>
+
+<body marginheight="5" topmargin="5" marginwidth="10" leftmargin="10">
+
+@header@
+
+<hr size="1" noshade width="100%">
+
+<a name="top"></a>
+
+<h1>Tcl Dev Kit FAQ</h1>
+
+<ul>
+  <li><a class="doc" href="#install">Why does the Tcl Dev Kit installer say it cannot find the Tcl Dev Kit package?</a></li>
+  <li><a class="doc" href="#dist_comp">How do I distribute programs compiled with the Tcl Dev Kit Compiler?</a></li>
+  <li><a class="doc" href="#tclapp_rel_paths">Why can't my TclApp-wrapped application access wrapped files via relative paths?</a></li>
+  <li><a class="doc" href="#require_tk">Why are Tk commands not recognized when I wrap my application with Tk in a Linux environment?</a></li>
+  <li><a class="doc" href="#starkitstarpack">What are Starkits and Starpacks?</a></li>
+  <li><a class="doc" href="#cust_basekit">How do I create a custom base kit?</a></li>
+  <li><a class="doc" href="#mult_versions">Can I install multiple versions of the TDK?</a></li>
+  <li><a class="doc" href="#tap_location">Where are the .tap files located?</a></li>
+  <li><a class="doc" href="#tap_moving">How does TclApp find moved packages and .tap files?</a></li>
+  <li><a class="doc" href="#custom_tap_moving">How does TclApp find custom .tap
+  files for packages not included with the Tcl Dev Kit?</a></li>
+  <li><a class="doc" href="#error_in_startup_script">What can cause an "Error in startup script"?</a></li>
+</ul>
+
+
+<h2><a name="install">Why does the Tcl Dev Kit installer say it cannot find the Tcl Dev Kit package?</a></h2>
+
+<p>If the Tcl Dev Kit installer generates a message that it cannot find the Tcl Dev Kit 
+package, it is likely that the TCL_LIBRARY variable is set in your 
+environment.  (Installing the Ruby language, for example, automatically sets 
+this variable.) This variable is unnecessary, and should be removed. 
+
+<p>Windows 9x users can remove the variable by editing their autoexec.bat file. 
+Reboot the system when complete.</p>
+
+<p>Windows XP (or later) users can remove the variable by altering their Environment Settings:</p>
+
+<ul>
+	<li>Right click on <strong>My Computer</strong> and select <strong>Properties</strong>.</li>
+	<li>On the <strong>Advanced</strong> tab, select "Environment Variables..."</li>
+	<li>Select the TCL_LIBRARY variable, and click <strong>Delete</strong>.</li>
+</ul>
+
+<h2><a name="dist_comp">How do I distribute programs compiled with the Tcl Dev Kit Compiler?</a></h2>
+
+<p>The <a class="doc" href="Compiler.html">Tcl Dev Kit Compiler</a>  
+generates bytecode representations of Tcl scripts for the purpose of obscuring 
+and securing the code.  However, compiled applications do not include a Tcl 
+interpreter, and thus rely on an interpreter installed on the client machine.</p>
+
+<p>The ActiveTcl distribution includes a <code>tbcload</code> library that is 
+free to distribute, and can be used to load compiled applications. Alternatively, 
+use <a class="doc" href="TclApp.html">TclApp</a> to generate a compiled 
+application that includes an interpreter and the required libraries.</p>
+
+<h2><a name="tclapp_rel_paths">Why can't my TclApp-wrapped application access wrapped files via relative
+paths?</a></h2>
+
+<p>A wrapped application inherits the current working directory from the
+shell where the application was run. Runtime support does not change the
+current working directory to a location inside of the wrapped application
+before running it. Therefore, you must use a method such as
+<code>set base $starkit::topdir</code> to specify the base path. See
+<a class="doc" href="tclapp.html#path_handling">Path Handling</a> in the "Converting Prowrap Projects
+to TclApp Projects" section of the TclApp documentation for more information.</p>
+
+
+<h2><a name="require_tk">Why are Tk commands not recognized when I wrap my application with Tk in a Linux environment?</a></h2>
+
+<p>You must add a 'package require Tk' command to your script to successfully
+wrap an application with Tk in a Linux environment.</p>
+
+<h2><a name="starkitstarpack">What are Starkits and Starpacks?</a></h2>
+
+<p>A <strong>starkit</strong> is a single file that packages a set of Tcl
+scripts, platform-specific compiled code and application data. It relies on
+an external run-time interpreter. A <strong>starpack</strong> is a single
+executable file that contains both a starkit and an interpreter.</p>
+
+<p>TclApp generates a starpack when a base kit is specified as a build
+option. Specify a base kit in the <strong>Prefix file</strong> field on the
+<a class="doc" href="TclApp.html#application_gui">Wrapping Tab</a> in the graphical
+TclApp, or using the <a class="doc" href="TclApp.html#interp">-prefix</a>
+option on the command line. See
+<a class="doc" href="TclApp.html#interp">Specifying the Interpreter:
+Creating Starpacks and Starkits</a> in the TclApp section for more
+information.</p>
+
+<p>See <a class="doc" target="blank" href="http://www.equi4.com/191">http://www.equi4.com/191</a> 
+for an <strong>Anatomy of a starkit</strong>.</p>
+
+
+<h2><a name="cust_basekit">How do I create a custom base kit?</a></h2>
+
+<p>"Base kits" are executable files that include an interpreter. Base kits can 
+be included in applications generated by <a class="doc" href="tclapp.html">TclApp</a> in
+order to generate a standalone, portable application (a "starpack").</p>
+
+<p>The Tcl Dev Kit includes two platform-specific base kits: base-tcl* and
+base-tk* (which is the equivalent of base-tcl plus tk). Custom base kits can
+also be included in applications generated by TclApp. For example, custom
+base kits would be required to use old build systems which create only static
+libs.</p>
+
+<p>Before customizing the build process to create a custom tclkit, ensure
+that the standard tclkit will build without errors.</p>
+
+
+<p>Note that as the resulting applications containing your static libraries are
+different from the original tclkits, to avoid confusion they should not be named
+"tclkit". For example, ActiveState calls the binaries provided with the
+Tcl Dev Kit "base-kits".</p>
+
+<p>For more information, see the starkit mailing list at
+<a target="blank" href="http://www.equi4.com/277">http://www.equi4.com/277</a>.
+This list is for the general discussion of starkits and tclkits.</p>
+
+
+
+<h3>UNIX</h3>
+
+<p>Jean-Claude Wippler provides instructions and a script for generating base
+kits on his site, located at
+<a target="blank" href="http://www.equi4.com/218">http://www.equi4.com/218</a>. 
+The primary consideration for creating custom base kits is the inclusion of
+your own static libraries. These must be specified in the following locations:</p>
+
+<h4>The Tclkit Sources</h4>
+
+<p>The static libraries must be included in the sources of tclkit, so that
+the package is initialized at runtime. The relevant source file is
+<code>kit/src/kitInit.c</code>. (This file is extracted from the archive
+<code>kit.tar.gz</code>, retrieved during the kit-building process.)
+<code>kit/src/kitInit.c</code> contains slightly non-standard initialization 
+code for a tcl core / application. However, the parts where packages are   
+initialized are standard.</p>
+
+<p>Note that <code>kit/src/kitInit.c</code> does not include headers for any
+packages. Instead, it contains the relevant <code>extern...</code>
+declarations for the <code><em>package</em>_Init</code> functions.</p>
+
+  
+<h4>The Linking Phase of Tclkit</h4>
+
+
+<p>Create a file called <code>genkit.local</code> in the directory where
+genkit is called. This file contains the following statements:</p>
+
+<pre>
+    set Z(tclsuff) &lt;your static libraries&gt;
+    set Z(tksuff)  &lt;your static libraries&gt;
+</pre>
+
+<p>"<em>your static libraries</em>" might be something like:</p>
+
+<pre>
+    &lt;path&gt;/libFOO.a
+</pre>
+
+<p>...or:</p>
+
+<pre>
+    -L&lt;path&gt; -lfoo.
+</pre>
+
+<h3>Windows</h3>
+
+<p>The <code>kit.tar.gz</code> file described in the previous section has a
+subdirectory called "msvc6", which provides MSVC++ workspace and project
+files for the creation of a tclkit on Windows.</p>
+
+
+<p>The expected directory layout is:</p>
+
+<pre> 
+    tclkit/msvc6/kit.dsw etc
+    Dists/Tcl/...
+         /Tk/...
+         /Mk4tcl/...
+         /Vfs/...
+         /Itcl/...
+         /Zlib/...
+    Build/
+</pre>
+
+<p>"tclkit" is the directory provided by kit.tar.gz. The "Build" directory is
+for temporary files. The "Dists" directory is populated with the contents
+of the tar files retrieved from
+<a target="blank" href="http://www.equi4.com/pub/tk/tars/">http://www.equi4.com/pub/tk/tars/</a>.
+(On UNIX, as described above, this retrieval is done by "genkit").</p>
+
+<p>The results of the build are <code>kit.exe</code> and
+<code>kitsh.exe</code> in the tclkit/ directory. These are incomplete
+executables. To complete the generation, use:</p>
+
+<pre>
+    cat kitsh.exe tclkit/runtime.kit &gt; tclkitsh.exe
+    cat kit.exe tclkit/runtime.kit &gt; tclkit.exe
+</pre>
+
+<p>Insertion of your own libraries has to happen in
+<code>tclkit/src/kitInit.c</code> (as described in the UNIX section above),
+and in the link step of the MSVC project.</p>
+
+<h2><a name="mult_versions">Can I install multiple versions of the TDK?</a></h2>
+
+<p>Yes. The behavior will vary depending on your operating system.</p>
+
+<h3>Unix</h3>
+
+<p>On Unix, install different versions of the Tcl Dev Kit in different 
+directories. Alter the system's <code>PATH</code> variable to specify the 
+<code>bin</code> directory of the desired installation.</p>
+
+
+<h3>Windows</h3>
+
+<p>When installing multiple versions of the Tcl Dev Kit on Windows, the 
+following considerations apply:</p>
+
+<ul>
+  <li>The installer for ActiveTcl and the TDK both prepend their path info
+  to the user/global PATH environment variable (depending on whether the 
+  user or administrator (all) option is chosen during the installation).
+  This means that the last installed version is first on the path.
+  Modify the PATH environment variable by right-clicking the 
+  <strong>My Computer</strong> icon, selecting the <strong>Properties</strong> 
+  menu item, then selecting the <strong>Advanced</strong> tab and altering the 
+  variable in the <strong>Environment Variables</strong> dialog.</li>
+  
+  <li>The ActiveTcl and TDK installers create or modify the system's association 
+  for files with the <code>.tcl</code> extension. This association is 
+  modified to point to the version of <code>wish</code> included in the 
+  installation package. (When you invoke a file with this extension, 
+  the file is run using the version of <code>wish</code> specified in 
+  the file association.) To manually modify this setting (and thus associate the 
+  <code>.tcl</code> extension with another version of <code>wish</code>), 
+  modify the system's File Types setting. In Windows Explorer, select 
+  <strong>Tools | Folder Options | File Types</strong> and configure the 
+  association to point to the desired interpreter.</li>
+  
+  <li>Each version of the Tcl Dev Kit will create its own program group 
+  (accessed via the Windows Start menu). Regardless of the PATH or file 
+  associations, the menu items within the program group will link to the 
+  version of the Tcl Dev Kit included in the installation. The demonstration 
+  programs, however, may in some cases use the PATH and / or file associations 
+  to determine the location of the Tcl Dev Kit binaries.</li>
+  
+  <li>During uninstallation, the version being uninstalled will remove
+  any environment setting it made, if those settings are still set to the 
+  value configured by the installation.  That means if you modify the 
+  <code>.tcl</code> association after installing a new version, uninstalling 
+  that version will not remove the <code>.tcl</code> association.</li>
+  
+</ul>
+
+<h2><a name="tap_location">Where are the .tap files located?</a></h2>
+
+<p>TclApp Package definition (.tap) files are reorganized in the 3.x
+distribution of the Tcl Dev Kit. The majority of .tap files have undergone
+a conversion that facilitates moving them with a package directory. These
+.tap files are now located under the packages they belong to, for example:</p>
+
+<pre>
+    TclDevKit3.0/lib/bwidget1.6/
+      bwidget.tap
+</pre>
+
+<p><strong>or</strong></p>
+
+<pre>
+    TclDevKit3.1/lib/tcllib1.5/
+      tcllib.tap
+</pre>
+
+
+<p>The .tap files that have not undergone the conversion remain located in
+the <code>tap</code> directory under the Tcl Dev Kit installation,
+for example:</p>
+
+<pre>
+    TclDevKit3.x/lib/tap/
+      expwin.tap
+      snack.tap
+</pre>
+
+
+<h2><a name="tap_moving">How does TclApp find moved packages and .tap files?</a></h2>
+
+<p>Add the <code>@TAPDIR@</code> placeholder in the .tap file you want to move,
+and then put the .tap file in the same directory as the package file. The .tap
+file now moves with the package directory and TclApp can find the correct files
+to wrap, relative to the location of the .tap file.</p>
+
+
+<h2><a name="custom_tap_moving">How does TclApp find custom .tap files for
+packages not included with the Tcl Dev Kit?</a></h2>
+
+<p>There are two solutions:</p>
+
+<strong>1. Set the Environment Variable to the Directory</strong>
+<p>Put all your .tap files in a custom directory and set the environment
+variable <code>TCLAPP_PKGPATH</code> to that directory.</p>
+
+<strong>2. Set a Placeholder</strong>
+<p>In your .tap files, use the <code>@TAPDIR@</code> placeholder as a reference
+for the package directory, and then put the .tap file in the same directory as
+the package files. TclApp finds the correct files to wrap, relative
+to the location of the .tap file.</p>
+
+<h2><a name="error_in_startup_script">What can cause an "Error in
+startup script"?</a></h2>
+
+<p> If the implentation of a package tells Tcl what version it is
+(e.g. 1.3.1) and the index file of that package (pkgIndex.tcl - used
+by Tcl to map from versions to implementations) is not consistent with
+the implementation (e.g. maps version 1.3 to the implementation of
+version 1.3.1), an error in the startup script may occur.</p>
+
+<p>This can affect ActiveTcl 8.5 if it is used in conjunction with an
+older ActiveTcl for the packages to use. We have no hard data which
+old releases are problematical, and which are good. ActiveTcl 8.4.9
+has at least one package with an inconsistency of this type, i.e.
+starkit 1.3 vs 1.3.1.</p>
+
+<p>TclApp is only indirectly affected, and only TclApp. The result of
+its operation may fail if a Tcl 8.5 basekit was used, and packages
+having the inconsistency were wrapped as well. These packages may
+have come from older versions of ActiveTcl, or they may be packages
+the user of Tclapp has developed locally, i.e. company internal
+packages, etc.</p>
+
+</body>
+</html>

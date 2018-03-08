@@ -1,0 +1,239 @@
+TDK 2.5 TclApp
+==============
+
+A guide to converting prowrap-based projects to TclApp
+------------------------------------------------------
+
+This guide has and will to cover two areas:
+
+1)      The direct changes in the interfaces (cmdline and UI) between
+        the prowrap and TclApp application, insofar they have an
+        effect in porting an existing application between the two. In
+        other words, changes to the interface which have no effect on
+        the transition will not be not covered.
+
+2)      Changes to make to the source code of the application in
+        transition.
+
+------------------------------------------------------
+
+Ad 1)   Changes to the user interface, both commandline and UI.
+
+
+        -uses   This option has been dropped.
+
+                It was for specifying a specific interpreter and
+                containing presets for the inclusion of some packages.
+
+                It has been effectively superseded by the options
+                        -config
+                and     -pkg.
+
+                -pkg    for the specification of packages to include,
+                        and
+                -config for the specification of complete projects [*].
+
+                [*]     Which can be prowrap projects, TclApp
+                        projects, or simply collections of command
+                        line options recognized by TclApp.
+
+
+        -tcllib This option has been dropped.
+
+                This option was for the specification of the tcl
+                library directory to be used by the wrapped tcl
+                core. VFS based wrapped executables have no need of
+                this information. No replacement option.
+
+
+        -executable
+                This option has been required by prowrap, and is no
+                optional. The exact type of file specified has changed
+                as well.
+
+                For prowrap the file had to be a tclwrapper-enabled
+                application.
+
+                Now any file containing a metakit based virtual
+                filesystem at their end is allowed. Despite this only
+                two cases seem to be the most relevant:
+
+                a)      A file containing a standard tcl script as
+                        header invoking the application stored in the
+                        virtual filesystem. This case be easily
+                        invoked by _not_ specifying the option. Tclapp
+                        then uses a standard file (it has stored in
+                        itself) as the base.
+
+                b)      A platform-specific executable file set up so
+                        that it is able to invoke the application
+                        stored in the virtual filesystem at its
+                        end. The original applications for this a
+                        Jean-Claude Wippler's tclkits. Tcl Dev Kit
+                        provide in the bin directory of its
+                        installation two such file, called
+                        base-*-ARCH.exe, where ARCH is a string like
+                        win32-ix86 denoting the platform these
+                        executables are for.
+
+                A wrapping result from case (a) is called 'starkit',
+                and the result from (b) is a 'starpack'.
+
+                TclApp additionally understands -prefix as alias for
+                -executable. The old name will be dropped in the
+                future.
+
+        Location of directly specified files.
+
+                prowrap computes a relative path for all files and
+                places them in the archive relative to the root of the
+                archive.
+
+                tclapp also computes a relative path, but places this
+                path by default into the /lib/application subdirectory
+                of the archive.
+
+                This affects any person who is wrapping a package by
+                specifying it as a loose collection of files instead of
+                through the package selection dialog (which requires
+                the package to have .tap specification file), because
+                by default the subdirectories of lib/application are
+                __not__ searched for package indices.
+
+                To make such 'loose' packages visible the following
+                initialization code is required:
+
+                        package require starkit
+                        lappend auto_path [file join $starkit::topdir lib application YOUR_LIB_DIR]
+
+                The [lappend] has to list all directories which
+                contain subdirectories containing packages. A concrete
+                example:
+
+                The loose package is pgsql, and it is placed in
+
+                        lib/application/lib/pgsql
+
+                Then the code above transforms to
+
+                        package require starkit
+                        lappend auto_path [file join $starkit::topdir lib application lib]
+
+                >>>>>>>>>
+                        The final version of TDK 2.5 will make this
+                        more convenient, either by providing special
+                        variables to make the path simpler to specify,
+                        or by automatically adding subdirectory of
+                        lib/application to the auto_path. Or both.
+                <<<<<<<<<
+
+
+        Statically linked versus dynamically loaded libraries
+
+                The prowrap documentation states in multiple places
+                that usage of dynamically loaded libraries is
+                difficult to impossible and to use static libraries
+                instead, by creation specialized tclwrapper-enabled
+                executables.
+
+                With our switch to the Tcl 8.4 virtual filesystem
+                (VFS) this is _not true_ anymore. Usage of shared
+                libraries is as easy for a wrapped application as it
+                is for the unwrapped code.
+
+                Because of that the old recommendation does not hold
+                anymore and is actually reversed now. Use shared
+                libraries before resorting to the creation of custom
+                tclkits.
+
+------------------------------------------------------
+
+Ad 2)   Transitioning the source code to wrap.
+
+
+        tcl_platform(isWrapped)
+                This variable has been dropped.
+
+                It was present in applications generated by prowrap to
+                enable developers to write tcl scripts capable of
+                running in wrapped and unwrapped mode, (de)activating
+                code for the circumvention of the limitations in the
+                prowrap-filesystem as needed.
+
+                With the 8.4 VFS however there is no great need for
+                mode-dependent code anymore, simply because the
+                aforementioned limitations are now gone. So most code
+                conditionalized on this variable should be rewritten to
+                simply make use of the standard filesystem operations.
+
+                For people truly in need of mode-dependent code check
+                the result of the command [starkit::startup]
+
+                        starkit         - launched from a starkit
+                        starpack        - launched from a starpack
+                        unwrapped       - called from an unwrapped tcl script
+                        sourced         - [source]'ed by another starkit
+
+
+        Handling of paths in the application
+
+                 An application wrapped by prowrap had to follow a
+                 handful of special rules and cases when working with
+                 file paths to get it access to the wrapped files and
+                 non-wrapped files right.
+
+                 Something like: If the path is relative it is looked
+                 up in the archive first, relative to the root of the
+                 archive, and only if nothing is found there the
+                 native file system is searched. Absolute paths always
+                 go to the native filesystem, bypassing the archive.
+
+                 These rules are not relevant anymore. The VFS makes
+                 the archive look like an ordinary directory somewhere
+                 in the file system, and any access to a path in that
+                 directory reads the archive. And any path outside of
+                 that directory is the native filesystem. Relative
+                 versus absolute doesn't matter.
+
+                 The location of the 'somewhere' is also easily
+                 explained:
+
+                 If the application FOO (starkit or starpack) is
+                 located at
+
+                         /path/to/FOO
+
+                then this path will be the virtual directory the
+                contents of the archive can be accessed through. In
+                other words, a file which was wrapped as
+                'lib/application/foo.tcl' now can be accessed via
+
+                          /path/to/FOO/lib/application/foo.tcl
+
+                Or,       cd /path/to/FOO/lib
+                          open application/foo.tcl
+
+                (The latter just to demonstrate that all the usual
+                operations work as in the unwrapped case).
+
+                This base path (/path/to/FOO) can be queried from
+                within the application via
+
+                        package require starkit
+                        set base $starkit::topdir
+
+        Globbing
+
+                The prowrap file system did not support [glob]bing of
+                virtual directories. This meant that applications
+                looking for lists of files (like the images they used)
+                had to special case this dependent on the value of
+                'tcl_platform(isWrapped)'. In the wrapped case the
+                list had to be hard coded.
+
+                This limitation is gone. [glob] works for virtual
+                directories like for native directories. There is no
+                need to hard code such lists anymore and the special
+                case code can be eliminated.
+
+==============

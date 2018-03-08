@@ -1,0 +1,223 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<HTML>
+<HEAD>
+<LINK REL="STYLESHEET" HREF="aspn.css" TYPE="text/css">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<TITLE>Tcl Dev Kit Tutorial - Hotspot Analysis</TITLE>
+</HEAD>
+
+<body marginheight="5" topmargin="5" marginwidth="10" leftmargin="10">
+
+@header@
+
+<hr size="1" noshade width="100%">
+
+<a name="top"></a>
+
+<h1>Tutorial: Hotspot Analysis, or the Importance of Choosing a Good Algorithm</h1>
+
+
+<UL>
+  <li><a class="doc" href="#intro">Introduction</a></li>
+  <LI><A class="doc" HREF="#one">Step One: Open the Tutorial Program</A></LI>
+  <LI><A class="doc" HREF="#two">Step Two: View Unexecuted Lines</A></LI>
+  <LI><A class="doc" HREF="#three">Step Three: View Executed Lines</A></LI>
+  <LI><A class="doc" HREF="#four">Step Four: Use Coverage and Profiling Dialog</A></LI>
+  <LI><A class="doc" HREF="#five">Step Five: An Improved Algorithm</A></LI>
+  <LI><A class="doc" HREF="#six">Step Six: Saving Profile Data</A></LI>
+  <ul>
+    <LI><A class="doc" HREF="#example">Example</A></LI>
+  </ul>
+
+</UL>
+
+
+<H2><A NAME="intro">Introduction</A></H2>
+
+<P>This tutorial shows how to use the Tcl Dev Kit Debugger with profiling
+to analyze the efficiency of your code. When the "Profiling" option is
+selected in the
+<a class="doc" href="Debugger.html#ChangeProCoverage">Project Settings</a>, the
+Tcl Dev Kit Debugger will generate additional data about the time required to
+execute individual commands. The sample projects use integer multiplication as
+implemented in Tcl. While you would probably never implement multiplication in
+a scripting language, this example demonstrates how the choice of algorithm 
+affects the performance of an operation.</P>
+
+<H2><A NAME="one">Step One: Open the Tutorial Program</A></H2>
+
+<ul>
+  <li><strong>UNIX</strong>: Change to the directory 
+  <CODE>/demos/TclDevKit/TclDebugger/Profiling/</CODE> beneath the root Tcl Dev Kit 
+  installation directory, and run:
+  
+  <pre>tcldebugger mult_1.tpj</PRE></li>
+  
+  <li><strong>Windows</strong>: Click <STRONG>Start | Programs | ActiveState
+  Tcl Dev Kit | Tcl Dev Kit Demos | Profiling and Coverage | Hotspot
+  Multiplication I</STRONG></li>
+</ul>
+
+  
+<P>The Tcl Dev Kit Debugger will open and load the <CODE>mult_1</CODE>
+project. The file <CODE>mult_1_run.tcl</CODE> will open in the Code display
+portion of the debugger's main window.</P>
+
+
+<H2><A NAME="two">Step Two: View Unexecuted Lines</A></H2>
+
+<P>Run the application in the debugger as usual. You can watch variables,
+use the eval console, and perform all other debugging tasks while 
+coverage information is being gathered in the background.</P>
+
+<P>As the debugger executes lines in the application, lines that have 
+not been executed will be displayed with a yellow background.</P>
+
+<P>When the script has finished running, select <STRONG>View | Code Coverage</STRONG>,
+or click the <strong>Coverage</strong> <img src="images/debug_cover_butt.gif"> 
+button on the toolbar. The 
+<STRONG>Code Coverage and Profiling</STRONG> dialog will be displayed.</P>
+
+<img border="1" src="images/tut_mult_1.gif">
+
+
+<H2><A NAME="three">Step Three: View Executed Lines</A></H2>
+
+<P>Use the radio buttons at the top of the dialog to switch between
+the highlighting modes. In Step Two, we discussed highlighting 
+uncovered code. In this step, we'll look at highlighting covered code.</P>
+
+<P>To view qualitative profiling information, select <STRONG>Highlight Covered 
+Code for Selected File</STRONG>. Now, executed commands are colored in orange 
+and black. The darker the color, the greater the number of times the command
+was executed.</P>
+
+<img border="1" src="images/tut_mult_2.gif">
+
+<P>Notice that lines 13 and 14 have a black background. These 
+lines have been executed the most often. These two lines make up
+the main loop of the multiplication command and, together, are the
+"hotspot" - that is, the part of the application that must be optimized 
+to improve performance.</P>
+
+<H2><A NAME="four">Step Four: Use the Coverage and Profiling Dialog</A></H2>
+
+<P>A complex application might have several hotspots scattered over
+multiple files, making this type of visual inspection
+tedious. To make this easy, in the Code Coverage and Profiling dialog, 
+select the <STRONG>Calls</STRONG> tab. (The default tab, <STRONG>Files</STRONG>, 
+shows a list of files for which profiling information was collected.)</P>
+
+<img border="1" src="images/tut_mult_3.gif">
+
+<P>The <STRONG>Calls</STRONG> tab displays a list of all the lines in the program
+that have been executed. The list contains the line number, the file
+in which the line is located, and the number of calls made to the 
+line. In addition, the Calls tab displays the minimum, average, maximum, and total
+time spent to execute a particular command. Times are shown in microseconds.
+By default, the list is sorted by the number of calls, so that 
+the most frequently executed lines are displayed at the top.</P>
+
+<P>If you were working with a large file, you could click on a line 
+in the list and then click the <STRONG>Show Code</STRONG> button to position 
+the code display in the debugger to the selected file and line.</P>
+<P>In our example, we see that the commands on lines 13 and 14 were called a
+whopping 15007 times, and used 212,705 and 229,367 microseconds of
+processing time, respectively.</P>
+
+
+
+<H2><A NAME="five">Step Five: An Improved Algorithm</A></H2>
+
+<P>Think about the algorithms used in the hotspots that were
+highlighted by the debugger in the previous step. In the 
+real world, you might think about moving this part from 
+a Tcl implementation to one based upon C. However, it 
+is also possible to use a different algorithm to make 
+the calculation more efficient.</P>
+
+<P>The second tutorial project contains a program that rewrites 
+the multiplication loop to use a halving/doubling
+algorithm, instead of linearly incrementing the result.</P>
+
+<P>Select <STRONG>File | Close Project</STRONG> to close the first project, 
+then select <strong>File | Open Project</strong> to load the <CODE>mult_2.tpj</CODE>
+project. The <CODE>mult_2_run.tcl</CODE> file will open in the Code display
+portion of the debugger's main window.</P>
+
+<P>Run the program to the end, then open the Code Coverage 
+and Profiling dialog, select <STRONG>Highlight Covered Code...</STRONG>, and 
+click the <STRONG>Calls</STRONG> tab.</P>
+
+<img border="1" src="images/tut_mult_4.gif">
+
+<P>While the multiplication loop still contains commands
+that are called most often, the absolute numbers are
+drastically reduced, a direct result of choosing a superior
+algorithm. The highest number of calls on a line is now 
+41 instead of 15007, and the total processing time has been
+reduced to 1,465 microseconds. This occurs in the command that decides 
+between incremental and halving steps. We also 
+see that the halving step is called more often than the
+incremental step (about twice as often in fact). This is not
+surprising considering that it is this step that reduces the overall number of
+iterations through the loop.</P>
+
+
+<H2><A NAME="six">Step Six: Saving Profile Data</A></H2>
+
+<P>You can use the <STRONG>Save Data</STRONG> button in the Code Coverage and 
+Profiling dialog to export coverage information in a
+standard format for post-processing with external tools like
+Excel, statistics applications, etc. Clicking this button writes
+the current profiling information in CSV format to a file.</P>
+
+<P>The generated file contains the following columns:</P>
+
+<DL>
+<DT><STRONG><A NAME="item_NrCallsToCmd">NrCallsToCmd</A></STRONG></dt>
+<DD>Number of calls to the described command</dd>
+
+<DT><STRONG><A NAME="item_Filename">Filename</A></STRONG></dt>
+<DD>Name of the file it is in</dd>
+
+<DT><STRONG><A NAME="item_Min">Min</A></STRONG></dt>
+<DD>Minimum amount of time, in microseconds, spent on the executed command</dd>
+
+<DT><STRONG><A NAME="item_Avg">Avg</A></STRONG></dt>
+<DD>Average amount of time, in microseconds, spent on the executed command</dd>
+
+<DT><STRONG><A NAME="item_Max">Max</A></STRONG></dt>
+<DD>Maximum amount of time, in microseconds, spent on the executed command</dd>
+
+<DT><STRONG><A NAME="item_Total">Total</A></STRONG></dt>
+<DD>Total amount of time, in microseconds, spent on the executed command</dd>
+
+<DT><STRONG><A NAME="item_CmdLine">CmdLine</A></STRONG></dt>
+<DD>Line in the named file the command is on</dd>
+
+<DT><STRONG><A NAME="item_CmdCharIndex">CmdCharIndex</A></STRONG></dt>
+<DD>Index of the command in the named file in characters</dd>
+
+<DT><STRONG><A NAME="item_CmdLength">CmdLength</A></STRONG></dt>
+<DD>Length of the command in characters</dd>
+</DL>
+
+
+<H3><A NAME="example">Example</A></H3>
+
+<img border="1" src="images/tut_mult_5.gif">
+
+<P>Look at the first row in the Excel spreadsheet pictured above. The command on
+line 13 of "mult_1_run.tcl" was called 15007 times. The first character of the
+command is the 129th character in the file (counting EOL as one character),
+and the command consists of 10 characters.</P>
+
+<P>You can view profiling information for both of the tutorial projects in the
+files "mult_1.csv" and "mult_2.csv", located in the same directory as the tutorial
+files.</P>
+
+</BODY>
+
+</HTML>

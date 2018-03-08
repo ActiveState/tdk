@@ -1,0 +1,65 @@
+
+Specification of option widget for compiler
+===========================================
+
+Refs:	compiler/UI_spec.txt,	ui_cto
+	compiler/Code_spec.txt,	tclpro::compiler::optionWidget
+
+API
+	Options
+		-variable	Variable to store the information
+				gathered by the UI into.
+		-foreground	(-fg) Forground color.
+		-background	(-bg) Backgrund color.
+		-errorbackground
+				Background color for error states.
+				Default = "coral"
+		-font		Font for internal widgets
+
+	Methods
+		/NONE/
+
+	Keys used in linked variable (variable is accessed as array!)
+
+	     force		(-force)	Boolean
+	     out		(-out)		String	Destination/Out directory
+	     prefix		(-prefix)	Enum	[none,auto,tag,path]
+	     prefix,path			String	Prefix file
+	     ok					Boolean
+	     errmsg				String	Error message, set iff !ok
+
+Internals
+	Widgets
+
+	.force	CheckBox	"Force overwrite", <=> var(force), Boolean
+
+	.out	LabelFrame	"Destination directory"
+	.out.b	Button		"..."	     Invoke tk_chooseDirectory <=> var(out)
+	.out.e	Entry		<=> var(out) String
+
+	.pfx	LabelFrame	"Prefix"
+	.pfx.rn	Radiobutton	"None", <=> var(prefix) = "none"
+	.pfx.ra	Radiobutton	"Auto", <=> var(prefix) = "auto"
+	.pfx.rt	Radiobutton	"Tag",  <=> var(prefix) = "tag"
+	.pfx.rp	Radiobutton	"Path", <=> var(prefix) = "path"
+	.pfx.b	Button		"..."	     Invoke tk_getOpenFile <=> var(prefix,path)
+	.pfx.e	Entry		<=> var(prefix,path) String
+
+	Placement
+
+	.force	Top Left
+	.out	below .force,	full width
+	.pfx	below .out,	full width
+
+	.out.*	Grid, Left to right: .b .e
+	.pfx.*	Grid, Top to Bottom: .rn .ra .rt .rp
+		      Left to right: .rp .b .e
+
+	Other information
+
+	var(out)		ok iff (empty || ([exists] && [isdir] && [writeable]))
+				!ok => background -errorbackground
+	var(prefix,path)	ok iff ((prefix == "path") => [exists] && [isfile] && [readable])
+				!ok => background -errorbackground
+
+	var(ok)			iff "out ok" && ("prefix,path ok" && (prefix == "path"))

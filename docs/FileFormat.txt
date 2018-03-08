@@ -1,0 +1,220 @@
+TclDevKit Project File Format Specification, 2.0
+=============================================
+
+<< Internal documentation >>
+<< We might consider to release this as part of the TclDevKit documentation >>
+
+<<
+        Usage of compiler in wrapper - did we determine if we should do
+        do this in 2.0 final ? If yes, it should go into the file format
+        too.
+>>
+
+
+*       The format is version 2.0 because the TclDevKit Debugger
+        currently already is able to save and load his own project
+        files. This format is designated
+
+                "TclDevKit Project File Format 1.0"
+
+*       Versioning of the specification and the format.
+
+        For backward compatible changes we have to increment the minor
+        version number of the file format specification.
+
+        For incompatible changes we have to increment the major
+        version number of the file format specification.
+
+*       Tool policy with regard to different file versions.
+
+        When reading a file of version X the tool will write changes
+        back as version X, except if changes require the usage of a
+        higher format Y > X. In that case the tool will report back
+        and ask the user if version X or Y shall be used. If the user
+        chooses Y the file will be handled as version Y from then
+        on.
+
+        The query should list which changes/features makes the higher
+        version necessary.
+
+
+*       Basic properties of the format:
+
+        =       Plain text, no binary data
+
+        =       Line-oriented, especially header and trailer.
+
+        =       Contents can be evaluated as a Tcl script. The
+                available commands are highly restricted
+                howeever. This avoids security problems.
+
+        =       The available commands are tool specific.
+
+*       Required commands, used by all tools.
+
+        (1)      format  {TclDevKit Project File}
+        (2)      fmtver  2.0
+        (3)      fmttool ... ___
+
+        These three commands have to appear in the first three lines
+        of any version 2.0 TclDevKit Project File, and in the exact
+        formatting shown above. Instead of "..." and "___" the third
+        line has to contain the name and version of the tool which
+        wrote the file.
+
+        The recognized strings are
+
+         | String               | Tool
+        -+----------------------+------------------
+         | {TclDevKit Debugger} | TclDevKit Debugger
+         | {TclDevKit Compiler} | TclDevKit Compiler
+         | {TclDevKit Wrapper}  | TclDevKit Wrapper
+        -+----------------------+------------------
+
+*       Tool specific commands
+
+        Debugger
+
+                All the keywords defined by "TclDevKit Project File Format 1.0"
+                are available as commands. In addition 'varTransformList' is
+                available. The contents of command/key 'watchList' have
+                changed in 2.0., they contain information about display
+                transformations now too.
+
+        The keywords are
+
+         | Keyword/Command      | Type          | Notes 
+        -+----------------------+---------------+-------------------------------
+         | appScript            | Path          | Script to debug
+         | appArg               | List (String) | List of application arguments
+         | appDir               | Path          | Working directory fo application
+         | appInterp            | Path          | Interpreter executing the application
+         | appScriptList        | List (Path)   | xxxList = List of choices
+         | appArgList           | List (List)   | for xxx, as shown in
+         | appDirList           | List (Path)   | the comboboxes
+         | appInterpList        | List (Path)   |
+         | appType              | Enum          | (local,remote)
+         | breakList            | List          | List of breakpoints
+         | errorAction          | Int/Bool ?    | ????
+         | dontInstrument       | Glob          | Pattern for proc names excluded from instrumentation
+         | doInstrument {*}     | Glob          | Pattern for proc names to instrument
+         | instrumentDynamic    | Boolean       | Instrument dynamically generated code, yes/no
+         | instrumentIncrTcl    | Boolean       | Instr. [Incr Tcl] cmds
+         | instrumentExpect     | Boolean       | Instr. Expect cmsd
+         | instrumentTclx       | Boolean       | Instr. TclX cmds
+         | autoLoad             | Boolean       | ????
+         | portRemote           | Integer       | Port for remote debugging
+         | projVersion          | Major.Minor   | fmtVersion - Repeat
+         | prevViewFile         | Path          | Last file shown in display
+         | watchList            | List          | List of watchpoints [x]
+         | varTransformList     | List          | Association of variables with
+         |                      |               | display transformations. [/]
+        -+----------------------+---------------+-------------------------------
+
+        [x] List of List of Variable names and the names of display transformations.
+                Structure = {{VN DT} ...}
+
+        [/] List of List of Variable names, stack levels and the names of display
+            transformations.
+                Structure = {{VN SL DT} ...}
+
+
+        Compiler
+
+         | Keyword/Command      | Type          | Notes 
+        -+----------------------+---------------+-------------------------------
+         | DestinationDir       | Path          | An empty vlaue is allowed. If
+         |                      |               | the value is not empty it
+         |                      |               | defines the directory to write
+         |                      |               | the generated .tbc files to.
+        -+----------------------+---------------+-------------------------------
+         | Prefix/Mode          | Enum          | "none", "auto", "tag", "path"
+        -+----------------------+---------------+-------------------------------
+         | Prefix/File          | Path          | << Prefix/Mode == path >>
+         |                      |               | implies that this value is not
+         |                      |               | empty and contains the path to
+         |                      |               | the file whose contents are to
+         |                      |               | be used as prefix of the gen-
+         |                      |               | erated .tbc files. For any
+         |                      |               | other value of Prefix/Mode the
+         |                      |               | value of Prefix/File is not
+         |                      |               | relevant and ignored.
+        -+----------------------+---------------+-------------------------------
+         | Files                | List (Path)   | List of files to compile.
+        -+----------------------+---------------+-------------------------------
+         | ForceOverwrite       | Boolean       | ...
+        -+----------------------+---------------+-------------------------------
+
+        Wrapper
+
+         | Keyword/Command      | Type          | Notes 
+        -+----------------------+---------------+-------------------------------
+         | App/Code             | Script        | Special initialization code
+         |                      |               | for the application.
+        -+----------------------+---------------+-------------------------------
+         | App/Args             | List (String) | Arguments to deliver to the
+         |                      |               | application upon startup of
+         |                      |               | the wrapped executable.
+        -+----------------------+---------------+-------------------------------
+         | Files                | List [*]      | The files to wrap. See [*].
+        -+----------------------+---------------+-------------------------------
+         | System/Verbose       | Boolean       | ...
+        -+----------------------+---------------+-------------------------------
+         | System/TempDir       | Path          | Path to the working directory
+         |                      |               | to hold scratch files created
+         |                      |               | by the wrapper during the
+         |                      |               | wrapping process.
+        -+----------------------+---------------+-------------------------------
+         | Wrap/Compile/Tcl     | Boolean       | When set the wrapper will com-
+         |                      |               | pile all .tcl files into .tbc
+         |                      |               | files and wrap the compiled
+         |                      |               | files instead of the original
+         |                      |               | sources.
+         | Wrap/BaseExecutable  | Path          | The file to use as wrap-stub.
+        -+----------------------+---------------+-------------------------------
+         | Wrap/Output          | Path          | The name and location of the
+         |                      |               | file to be generated by the
+         |                      |               | wrapper.
+        -+----------------------+---------------+-------------------------------
+         | Wrap/TclLibraryDir   | Path          |
+        -+----------------------+---------------+-------------------------------
+         | Wrap/Specification   | List (T D)    | T = Type of the wrap specifi-
+         |                      |               |     cation, one of
+         |                      |               |     "builtin", or "path".
+         |                      |               | D = Detail for type.
+         |                      |               |     builtin : Name of builtin
+         |                      |               |     path: Path to the specifi-
+         |                      |               |     cation file.
+        -+----------------------+---------------+-------------------------------
+
+        [*] A list of file specifications, where each specification is
+            in itself a list, of either two or three elements. The
+            first element of each specification is its type, followed
+            by the path. Dependent on the type a detail element may
+            follow.
+
+             | Type     | Detail        | Meaning
+            -+----------+---------------+---------------------------------------
+             | file     | No            | Path is a file to wrap.
+            -+----------+---------------+---------------------------------------
+             | directory| Yes           | Path is a directory. Detail is a list
+             |          |               | of file specifications relative to the
+             |          |               | directory. This sub list must not con-
+             |          |               | tain 'directory' specifications.
+            -+----------+---------------+---------------------------------------
+             | startup  | No            | "file" + This file is the one to exe-
+             |          |               | cute to start the application. Allowed
+             |          |               | only once. Allowed to be missing.
+            -+----------+---------------+---------------------------------------
+             | glob     | No            | Glob pattern specifying files to wrap.
+            -+----------+---------------+---------------------------------------
+
+*       Extensibility
+
+        Adding a new keyword to the required or tool-specific sections
+        above is a backward compatible change, if the keyword does not
+        influence the behaviour of existing keywords, or if it does
+        its absence implies the previously defined behaviour.
+
+        Changing the meaning of an existing keyword or deleting it is
+        a backward incompatible change.

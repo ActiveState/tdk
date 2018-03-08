@@ -1,0 +1,2104 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<HTML>
+<HEAD>
+<LINK REL="STYLESHEET" HREF="aspn.css" TYPE="text/css">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<TITLE>Tcl Dev Kit - Debugger</TITLE>
+</HEAD>
+
+<body marginheight="5" topmargin="5" marginwidth="10" leftmargin="10">
+
+@header@
+
+<hr size="1" noshade width="100%">
+
+<a name="top"></a>
+
+<H1>Debugger</H1>
+
+<p>The Tcl Dev Kit Debugger provides a variety of features that help you to find and fix bugs in Tcl scripts quickly. These features include:
+<ul>
+    <li><a class="doc" href="#stepping">Stepping functions</a> for evaluating single Tcl commands, or running to the current cursor position in the code</LI>
+    <li>Display of <a class="doc" href="#variable_display">variable values</a> for all accessible stack frames</LI>
+    <li>Full <a class="doc" href="#stack_display">stack information and navigation</a> around the stack and source code when the application is stopped</LI>
+    <li><a class="doc" href="#line">Line-based</a> and <a class="doc" href="#variable">variable-based</a> breakpoints</LI>
+    <li>An <a class="doc" href="#ManData">Eval Console</a> in which you can enter code for the application to evaluate dynamically when the application is stopped</LI>
+    <li>Code <a class="doc" href="#profiling">coverage and profiling</a></LI>
+    <li>The ability to <a class="doc" href="#interrupt">interrupt code</a> to determine the execution status of the application that you are debugging</LI>
+    <li>The ability to <a class="doc" href="#DebugRemote">communicate with remote and embedded</a> applications</LI>
+    <li>The ability to <a class="doc" href="#mult_processes">debug multiple processes</a></li>
+</ul>
+
+<h2><a name="overview">Overview</a></H2>
+
+<p>This section lists the platforms and Tcl versions that the Tcl Dev Kit Debugger supports. It then describes how to start
+the Tcl Dev Kit Debugger and provides a tour of the Tcl Dev Kit Debugger main window.
+
+<h3>Supported Tcl Versions</H3>
+
+<p>The Tcl Dev Kit Debugger can debug any Tcl/Tk script running in a Tcl version 7.6 and Tk version 4.2 or later
+interpreter. This includes any extensions to those interpreters that do not radically redefine any standard Tcl commands.
+
+<P><Strong>Important</strong>: Renaming or radically redefining any standard Tcl commands may cause
+the Tcl Dev Kit Debugger to fail. An example of a radical redefinition of the <strong>
+proc</strong> command would be to redefine it to take four arguments instead of three.
+In particular, avoid altering the Tcl commands listed below:</P>
+
+<TABLE cellspacing="6">
+    <TR>
+        <TD ROWSPAN="1" COLSPAN="1">
+            <p>array</P>
+        </TD>
+        <TD ROWSPAN="1" COLSPAN="1">
+            <p>break</P>
+        </TD>
+        <TD ROWSPAN="1" COLSPAN="1">
+            <p>catch</P>
+        </TD>
+        <TD ROWSPAN="1" COLSPAN="1">
+            <p>cd</P>
+        </TD>
+        <TD ROWSPAN="1" COLSPAN="1">
+            <p>close</P>
+        </TD>
+        <TD ROWSPAN="1" COLSPAN="1">
+            <p>concat</P>
+        </TD>
+        <TD ROWSPAN="1" COLSPAN="1">
+            <p>continue</P>
+        </TD>
+    </tr>
+    <tr>
+        <TD ROWSPAN="1" COLSPAN="1">
+            <p>eof</P>
+        </TD>
+        <TD ROWSPAN="1" COLSPAN="1">
+            <p>error</P>
+        </TD>
+        <TD ROWSPAN="1" COLSPAN="1">
+            <p>eval</P>
+        </TD>
+        <TD ROWSPAN="1" COLSPAN="1">
+            <p>event</P>
+        </TD>
+        <TD ROWSPAN="1" COLSPAN="1">
+            <p>exit</P>
+        </TD>
+        <TD ROWSPAN="1" COLSPAN="1">
+            <p>expr</P>
+        </TD>
+        <TD ROWSPAN="1" COLSPAN="1">
+            <p>fconfigure</P>
+        </TD>
+    </tr>
+    <tr>        
+        <TD ROWSPAN="1" COLSPAN="1">
+            <p>file</P>
+        </TD>
+        <TD ROWSPAN="1" COLSPAN="1">
+            <p>fileevent</P>
+        </TD>
+        <TD ROWSPAN="1" COLSPAN="1">
+            <p>flush</P>
+        </TD>
+        <TD ROWSPAN="1" COLSPAN="1">
+            <p>for</P>
+        </TD>
+        <TD ROWSPAN="1" COLSPAN="1">
+            <p>foreach</P>
+        </TD>
+        <TD ROWSPAN="1" COLSPAN="1">
+            <p>gets</P>
+        </TD>
+        <TD ROWSPAN="1" COLSPAN="1">
+            <p>global</P>
+        </TD>
+    </tr>
+    <tr>        
+        <TD ROWSPAN="1" COLSPAN="1">
+            <p>if</P>
+        </TD>
+        <TD ROWSPAN="1" COLSPAN="1">
+            <p>incr</P>
+        </TD>
+        <TD ROWSPAN="1" COLSPAN="1">
+            <p>info</P>
+        </TD>
+        <TD ROWSPAN="1" COLSPAN="1">
+            <p>lappend</P>
+	</TD>
+<TD ROWSPAN="1" COLSPAN="1">
+<p>lindex</P>
+</TD>
+<TD ROWSPAN="1" COLSPAN="1">
+<p>linsert</P>
+</TD>
+<TD ROWSPAN="1" COLSPAN="1">
+<p>list</P>
+</TD>
+    </tr>
+    <tr>
+<TD ROWSPAN="1" COLSPAN="1">
+<p>llength</P>
+</TD>
+<TD ROWSPAN="1" COLSPAN="1">
+<p>lrange</P>
+</TD>
+<TD ROWSPAN="1" COLSPAN="1">
+<p>lreplace</P>
+</TD>
+<TD ROWSPAN="1" COLSPAN="1">
+<p>lsearch</P>
+</TD>
+<TD ROWSPAN="1" COLSPAN="1">
+<p>namespace</P>
+</TD>
+<TD ROWSPAN="1" COLSPAN="1">
+<p>open</P>
+</TD>
+<TD ROWSPAN="1" COLSPAN="1">
+<p>proc</P>
+</TD>
+    </tr>
+    <tr>
+<TD ROWSPAN="1" COLSPAN="1">
+<p>puts</P>
+</TD>
+<TD ROWSPAN="1" COLSPAN="1">
+<p>pwd</P>
+</TD>
+<TD ROWSPAN="1" COLSPAN="1">
+<p>read</P>
+</TD>
+<TD ROWSPAN="1" COLSPAN="1">
+<p>regexp</P>
+</TD>
+<TD ROWSPAN="1" COLSPAN="1">
+<p>regsub</P>
+</TD>
+<TD ROWSPAN="1" COLSPAN="1">
+<p>rename</P>
+</TD>
+<TD ROWSPAN="1" COLSPAN="1">
+<p>return</P>
+</TD>
+    </tr>
+    <tr>
+<TD ROWSPAN="1" COLSPAN="1">
+<p>set</P>
+</TD>
+<TD ROWSPAN="1" COLSPAN="1">
+<p>string</P>
+</TD>
+<TD ROWSPAN="1" COLSPAN="1">
+<p>switch</P>
+</TD>
+<TD ROWSPAN="1" COLSPAN="1">
+<p>trace</P>
+</TD>
+<TD ROWSPAN="1" COLSPAN="1">
+<p>unset</P>
+</TD>
+<TD ROWSPAN="1" COLSPAN="1">
+<p>uplevel</P>
+</TD>
+</TR>
+<TR>
+<TD ROWSPAN="1" COLSPAN="1">
+<p>upvar</P>
+</TD>
+<TD ROWSPAN="1" COLSPAN="1">
+<p>variable</P>
+</TD>
+<TD ROWSPAN="1" COLSPAN="1">
+<p>vwait</P>
+</TD>
+<TD ROWSPAN="1" COLSPAN="1">
+<p>while</P>
+</TD>
+</TR>
+</TABLE>
+
+<h3>Starting the Tcl Dev Kit Debugger </H3>
+
+<p>To run the Tcl Dev Kit Debugger on a Windows system, select <b>Tcl Dev Kit Debugger</b> 
+from the Tcl Dev Kit program group on the Windows Start menu, or double-click the 
+<i>tcldebugger.exe</i> file (the default location is C:\Tcl\bin). Alternatively,
+enter <code>tcldebugger.exe</code> at the command prompt. To enable
+<a class="doc" href="#profiling">Code Profiling and Coverage</a>,
+select <strong>File|Project Settings</strong> and choose one of the options on the
+<strong>Coverage &amp; Profiling</strong> tab.</p>
+
+<p>To run the Tcl Dev Kit Debugger on a Unix system, enter <code>tcldebugger</code> 
+at the shell prompt.</p>
+
+<h3>The Tcl Dev Kit Debugger Main Window</H3>
+
+<p>The main window is made up of the following components:
+
+<ul>
+    <li>Toolbar</LI>
+    <li>Stack Frames display</LI>
+    <li>Variable display</LI>
+    <li>Code display</LI>
+    <li>Result display</LI>
+</UL>
+
+<IMG SRC="images/Debugger-1.gif">
+
+<p>The menus and toolbar in the main window are used run, step through, interrupt,
+kill, or restart your code. You can change the appearance of the Tcl Dev Kit Debugger
+by toggling the display of elements in the main window from the View menu:
+
+<ul>
+    <li><strong>Toolbar</strong> - Select <strong>View|Toolbar</strong>.</li>
+    <li><strong>Result display</strong> - Select <strong>View|Result</strong>.</li>
+    <li><strong>Status bar</strong> - Select <strong>View|Status</strong>.</li>
+    <li><strong>Line numbers</strong> - Select <strong>View|Line Numbers</strong>.</li>
+</ul>
+
+<H4><a name="DebugToolBar">The Toolbar</a></H4>
+
+<p>The function of each button is described in the following sections.</p>
+
+<IMG SRC="images/Debugger-2.gif">
+
+<p>When you hover the mouse over a toolbar button, a description of the functionality
+appears as a pop-up below the mouse pointer and on the left side of the status bar.</p>
+
+<h4><a name="stack_display">The Stack Frames Display</a></h4>
+
+<p>The Stack Frames display shows the most recent stack levels and highlights the current location in your code when
+the application is stopped. If you select a stack level, the Tcl Dev Kit Debugger shows the code and variable values for
+that stack level in the Code display and the Variable display. When the application encounters a breakpoint, the
+last stack frame is automatically selected and highlighted in the Stack Frame display. The call stack includes an
+entry for each distinct scope or body of code. It displays stack frame information in this format: stack level,
+Tcl command, and relevant arguments. Stack level 0 indicates the global level. Stack level 1 indicates that a
+procedure is invoked from level 0; stack level 2 indicates that a procedure is invoked from stack level 1, and so on.
+
+<p><strong>Note</strong>: If your code is in an event loop when you click the Pause button, no code is shown
+in the Code display and the top level in the stack frame displays &quot;event.&quot;
+
+<p>The following example shows a sample stack frame:
+
+
+<pre>
+0 global
+0 source myScriptFile
+1 proc myProc arg1 arg2 arg3
+2 namespace eval myNamespace
+3 proc myproc3
+0 uplevel
+1 proc myproc3 args
+</pre>
+
+
+
+<p>In this example, the stack level is reset to 0 by the <strong>uplevel</strong> command; the <strong>uplevel</strong>
+ command can be called explicitly in your source code or implicitly by a callback. As with any other procedure call, the <strong>
+namespace eval</strong> command creates a new level.
+
+<p>You can navigate through the application by clicking on specific stack frames, which affects both the Variable and
+Code displays. When you double-click any part of a stack frame, the Code display scrolls to and highlights the current
+command in that stack frame. For example, if you want to see the code that caused a stack frame to be created,
+you can double-click the frame directly above the frame in question. In addition to highlighting the current command,
+if the last stack frame is selected, the Tcl Dev Kit Debugger indicates the current command with a yellow Run Arrow in the Code
+bar. The Tcl Dev Kit Debugger also indicates the current command with a green triangular History Arrow in the Code bar. When
+you click a stack frame, the Variable display shows the variables in that stack frame. For example, if you want to see
+global variables, you can double-click any Level 0 stack frame. If you click directly on an argument in a <strong>
+proc</strong> stack frame, the Variable window scrolls to and highlights the selected argument.
+
+<h4><a name="variable_display">The Variable Display</a></h4>
+
+<p>The Variable display shows all of the existing variables in the selected 
+stack frame. The value of each variable is updated whenever the application is 
+stopped. The value for each array appears as an ellipsis (...). You can expand
+and contract the display of the array by clicking the ellipsis. When an array 
+is expanded, each index is listed with its corresponding value.</p> 
+
+<p>To set a variable breakpoint, click the breakpoint margin to the left of the 
+variable display. The application will stop whenever the variable is modified. 
+See <a class="doc" href="#ManBreak">Manipulating Breakpoints</a> for more 
+information.</p>
+
+<p>When a variable value exceeds the size of the display, double-click the 
+variable to open the Data Display window, which will show the entire value. 
+See <a class="doc" href="#DisplayingData">Displaying Data</a> for more 
+information.</p>
+
+<p><em><u>Variable Value Formats</u></em></p>
+
+<p>In each of the windows where variable values are displayed (the Variable 
+pane, the <a class="doc" href="#DisplayingData">Data Display window</a> 
+and the <a class="doc" href="#watch_var">Watch Variables window</a>), 
+you can configure the format in which the variable values are displayed. 
+Right-click the variable in the Variable pane and select the desired format.
+The following formats are supported:</p>
+
+<ul>
+  <li><strong>String: As Hex</strong></li>
+  <li><strong>String: As Octal</strong></li>
+  <li><strong>String: As Unicode</strong></li>
+  <li><strong>Integer: As Hex</strong> (must be an integer)</li>
+  <li><strong>Integer: As Octal</strong> (must be an integer)</li>
+  <li><strong>Integer: As Bits</strong> (must be an integer)</li>
+</ul>
+
+<p>If the chosen format is not appropriate for the specified variable (for 
+example, selecting <strong>Integer: As Hex</strong> for a variable that 
+contains a non-numeric string), the format transformation will not be 
+performed.</p> 
+
+<p>When specifying the format for variable values, note that the format 
+specified in either the Variable pane or the 
+<a class="doc" href="#watch_var">Watch Variables window</a> will be inherited 
+by the <a class="doc" href="#DisplayingData">Data Display window</a> 
+(depending on which source was used to call the Data Display window).</p>
+
+
+<p>If the message &quot;No variable info for this stack&quot; appears in the Variable display, it means that the
+stack level that is highlighted in the Stack display is hidden. Stack levels are hidden as a result of calls to Tcl
+commands like <strong>vwait</strong> and <strong>uplevel</strong>. When <strong>vwait</strong> is called, it creates a new
+stack, and all of the non-zero levels of the old stack are hidden until the <strong>vwait</strong> call returns. When <strong>
+uplevel</strong> is called with the absolute level for <i>x</i>, all of the levels of the old stack that are greater than <i>x</i>
+ are hidden until the <strong>uplevel</strong> call returns.</p>
+
+<h4><a name="Code_Display">The Code Display</a></h4>
+
+<p>The Code display shows exactly one Tcl code source at a time. A code source is a file opened from the File
+menu, a file that has been sourced by the application, or a chunk of code dynamically created at runtime by
+commands such as <strong>eval</strong>. The Window menu lists all the open files, allowing you to select the file you
+want to view. You can also select a code source to view from the Breakpoint and Procedures windows.
+See <a class="doc" href="#UsingBreak">Using Breakpoints and Finding Procedures</a>.</p>
+
+<p>When the application is stopped, an arrow or triangle appears in the code bar indicating the current command
+with highlighted text. For example, in the Tcl Dev Kit Debugger main window, the portion of the code that is highlighted
+is code that is about to be executed and it is also indicated by the yellow run arrow in the code bar. Code is also
+highlighted if it is found using the Find command. See <a class="doc" href="#GoingToALine">Going to a Specified Line</a> for information on commands that
+you can use to move through and search for specific portions of code.
+
+<p>If you see the message &quot;No Source Code...&quot; in the Code display, 
+there are two possible reasons:
+
+<ul>
+    <li>If your application is in the event loop when you click the Pause button, 
+    the Tcl Dev Kit Debugger cannot display code because no code is being evaluated.</LI>
+    <li>The Tcl Dev Kit Debugger cannot display code for the first stack level 
+    labeled &quot;global&quot; because your application's code is sourced by 
+    code internal to the Tcl Dev Kit Debugger.</LI>
+</UL>
+
+<h4>The Status Bar</h4>
+
+<p>The status bar is located at the bottom of the Tcl Dev Kit Debugger. The section 
+on the left displays the information about the state of the debugger session. If 
+you hover the mouse pointer over a toolbar button, this section of the status bar 
+will display a usage tip for the button.</p>
+
+<p>Errors and warnings are indicated by the red and yellow icons in the 
+middle of the status bar. The background color of these icons is configured 
+in the <a class="doc" href="#preferences">debugger preferences</a>.</p>
+
+<p>To the right of the errors and warnings icons, an asterisk (&quot;*&quot;) 
+will be displayed if the current code source is uninstrumented. See 
+<a class="doc" href="#Instrumentation">About Tcl Dev Kit Instrumentation</a> for 
+more information.</p> 
+
+<p>The far right portion of the status bar displays the current file name and 
+path and line number.</p>
+
+
+
+<h4>The Result Display</h4>
+
+<p>The Result display shows the result and completion code of the most recently executed Tcl command.
+The Result display is not a scrolling window; the Tcl Dev Kit Debugger displays only as much of the result as can fit
+in the Result display. You can double-click on the result to display it in the Data Display window
+(see <a class="doc" href="#DisplayingData">Displaying Data</a>).
+
+<p><strong>Note</strong>: The performance of the Tcl Dev Kit Debugger can decrease if your application produces
+particularly long results (for example, reading a large file into a variable) and you have the Result display
+visible. If you want to increase performance in cases like this, toggle off the Result display by selecting
+<strong>View|Result</strong>.</p>
+
+<a class="topText" href="#Top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+<h2><a name="managing">Managing Projects</a></H2>
+
+<p>You can manage multiple <i>projects</i> with the Tcl Dev Kit Debugger. The Tcl Dev Kit Debugger saves project information in files with the <i>
+.tpj</i> extension. Projects store a variety of information about an application including:
+<ul>
+<li>the name of the initial Tcl script</LI>
+<li>the interpreter</LI>
+<li>any command-line arguments you pass to the script</LI>
+<li>the current working directory</LI>
+<li>any line breakpoints you have set</LI>
+<li>any variables in your watch list</LI>
+</ul>
+
+<p>The file format for debugger projects changed after the first version
+of the Tcl Dev Kit. Version 1 .tpj files can still be opened by the debugger;
+changes to version 1 projects will still be stored in the version 1 format.
+However, information about variable value formatting cannot be stored in version
+1 project files. New projects use the latest .tpj format.</p>
+
+<p>By default, when the Tcl Dev Kit Debugger starts, it automatically reloads the last project you had open. You can change
+this behavior as described in Startup and Exit Preferences.
+
+<p><strong>Note</strong>: You must have a project open to perform any debugging actions.
+
+<h3>Creating a New Project</H3>
+
+<p>To create a new project:</p>
+
+<ol>
+    <LI>Select <strong>File|New Project</strong>. If you have a project already open,
+    Tcl Dev Kit Debugger prompts you to save that project.</LI>
+    <P>The Tcl Dev Kit Debugger Project window will open.</p>
+
+
+<IMG SRC="images/Debugger-3.gif"><br><br>
+
+    <li>Select <strong>Local Debugging</strong> to debug a Tcl script running normally on your system.
+    Select <strong>Remote Debugging</strong> only to debug a remote, embedded, or CGI Tcl application.
+    See <a class="doc" href="#DebugRemote">Debugging Remote, Embedded, and CGI Applications</a>
+    for information on remote debugging.</LI>
+    <li>In the <strong>Script</strong> field, type the path and name of the Tcl script to run, or click the
+    <strong>Browse</strong> button next to the field to locate the Tcl script.</LI>
+    <li>(Optional) In the <strong>Script Arguments</strong> field, type any script
+    arguments you want to pass to the script when you run it under the debugger.</LI>
+    <li>(Optional) In the <strong>Working Directory</strong> field, type the full
+    path of the directory that you want to use for the working directory inside the Tcl/Tk script.
+    If you don't specify a working directory, the Tcl Dev Kit Debugger uses the directory that
+    contains the Tcl script you are debugging.</LI>
+    <li>In the <strong>Interpreter</strong> field, type the path and name of the Tcl
+    interpreter or click the <strong>Browse</strong> button next to the field to
+    locate the interpreter. You can use the standard Tcl interpreter or a custom Tcl
+    shell. You can also choose one from the drop-down list, which contains a list of
+    Tcl interpreters set by your project defaults.</LI>
+</OL>
+
+<p><strong>Note</strong>: The Tcl Dev Kit Debugger works properly with most custom Tcl interpreters. However, if your
+interpreter doesn't accept as its first command-line argument a Tcl script to execute or if it doesn't pass
+subsequent command-line arguments to the script using the standard <i>argc</i> and <i>argv</i>
+Tcl variables, then you must take special steps to use your interpreter with the Tcl Dev Kit Debugger. See
+<a class="doc" href="#UsingCustomTcl">Using Custom Tcl Interpreters with the Tcl Dev Kit Debugger</a> for more information.</P>
+
+<p><strong>Tip</strong>: If there are one or more interpreters you commonly use, you can change your default
+project settings to include them in the Interpreter drop-down list:</P>
+
+<OL>
+    <li>Bring up the default project settings, as described in <a class="doc" href="#SetDefPro">Setting Default Project Settings</a>.</LI>
+    <li>Type the path and name of the Tcl interpreter or click the <strong>Browse</strong> button next to the field to locate
+    the first interpreter you want to appear in the drop-down list.</LI>
+    <li>Repeat for each interpreter that you want to add to the list.</LI>
+    <li>Save your default project settings.</LI>
+</OL>
+
+<P>The interpreters you specify are now available for all new projects you create afterwards.</P>
+
+<OL>
+    <li>The Instrumentation and Errors tabs allow you to fine tune the Tcl Dev Kit Debugger's control over your application as
+you debug it. See <a class="doc" href="#ChangeProSet">Changing Project Settings</a> for information on these tabs.</LI>
+    <li>Click the OK button to apply your choices and close the Project window, the Cancel button to cancel your
+choices and not open the new project, or the Apply button to apply your choices and keep the Project window open.</LI>
+</ol>
+
+<p>Once you create your new project, the Tcl Dev Kit Debugger displays the Tcl script file you specified in the Code display
+of the main window. The Tcl Dev Kit Debugger does not run the script until you tell it to do so, as described in
+<a class="doc" href="#ControlYourApp">Controlling your Application</a>.
+
+<h3>Opening an Existing Project</H3>
+
+<p>There are two ways that you can open an existing project in the Tcl Dev Kit Debugger:
+
+<ul>
+    <li>Select <strong>File|Open Project</strong>, and select the project file you want to open from the file browser displayed.</LI>
+    <li>Select <strong>File|Recent Projects</strong> and select the project file you want to open.</LI>
+</ul>
+
+<p>If you already have a project open, the Tcl Dev Kit Debugger asks if you want to save that project.</p>
+
+<p>When you open an existing project, the Tcl Dev Kit Debugger restores all of the project settings and breakpoints in effect
+when you saved the project. The Tcl Dev Kit Debugger also displays the Tcl script file that you were viewing when you saved the project.
+
+<h3>Saving a Project</H3>
+
+<p>To save a project, select <strong>File|Save Project</strong>. The first time you save a project, specify the file name and
+location for your project. The Tcl Dev Kit Debugger saves your project settings and any breakpoints and any watch variables you have set.
+
+<p>To save a project with a different name, select <strong>File|Save Project As</strong>.
+
+<h3>Closing a Project</H3>
+
+<p>To close a project, select <strong>File|Close Project</strong>. If you made
+changes, the Tcl Dev Kit Debugger asks if you want to save the project before closing it.
+
+<p>Closing a project closes the project file and clears all the Tcl Dev Kit Debugger displays.
+
+<h3><a name="ChangeProSet">Changing Project Settings</a></H3>
+
+<p>To change the settings of the current project, select <strong>File|Project Settings</strong>.
+The Tcl Dev Kit Debugger displays the Project window. From this window you can change
+the script, interpreter, instrumentation, error, and coverage and profiling settings
+for a project as described in the sections below.
+
+<p><strong>Note</strong>: Changes that you apply to your project settings while your application is running
+don't take effect until the next time you restart your application.
+
+<h4><a name="ChangeProApp">Changing Project Application Settings</a></h4>
+
+<p>The Application tab lets you select basic application settings such as the Tcl script
+to debug and the Tcl interpreter to use. The contents of the Application tab depend on the Debugging Type
+option you select:
+
+<ul>
+    <li><b>Local Debugging</b><BR>
+    Debug a Tcl script running normally on your system.</li>
+    <li><b>Remote Debugging</b><BR>
+    Debug a remote, embedded, or CGI Tcl application. See <a class="doc" href="#DebugRemote">Debugging Remote,
+    Embedded, and CGI Applications</a> for information on remote debugging.
+</ul>
+
+<p>If you select the Local Debugging option, the Application tab appears as shown
+below.</p>
+
+<IMG SRC="images/Debugger-4.gif">
+
+<p>You can change the following Local Debugging settings for a project:
+
+<ul>
+    <li><strong>Script Type</strong> -  the pathname of the Tcl script to run, or click the <strong>Browse</strong> button next to the field to locate the
+    Tcl script. You can also select the script from the drop-down list, which lists scripts that you have used
+    recently in this project.</li>
+    <li><strong>Script Arguments</strong> - Type any script arguments you want to pass to the script when you run it under the debugger.
+    You can also select the arguments from the drop-down list, which lists the arguments that you have specified
+    recently in this project.</li>
+    <li><strong>Working Directory</strong> - Type the full path of the directory that you want to use for the working directory inside
+    the Tcl/Tk script. If you don't specify a working directory, the Tcl Dev Kit Debugger uses the directory that contains
+    the Tcl script you are debugging. You can also select the working directory from the drop-down list, which lists
+    the working directories that you have used recently in this project.</li>
+    <li><strong>Interpreter</strong> - Type the path and name of the Tcl interpreter or click the <strong>Browse</strong> button next to the field to
+    locate the interpreter. You can use a standard Tcl interpreter or a custom Tcl shell. You can also choose one from
+    the drop-down list, which contains Tcl interpreters that have been installed in the standard locations on your
+    computer and any other Tcl interpreters that you have previously specified for this project.</li>
+</ul>
+
+<p><strong>Note</strong>: The Tcl Dev Kit Debugger works properly with most custom Tcl interpreters. However, if your
+interpreter doesn't accept as its first command-line argument a Tcl script to execute or if it doesn't pass subsequent
+command-line arguments to the script using the standard <i>argc</i> and <i>argv</i> Tcl variables, then you
+must take special steps to use your interpreter with the Tcl Dev Kit Debugger. See <a class="doc" href="#UsingCustomTcl">
+Using Custom Tcl Interpreters with the Tcl Dev Kit Debugger</a> for more information.
+
+<p>If you select the Remote Debugging option, the Application tab appears as
+shown below.</p>
+
+<IMG SRC="images/Debugger-5.gif">
+
+<p>The only application setting you can change when debugging remotely is the TCP port that the Tcl Dev Kit Debugger
+uses to communicate with the remote application. This is the port that you need to pass to <strong>debugger_init</strong>
+when starting your debugging session from a remote application. See <a class="doc" href="#DebugRemote">Debugging
+Remote, Embedded, and CGI Applications</a> for information on remote debugging.
+
+<p><strong>Note</strong>: Changes that you apply to your project settings (by clicking either the OK or Apply
+button) while your application is running don't take effect until the next time you restart your application.
+
+<h4><a name="ChangeProInst">Changing Project Instrumentation Settings</a></h4>
+
+<p>The Instrumentation tab lets you select files and classes of procedures that the Tcl Dev Kit Debugger should and should not instrument. Instrumenting a file gives the Tcl Dev Kit
+Debugger control over its execution, and allows you to set breakpoints, single-step through the file, and perform other
+debugging tasks. If a file is not instrumented, you can't perform debugging tasks while your application is executing
+the file (or procedures defined in that file). For more information about instrumentation, see <a class="doc" href="#Instrumentation">
+About Tcl Dev Kit Instrumentation</a>.
+
+<p>Some cases of when you would want to control which files are instrumented and which files are not include:
+<ul>
+    <li>When you use a common Tcl script library for several projects in your organization. In this case, you would most
+    likely debug the library separately and then instruct the Tcl Dev Kit Debugger not to instrument the library when you later
+    debug individual projects that use that library.</LI>
+    <li>When you debug large applications. Instrumenting a script takes time and slows the execution of your application.
+    To minimize the overhead of debugging, it is more efficient to instrument and debug portions of your application separately.</LI>
+</UL>
+
+<IMG SRC="images/Debugger-6.gif">
+
+<p>The top half of the Project Instrumentation dialog determines the files that the Tcl Dev Kit Debugger instruments.
+(By default, all files are instrumented.) The first list box identifies a set of files to instrument, and the second
+list box identifies a subset of exceptions that are not instrumented. File name patterns follow the "string match" pattern
+conventions. (See the Tcl "string manual page" in the ActiveTcl User Guide for more information on pattern syntax.)
+Whenever your application sources a script file, the Tcl Dev Kit Debugger compares the file name
+against the patterns you specify in this dialog to determine whether to instrument it. For example, setting
+the pattern &quot;app*.tcl&quot; in the first list box and &quot;*GUI.tcl&quot; in the second list box causes the
+Tcl Dev Kit Debugger to instrument files such as <i>appMain.tcl</i> and <i>appStats.tcl</i>, but not instrument a
+file named <i>appGUI.tcl</i>. The patterns will match file names in both absolute and relative paths.</p>
+
+<p>To add a pattern to a list box, type the pattern in the <strong>String Match Pattern</strong> field, and then
+click the <strong>Add</strong> button next to the appropriate list box. To remove a pattern from the list, click
+the file or pattern to highlight it, then click the <strong>Remove</strong> button.
+
+<p><strong>Note</strong>: If you delete all patterns in the first list box and then apply the setting (by clicking
+either the OK or Apply button), the Tcl Dev Kit Debugger automatically adds the pattern &quot;*&quot; to the first list
+box. If the Tcl Dev Kit Debugger didn't do this, then you could accidentally cause the Tcl Dev Kit Debugger not to instrument
+any files, in which case you couldn't control your application with the debugger.
+
+<p>The lower half of the Project Instrumentation dialog provides finer control of the instrumentation of procedures
+and control structures in a script file:
+
+<ul>
+    <li><strong>Instrument Dynamic Procs</strong> - Instrument procedures that you create dynamically. For example, selecting this
+    check box instruments procedures created by the <strong>eval</strong> command.</li>
+    <li><strong>Instrument Auto Loaded Scripts</strong> - Automatically instrument auto-loaded scripts. You might want to turn this
+    option off if you are using only standard Tcl extensions.</li>
+    <li><strong>Instrument [incr Tcl]</strong> - Instrument all your [incr Tcl] classes and methods.</li>
+    <li><strong>Instrument TclX</strong> - Instrument control structures in the TclX package, such as the <strong>loop</strong> command.</li>
+    <li><strong>Instrument Expect</strong> - Instrument the control structures in the Expect package, such as the <strong>expect</strong> command.</li>
+</ul>
+
+<p><strong>Note</strong>: Changes that you apply to your project settings (by clicking either the OK or Apply button)
+while your application is running don't take effect until the next time you restart your application.
+
+<h4>Changing Project Startup and Exit Settings</h4>
+
+<p>Use the Startup &amp; Exit tab to specify how the Tcl Dev Kit Debugger handles
+<a class="doc" href="#mult_processes">subprocesses</a>.</p>
+
+<ul>
+  <li><strong>Automatically add all spawnpoints to any newly loaded script</strong> - 
+  When debugging multiple processes, the Tcl Dev Kit Debugger detects lines
+  in the script containing <a class="doc" href="#spawn">spawn commands</a>
+  and automatically sets <a class="doc" href="#mult_processes">spawnpoints</a> in
+  the debugger's main window.</li>
+  <li><strong>Automatically kill a spawned sub-session when its application completes</strong> -
+  When debugging multiple processes, the Tcl Dev Kit Debugger will
+  automatically close the debugger's connection with a
+  <a class="doc" href="#mult_processes">subprocess</a> when the script for that
+  subprocess has run.</li>
+</ul>
+
+<IMG SRC="images/Debugger_Start_Exit.gif">
+
+<h4>Changing Project Error Settings</h4>
+
+<p>The Errors tab lets you specify how the Tcl Dev Kit Debugger handles errors in your Tcl script:
+<ul>
+    <li><strong>Always Stop on Errors</strong> - The Tcl Dev Kit Debugger notifies you each time it encounters an error in the script
+    (The Tcl Dev Kit stops execution of your script even if your script catches the error).</li>
+    <li><strong>Only Stop on Uncaught Errors</strong> - The Tcl Dev Kit Debugger notifies you only when it encounters an error not caught
+    by the script (The Tcl Dev Kit stops execution of your script only if your script does not catch the error).</li>
+    <li><strong>Never Stop on Errors</strong> - The Tcl Dev Kit Debugger does not notify you about any errors in the application.</li>
+</ul>
+
+<p><strong>Note</strong>: For more information on how the Tcl Dev Kit Debugger handles errors, see <a class="doc" href="#ErrorHandling">
+Error Handling</a>.
+
+<p><strong>Note</strong>: Changes that you apply to your project settings (by clicking either the OK or Apply
+button) while your application is running don't take effect until the next time you restart your application.</p>
+
+<IMG SRC="images/Debugger-7.gif">
+
+
+
+<h4><a name="ChangeProCoverage">Changing Project Coverage and Profiling Settings</a></h4>
+
+<p>The Coverage &amp; Profiling tab lets you choose to run the Tcl Dev Kit Debugger
+with coverage or profiling or neither. By default, new debugger projects run with
+neither coverage nor profiling. To change the setting, select
+<strong>File|Project Settings</strong>, and click the Coverage &amp; Profiling
+tab. The setting specified here will determine what type of results are displayed
+in the <a class="doc" href="#coverage_dialog">Code Coverage and Profiling dialog
+box</a> (<strong>Edit|Code Coverage</strong>). Select one of the following options:</p>
+
+<ul>
+  <li><strong>Neither coverage nor profiling</strong> - No lines are highlighted
+  during debugging and no results are reported in the Code Coverage &amp; Profiling
+  dialog box.</li>
+  <li><strong>Plain coverage</strong> - Depending on the options specified in
+  the Code Coverage &amp; Profiling dialog box, lines of either covered or
+  uncovered code will be highlighted, and details about files for which the debugger has
+  collected coverage information will be displayed in the Code Coverage and
+  Profiling dialog box. When you select this option, the Calls tab displays a table
+  indicating the number of calls to each line in each file executed by the debugger,
+  along with the file names and line numbers.</li>
+  <li><strong>Profiling</strong> - This option produces the same results as the "Plain
+  coverage" option (described above), and, additionally, the table on the Calls
+  tab reports the time required for the system to execute commands. This information
+  is contained in columns representing the minimum, maximum, and average time spent
+  on an executed command, relative to the entire run. All times are in microseconds.</li>
+</ul>
+
+<IMG SRC="images/Debugger_Cov_Prof.gif">
+
+<p>For more information see <a class="doc" href="#profiling">Code Profiling and Coverage</a>.</p>
+
+<h3><a name="SetDefPro">Setting Default Project Settings</a></H3>
+
+<p>You can change any of the default project settings so that new projects you create have those settings.
+Changing the default project settings doesn't affect any existing projects you might have.
+
+<p>For example, if you commonly use a set of packages that you don't want the Tcl Dev Kit Debugger to instrument,
+you could set those files in the default project settings. Then, any new project you create would pick up those
+instrumentation settings by default.
+
+<p>To set the default project settings:
+<ol>
+    <li>If you have a project already open, select <strong>File|Close Project</strong>
+    to close that project.</LI>
+    <li>Select <strong>File|Default Project Settings</strong>. (The Tcl Dev Kit
+    Debugger displays this option only if you have no projects currently open.) 
+    The Tcl Dev Kit Debugger displays the Default Project Settings window. This window has
+    the same tabs and settings available as in the Project window.</LI><br/><br/>
+
+<IMG SRC="images/Debugger-8.gif" /><p></p>
+
+    <li>Set the default project settings just as you set an individual project's settings.
+    See <a class="doc" href="#ChangeProSet">Changing Project Settings</a> for a
+    description of all project settings.</li>
+    <li>After changing the default project settings, click the <strong>OK</strong> button
+    to save your choices and close the Default Project Settings window, the <strong>Cancel</strong>
+    button to cancel your choices and close the Default Project Settings window, or the
+    <strong>Apply</strong> button to apply your choice and keep the Default Project Settings window open.</li>
+</ol>
+
+<a class="topText" href="#Top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+<h2><a name="opening_file">Opening a File</a></H2>
+
+<p>Opening a file in the Tcl Dev Kit Debugger gives you the opportunity to create or check existing line-based breakpoints
+in the file before the file is sourced in the application. Breakpoints cause the application to stop before a line
+of code is executed so that you can examine the state of the application that you are debugging. See <a class="doc" href="#UsingBreak">
+Using Breakpoints</a>.
+
+<p>To open a file:
+    
+<ol>
+    <li>Select <strong>File|Open File</strong>.</LI>
+    <li>Type the full path and name of the file or browse and click the file that you want to open.</LI>
+    <P>The file that you opened appears in the Tcl Dev Kit Debugger. You can view it using the scroll bars and menus. </P>
+</ol>
+
+<p><strong>Tip</strong>: You can open a file at any time, even when an application is already running. When
+you open a file, the Tcl Dev Kit Debugger reloads the file if the file has not been sourced by the running application or
+if no application is running. If the application is running and has sourced the file, modifications to that file cannot
+be seen in the Code display until that file is sourced again or the file is reopened after the
+application is terminated.</p>
+
+<a class="topText" href="#Top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+
+<h2><a name="ControlYourApp">Controlling Your Application</a></H2>
+
+<p>This section describes how to use the basic features of the Tcl Dev Kit Debugger. 
+
+<h3>Running Code with the Tcl Dev Kit Debugger</H3>
+
+<p>Click the Run button to run your code with the Tcl Dev Kit Debugger. When the application
+stops, the Tcl Dev Kit Debugger indicates the line of code that it is processing with an arrow and highlights the portion of the line
+that it is about to execute.
+
+<p>Once the application is running, it stops at these events:
+
+<ul>
+    <li>At breakpoints. For information about breakpoints, see <a class="doc" href="#UsingBreak">Using Breakpoints</a>.</LI>
+    <li>If an error is detected, the Tcl Dev Kit Debugger stops on the line of code that generated the error, and the code
+    that caused the error is highlighted. See <a class="doc" href="#ErrorHandling">Error Handling</a>.</LI>
+    <li>If you click the Run to Cursor icon in the toolbar, the application runs to the line where you placed your cursor.</LI>
+</UL>
+
+<h3>Run to Cursor </H3>
+
+<p>The Run to Cursor button lets you to create a temporary breakpoint that is automatically removed the next time the
+Tcl Dev Kit Debugger stops. When your application is stopped, you can move the cursor to the line of code where you want
+to stop, and press the Run To Cursor button.
+
+<p><strong>Note</strong>: If the application stops for any reason, such as encountering another breakpoint
+or reaching the line containing the cursor, the temporary breakpoint is removed. The operation of the Run
+to Cursor feature is similar to those of line-based breakpoints. If the cursor is not set, or if it is on a line that
+is either empty or contains only comments or curly braces, clicking the Run to Cursor button is equivalent
+to clicking the Run button. The application stops just before evaluating the first command on the line regardless
+of where you place the cursor on a line of code.
+
+<h3><a name="stepping">Stepping through Code</a></H3>
+
+<p>The Tcl Dev Kit Debugger offers four ways of stepping through your scripts: Step In, Step Out, Step Over, and Step
+To Result. When your application is stopped, you can step from the current command, indicated by the yellow run
+arrow in the code bar. To use the stepping features, click the corresponding button on the toolbar when your
+application is stopped. See <a class="doc" href="#DebugToolBar">The Toolbar</a> for a description of the buttons.</p>
+
+<p><strong>Note</strong>: If the application stops for any reason, such as encountering an error or breakpoint,
+after any of the Step buttons is pressed, the step is considered to be completed.
+
+<h4>Stepping In </h4>
+
+<p>The Step In feature provides the finest granularity at which you can stop and inspect your application.
+Stepping in causes the application to stop just before executing the next instrumented command. Stepping
+in is useful for following the control flow of your application as it sources files, calls procedures, and evaluates
+command substitutions.
+
+<p>For example, if your application is stopped on the command</p>
+
+<blockquote><code>myProc [incr x 5]</code></blockquote>
+
+<p>you can Step In and stop the application before it evaluates the subcommand <strong>
+incr x 5</strong>. You can Step In again to stop the application on the first line of code in the
+body of the <strong>myProc</strong> procedure.
+
+<p>The following list describes the rules of behavior for the Step In function:
+
+<ul>
+    <li>If the current command contains subcommands, the application stops just before evaluating the first subcommand. </LI>
+    <li>If the current command is a call to an instrumented procedure, and any existing subcommands have been
+    evaluated, the application stops on the first line of code in the body of the procedure.</LI>
+    <li>If the current command is a call to the <strong>source</strong> command, and any existing subcommands
+    have been evaluated, the application stops on the first line of code in the sourced file.</LI>
+    <li>If the current command is not a call to an instrumented procedure, and any existing subcommands have been
+    evaluated, the application stops on the first instrumented command called by the current command. </LI>
+    <li>If the current command does not call any instrumented code, then the Step In function behaves like the Step Over function.</LI>
+</UL>
+
+<h4>Stepping Out </h4>
+
+<p>Stepping out causes the application to stop before executing the next command after the current stack level
+or body of code returns. The Step Out feature is useful for backing out of code you are no longer interested in
+inspecting. For example: if you are stopped in the body of the <strong>myProc</strong> procedure in the following application:</p>
+
+<blockquote>
+<pre>
+1 source someFile.tcl
+2 myProc [incr x 5]
+3 myNextProc $x
+</pre>
+</blockquote>
+
+<p>and you would like to progress to the <strong>myNextProc $x</strong> command, you can Step Out of the <strong>
+myProc</strong> procedure, and then Step In the <strong>myNextProc</strong> procedure.
+
+<p>The following list describes the rules of behavior for the Step Out function:
+
+<ul>
+    <li>If the current command is in the body of a procedure, the application stops before executing the next command
+    after the procedure returns.</LI>
+    <li>If the current command is at the global level of a file that has been sourced, the application stops before executing
+    the next command after the code in the sourced file is evaluated.</LI>
+    <li>If the current command is at the global level of the main script file, clicking the Step Out button
+    behaves like clicking the Run button.</LI>
+</UL>
+
+<h4>Stepping Over </h4>
+
+<p>Stepping over causes the application to stop just before executing the next command after the current
+command in your application is fully executed. The Step Over feature is useful for following the application
+as it progresses through a body of code at the current stack level. For example, suppose you are stopped
+on line 1 in the following application:</p>
+
+<pre>
+1 source someFile.tcl
+2 set x 1
+3 myProc [incr x 5]
+4 puts $x
+</pre>
+
+<p>If you Step Over the <strong>source</strong> command, the application stops at <strong>set x 1</strong>.
+If you continue to click Step Over, <strong>myProc [incr x 5]</strong> becomes the new current command, followed by <strong>
+puts $x</strong>.
+
+<p>The following list describes the rules of behavior for the Step Over function:
+
+<ul>
+    <li>If the current command is a call to an instrumented procedure, the application stops before the
+    executing the next command after the procedure returns.</LI>
+    <li>If the current command is a call to the <strong>source</strong> command, the application stops before
+    the executing the next command after the code in the sourced file is evaluated.</LI>
+    <li>If the current command is the last one at the current stack level or in the current body of code,
+    Step Over behaves like Step Out.</LI>
+</UL>
+
+<h4>Stepping to Result</h4>
+
+<p>Stepping to Result executes the current command and stops execution. After using Step to Result,
+the Tcl Dev Kit Debugger highlights the command just executed and displays the result and return code of that
+command in the Command Results display of the debugger main window.
+
+<p>The Step to Result feature is useful for examining the results of nested commands. For example,
+suppose you click Step In at line 3 in the following application:</P>
+
+<pre>
+1 source someFile.tcl
+2 set x 1
+3 myProc [incr x 5]
+4 puts $x
+</pre>
+
+<p>If you click Step to Result, your application executes the subcommand and stops. You can then examine
+the result of the subcommand before continuing. By comparison, clicking Step In again at this point would
+execute the subcommand <strong>[incr x 5]</strong> and immediately Step In to <strong>myProc</strong>,
+and clicking Step Over would execute both the <strong>[incr x 5]</strong> subcommand and the call to <strong>
+myProc</strong> before stopping.
+
+<h3><a name="interrupt">Interrupting the Application</a></H3>
+
+<p>Clicking the Pause button causes the Tcl Dev Kit Debugger to interrupt the application while it is running. You can
+interrupt the application at any time; when you interrupt, an implicit breakpoint is added to the next command
+to be executed in the script. The application stops as it would at any other breakpoint, and you can then
+interact with the application.
+
+<p><strong>Note</strong>: If your code is in an event loop when you click the Pause button, no code is shown
+in the Code display and the top level in the stack frame displays &quot;<i>event</i>.&quot;
+
+<p><strong>Note</strong>: If your application is executing uninstrumented Code or is in a long-running
+command, the Tcl Dev Kit Debugger may not be able to stop the application immediately.
+
+<h3>Killing the Application</H3>
+
+<p>Clicking the Stop button causes the Tcl Dev Kit Debugger to end the application's process. When you kill the
+application that you are debugging, information about its state is no longer available. You can then
+restart the application or launch another application.
+
+<p><strong>Note</strong>: You cannot terminate remote applications using the Stop button. You can
+terminate a remote application by interrupting the application and typing &quot;exit&quot; in the Eval
+Console. See <a class="doc" href="#ManData">Manipulating Data</a>.</p>
+
+<h3>Restarting the Application </H3>
+
+<p>Click the Restart button to terminate the current application and then restart the same application.
+This is equivalent to killing the application and immediately restarting it. When you restart an application,
+the Tcl Dev Kit Debugger automatically reloads the main script. This is useful if you have modified the script to fix
+a bug and want to start the application over to test the change.
+
+<p>If you have modified files other than the main script and wish to set or change breakpoints in those
+files, you can open them by selecting <strong>File|Open File</strong> rather than viewing the stale
+files from the Window menu.
+
+<h3>Quitting the Tcl Dev Kit Debugger </h3>
+
+<p>To quit the Tcl Dev Kit Debugger, select <strong>File|Exit</strong>, or click the
+<strong>Close</strong> button in the Tcl Dev Kit main window.</p>
+
+<a class="topText" href="#Top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+<h2><a name="UsingBreak">Using Breakpoints</a></h2>
+
+<p>A breakpoint causes the application to stop so that you can examine its state. You can add breakpoints
+in an application at any time. Using breakpoints, you can obtain information, such as variables and their
+values, the current call stack, and valid procedure names. Tcl Dev Kit supports two types of breakpoints:
+"line-based" and "variable".
+
+<h3><a name="line">Line-based Breakpoints</a></H3>
+
+<p>Line-based breakpoints let you to specify a line of code where the application should stop. Line-based
+breakpoints cause the Tcl Dev Kit Debugger to stop before executing each command and subcommand on the specified
+line. Line-based breakpoints are persistent across runs of the application and debugger sessions.
+
+<p>The Tcl Dev Kit Debugger does not stop at line-based breakpoints that are set in uninstrumented lines of code,
+blank lines, comment lines, and lines that contain only curly braces. However, variable breakpoints can be
+triggered if the variable is modified in uninstrumented code. See <a class="doc" href="#Instrumentation">
+About Tcl Dev Kit Instrumentation</a> for information.
+
+<h3><a name="variable">Variable Breakpoints</a></H3>
+
+<p>Variable breakpoints cause the application to stop when the variable is modified. Variable-based breakpoints
+are not stored in the application after you close it, or when the variable is removed, unset, or goes out of scope,
+for example: a local variable in a procedure goes out of scope when the procedure returns.
+
+<p><strong>Note</strong>: The Variable breakpoints track the unique location where the variable is stored in
+memory rather than the name of the variable. You can not set a variable breakpoint until the variable exists in the application.
+
+<h3><a name="ManBreak">Manipulating Breakpoints</a></H3>
+
+<p>You can create breakpoints in the main Debugger window. To set a line-based breakpoint, click the code bar in the
+left margin in the Code display. The line-based breakpoint appears as a small stop sign, and causes the application
+to stop just before the line is executed.
+
+<p>To create a Variable breakpoint, click the left margin in the Variable display adjacent to the variable. The
+breakpoint appears as a large &quot;V&quot; in the Variable display. The &quot;V&quot; also appears in the
+code bar of the Code display when the variable breakpoint is triggered causing the application to stop. The
+variable breakpoint triggers when the value of the variable changes. You can also create
+and disable breakpoints from the Breakpoints submenu (<strong>Debug|Breakpoints</strong>)
+or in the <a class="doc" href="#BreakpointWin">Breakpoints window</a>.
+
+<p>To delete a breakpoint, click the breakpoint in the Code or Variable display.
+
+<h3><a name="BreakpointWin">Viewing Breakpoints in the Breakpoints Window</a></H3>
+
+<p>To display the Breakpoints window, click the &quot;B&quot; in the toolbar or select
+<strong>View|Breakpoints</strong>. The Breakpoints window displays
+line-based and variable breakpoints, as shown in
+<a class="doc" href="#BreakpointWin">The Breakpoints Window</a>.</p>
+
+<IMG SRC="images/Debugger-9.gif">
+
+<p>The line-based breakpoints in the Breakpoints window indicate the file and line number where the breakpoint
+has been set. To select a breakpoint, click the line to the right of the breakpoint in the Breakpoints window to
+highlight it. You can delete, disable, and enable breakpoints:
+
+<ul>
+    <li>To delete a breakpoint, select the line in the Breakpoints window and click the <strong>Remove</strong> button.</LI>
+    <li>To disable a breakpoint, click the breakpoint in the Breakpoints window. </LI>
+    <P>The disabled breakpoint is shown as a hollow stop sign for a line-based breakpoint or hollow &quot;V&quot;
+    for a variable-based breakpoint.</P>
+    <li>To enable a disabled breakpoint, click it in the Breakpoints window.</LI>
+    <P>Disabling and enabling breakpoints can be helpful when you want to keep all of your breakpoints
+    but may not want to use all of them at the same time.</P>
+</ul>
+
+<p><strong>Note</strong>: You can select multiple breakpoints to be disabled or enabled by clicking the
+breakpoints while pressing the Ctrl key.
+
+<p>You can perform the following actions on a selected breakpoint:
+<ul>
+    <li>Click the <strong>Show Code</strong> button to show the code at a line-based breakpoint. </LI>
+    <P>Clicking this button causes the Tcl Dev Kit Debugger to display the code
+    containing the corresponding line in the Code display.</P>
+    <li>Click the <strong>Remove</strong> button to remove a selected breakpoint.</LI>
+    <p>You can click the <strong>Remove All</strong> button to remove all of the breakpoints.
+</ul>
+
+<p>The information for a variable breakpoint in the Breakpoints window appears in the form of two sets.
+The first set contains the variable name followed by the absolute stack level at which the variable breakpoint was created.
+The second set contains information regarding the last time the variable breakpoint was triggered.
+If the second set is empty, the variable breakpoint has never been triggered. Otherwise, the second set contains
+the name and stack level of the variable that triggered the variable breakpoint. In most cases, the second
+set will not differ from the first set. However, when a variable is aliased by the
+<strong>global</strong> and <strong>upvar</strong> commands, any instance of
+that variable can trigger the variable breakpoint. The second set is helpful when you have an aliasing bug in your code.
+
+<p>The following is an example of an aliased variable <i>a</i> whose variable breakpoint gets triggered by a
+variable named <i>x</i>:
+
+<blockquote><pre>
+1 proc foo {} {
+2     upvar #0 a x
+3     set x 52
+4 }
+5 set a 50
+6 puts &quot;global var a is set&quot;
+7 set a 51
+8 foo
+</pre>
+</blockquote>
+
+<p>If you stop this application on line 6, you can create a variable breakpoint for the global variable <i>a</i>.
+If you open the Breakpoints window, you will see the following:
+
+<blockquote>
+<code>
+{a: 0} {: }
+</code>
+</blockquote>
+
+<p>If you continue to run the application, the variable breakpoint is triggered on line 7. The following appears in
+the Breakpoints window:
+
+<blockquote>
+<code>
+{a: 0} {a: 0}
+</code>
+</blockquote>
+
+<p>If you continue to run the application again, the variable breakpoint is triggered once more on line 3.
+The following appears in the Breakpoints window:
+
+<blockquote>
+<code>
+{a: 0} {x: 1}
+</code>
+</blockquote>
+
+<a class="topText" href="#Top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+<h2><a name="mult_processes">Debugging Multiple Processes</a></H2>
+
+<p>The Tcl Dev Kit Debugger can debug subprocesses (and threads) that
+are "spawned" from a debugging session. These subprocesses are
+launched by modifying your script and and setting "spawnpoints" at
+appropriate positions within the script. Spawnpoints are set similarly
+to breakpoints. If spawnpoints have been set, green arrows are
+displayed in the margin at the left of the Tcl Dev Kit Debugger's main
+window.</p>
+
+<p>Set and remove spawnpoints by right-clicking in the left margin in the
+Tcl Dev Kit Debugger's main window. Alternatively, select
+<strong>Debug|Breakpoints</strong>, and choose one of the spawnpoints options:</p>
+
+<ul>
+  <li><strong>Add All Spawnpoints</strong> Adds spawnpoints at all lines containing
+  <code>thread::create</code>, <code>spawn</code> and <code>exec</code> commands.</li>
+  <li><strong>Add Spawnpoint</strong> Adds a spawnpoint to the current line (as
+  indicated by the cursor).</li>
+  <li><strong>Disable Spawnpoint</strong> Disables a spawnpoint on the current
+  line (as indicated by the cursor).</li>
+</ul>
+
+
+<p>When you run the debugger with spawnpoints set, a new
+<a class="doc" href="#Code_Display">Code display</a> tab is launched for
+each spawned subprocess/thread. Once a subprocess has been spawned, you can
+<a class="doc" href="#ControlYourApp">debug</a> it as you would a regular session
+in the Tcl Dev Kit Debugger. To close the connection between the debugger and
+a subprocess, select <strong>Debug|Stop</strong> or click the
+<a class="doc" href="#DebugToolBar">Close active debugger connection</a> button
+on the toolbar.</p>
+
+<p><strong>Note</strong>: It is not possible to have multiple projects open in
+the debugger, with separate debugging sessions for each. The new sessions can
+only be subprocesses of the main session. Furthermore, data is not shared
+between sessions. Each session has its own breakpoints and file information.
+Only breakpoints and spawnpoints in the main session are saved and restored.</p>
+
+
+<h3><a name="spawn">Spawning a New Session</a></h3>
+
+<p>If you want to spawn a new session, you must modify the main script in a
+debugger project by adding the following <strong>proc</strong> command, along with
+a <strong>spawn</strong> command for each subprocess that you want to debug.
+Spawnpoints (indicated by green arrows) are then set at these lines. So, in the
+example shown below, the spawnpoints are set on the lines containing the spawn
+commands for <code>subprocess1.tcl</code> and <code>subprocess2.tcl</code>.</p>
+
+<pre>
+  proc spawn {cmd args} {
+       return [eval [linsert $args 0 \
+          exec [info nameofexecutable] $cmd]]
+  }
+  
+  puts "Running the profiled multipliers in parallel"
+  
+  spawn [file join [file dirname [info script]] subprocess1.tcl]
+  spawn [file join [file dirname [info script]] subprocess2.tcl]
+  
+  puts "Launch complete"
+</pre>
+
+<p>Note that the command name, signature, and functionality have to match the
+definition of <i>spawn.pdx</i>, which is wrapped in <i>tcldebugger.exe</i>.
+Use the Virtual Filesystem Explorer to view the
+contents of this file. The virtual path is <code>/tcldebugger.exe/debugger/</code>.</p>
+
+<p>Although the <code>spawn</code> procedure described above is the simplest and most
+effective way to debug a subprocess, there is an alternative method that makes
+it possible to invoke subprocesses in remote locations. This method requires that
+you create a main script containing the <code>exec</code> command and modify the
+script that you want to debug. Set a spawnpoint in the Tcl Dev Kit Debugger's
+main window at the line containing the <code>exec</code> command.</p>
+
+<p>Create a main script similar to the following:</p>
+
+<blockquote>
+
+<pre>
+puts "launch"
+
+exec C:\Tcl\bin\&lt;TclInterpreter$gt; C:\&lt;DirectoryName&gt;script.tcl
+
+puts "OK"
+</pre>
+
+</blockquote>
+
+<p>modify the script to be debugged similarly to the following:</p>
+
+<blockquote>
+
+<pre>
+package_require tcldebugger_attach
+if {[info exists ::env(DEBUG_INFO)]} {
+     foreach {host port cdata}  $::env(DEBUG_INFO) break
+     debugger_init $host $port $cdata
+}
+
+debugger_eval {
+     &lt;your code&gt;
+}
+</pre>
+
+</blockquote>
+
+
+
+<a class="topText" href="#Top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+<h2><a name="navigating">Navigating Code</a></H2>
+
+<p>The Tcl Dev Kit Debugger provides utilities that help you navigate to specific portions of the code that you are
+debugging, including the Procedures window, the Goto command, the Find command, and the Window menu.
+
+<h3><a name="GoingToALine">Going to a Specified Line</a></H3>
+
+<OL>
+    <li>Select <strong>Edit|Goto Line</strong>.</LI>
+    <li>Type a line number in the text box. </LI>
+    <li>Click the Goto Line button.</LI>
+</OL>
+
+<P>The Tcl Dev Kit Debugger highlights the specified line.</P>
+
+<p><strong>Tip</strong> - You can also use the <strong>Goto What</strong> drop-down list to
+move up or move down the lines in your code from the insertion cursor. Select <strong>Move Up Lines</strong>
+or <strong>Move Down Lines</strong> and type the number of lines that you want to move.</p>
+
+<h3>Using the Find Utility</H3>
+
+<OL>
+    <li>Select <strong>Edit|Find</strong>.</LI>
+    <li>Type a code fragment or other string in the text box to locate that string. You can choose among several find options:</LI>
+    <ul>
+	<li>Select <strong>Match whole word only</strong> to find those strings that match the entire string that you typed.
+	This option looks for white space as a delimiter. For example, if you searched for the string &quot;sea&quot;,
+	you would find all instances of &quot;sea&quot; but would not find &quot;seashore&quot;.</LI>
+	<li>Select <strong>Match case</strong> to find strings that match the case of the string that you typed. For example, with
+	Match case selected, searching for the string &quot;sea&quot; will not match &quot;Sea&quot;.</LI>
+	<li>Select <strong>Regular expression</strong> to find strings that match the one you typed using the search format for regular
+	expressions. If you do not select this checkbox, it will perform searches that match all characters exactly.</LI>
+	<li>Select <strong>Search all open documents</strong> to find matching strings in all files that are currently open. The Window menu
+	displays a list of all open files. If you don't select this option, the Tcl Dev Kit Debugger searches only the current file
+	(the one shown in the Code display).</LI>
+    </ul><br>
+    <li>Click to select the <strong>Direction</strong> for the search: <strong>Up</strong> or <strong>Down</strong>.</LI>
+    <li>Click <strong>Find Next</strong> or press the Enter key to begin a search.</LI>
+</OL>
+
+<p>The Tcl Dev Kit Debugger highlights the code that matches the string that you typed. If the string is not found, the Code
+Display does not change. You can find subsequent matching strings by clicking the Find Next button or pressing
+the &lt;F3&gt; key.</P>
+
+<h3><a name="FindingProc">Finding Procedures</a></H3>
+
+<p>You can use the Procedures window to view the list of procedures that have been
+defined in your application. To open the Procedures window, click the &quot;P&quot; button
+on the toolbar in the main Tcl Dev Kit Debugger window, or select <strong>View|Procedures</strong>.</p>
+
+<p>In order for procedures associated with the current application to be displayed
+in the Procedures window, the Tcl Dev Kit Debugger must be active. To view procedures,
+set a <a class="doc" href="#UsingBreak">breakpoint</a>, and then
+<a class="doc" href="#ControlYourApp">run the debugger</a>.</p>
+
+<IMG SRC="images/Debugger-10.gif">
+
+<p>To narrow down the list, you can type a pattern in the text box and click <strong>Search</strong>. The default pattern is an
+asterisk (&quot;*&quot;), which lists all of the defined procedures in the application. Pattern strings can be one
+or more characters and follow the search conventions that are used with the Tcl <strong>glob</strong> command.
+The matches for the string are shown in the display area of the Procedures window. This is useful for finding specific
+procedures if you have large applications with many procedures. For example, if you type &quot;tcl*&quot;
+in the text box of the Procedures window, <strong>tclLog</strong>,
+<strong>tclMacPkgSearch</strong>, and all other procedures beginning with &quot;tcl&quot; are displayed in
+the display area of the Procedures window.
+
+<p>You can display both instrumented and uninstrumented procedures by selecting <strong>Show Uninstrumented Procs</strong>.
+Uninstrumented procedures are indicated by asterisks in the display area of the Procedures window. For more information,
+see <a class="doc" href="#Instrumentation"> About Tcl Dev Kit Instrumentation</a>.
+
+<p>When you select a procedure from the list, you can perform any of the following actions on it:
+<ul>
+    <li><strong>Show Code</strong> - Display the code where the procedure is defined, or the body of the procedure
+    if the procedure is dynamically defined.</li>
+    <li><strong>Instrument</strong> - Instrument a selected procedure.</li>
+    <li><strong>Uninstrument</strong> - Uninstrument a selected procedure.</li>
+</ul>
+
+<h3>Finding Errors</h3>
+
+<p>The Tcl Dev Kit Debugger detects errors according to the criteria described 
+in <a class="doc" href="Debugger.html#ErrorHandling">Error Handling</a>. Using 
+the <strong>Syntax errors</strong> dialog box, you can view a summary list of 
+errors and warnings that have been encountered up to the current debugging 
+point.</p>
+
+<p>Note that errors and warnings will not necessarily prevent users from running
+the script. Errors such as false positives incorrectly detected by the Tcl Dev Kit
+Checker will have no effect at run-time, whereas runtime or instrumentation errors
+may prevent the application from running.</p>
+
+<p>To open the Syntax errors dialog, select <strong>View|Syntax errors</strong>, 
+or press <strong>Alt + F5</strong>.</p>
+
+<p>Lines containing syntax errors and warnings are colored in the code display 
+window according to the configuration of the <a class="doc" href="#preferences">debugger 
+preferences</a>.</p>
+
+<img src="images/syntax_error.gif">
+
+<p>To display the code causing a syntax error in the code display, select the 
+error and click <strong>Show Code</strong>.</p>
+
+<h3>Using the Window Menu</H3>
+
+<p>Select the <strong>Window</strong> menu to display all of the files that are open in the Tcl Dev Kit Debugger.</p>
+
+<a class="topText" href="#Top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+<h2><a name="displaying">Displaying Code and Data</a></H2>
+
+<p>The Tcl Dev Kit Debugger provides several windows in which you can display and monitor specific aspects of the
+application that you are debugging. These include the Watch Variable window, and the Data Display window.
+For information on the Breakpoints window, see <A class="doc" Href="#BreakpointWin">Viewing Breakpoints in the Breakpoints Window</a>.
+
+<h3><a name="watch_var">Watching Variables</a></H3>
+
+<p>To open the Watch Variables window, click the &quot;W&quot; button on the 
+toolbar. Alternatively, select <strong>View|Watch Variables</strong>.</p>
+
+<p>The Watch Variables window displays variable names and values at the stack 
+level that is selected in the Stack Frames display. The values in the Watch Variables 
+window are updated each time the application stops, and also each time you 
+select a new stack level in the Stack Frames display in the main window. If a 
+variable name or value is not defined at the selected stack level, then 
+&quot;&lt;No Value&gt;&quot; appears instead of a value.</p>
+
+<IMG SRC="images/Debugger-11.gif">
+
+<p>To add a variable name to the Watch Variables window:
+<ol>
+    <li>Type the variable name in the text box of the Watch Variables window. </LI>
+    <li>Click <strong>Add</strong> or press the Return key. </LI>
+</ol>
+
+<P>The variable name and the current value of the variable are displayed in the 
+variable list.</p>
+
+<P>To remove a specific variable, click the line, then click the <strong>Remove</strong> 
+button. To remove all variables, click the <strong>Remove All</strong> button.</p>
+
+<p>To invoke the <a class="doc" href="#DisplayingData">Data Display</a> window, 
+which displays the full unabbreviated value of a variable, click the 
+desired variable then click the <strong>Data Display</strong> button. 
+Alternatively, double-click the desired variable.</p>  
+
+
+<p>The Watch Variables window is useful for observing variables in different stack levels that have the same
+name. For example, suppose the following script is stopped just before executing line 10:
+
+<blockquote>
+<pre>
+1 proc bar {x} {
+2 puts $x
+3 }
+4 
+5 proc foo {y} {
+6 baz [expr {$y + 3}]
+7 }
+8 
+9 set x 2
+10 foo $x
+</pre>
+</blockquote>
+
+<p>The stack display is shown below:
+
+<blockquote>
+<pre>
+0 global 
+0 source sample.tcl 
+1 proc foo y 
+2 proc bar x
+</pre>
+</blockquote>
+
+<p>If you are watching the variable named <i>x</i>, you will see the value change as you select different stack
+levels. At level 2, <i>x</i> has the value 5. At level 1, <i>x</i> is not defined, so &quot;&lt;No Value&gt;&quot;
+is displayed. At level 0, <i>x</i> has the value 2.
+
+<p><em><u>Variable Value Formats</u></em></p>
+
+<p>In each of the windows where variable values are displayed (the Variable 
+pane, the <a class="doc" href="#DisplayingData">Data Display window</a> 
+and the <a class="doc" href="#watch_var">Watch Variables window</a>), 
+you can configure the format in which the variable values are displayed. 
+The following formats are supported:</p>
+
+<ul>
+  <li><strong>String: As Hex</strong></li>
+  <li><strong>String: As Octal</strong></li>
+  <li><strong>String: As Unicode</strong></li>
+  <li><strong>Integer: As Hex</strong> (must be an integer)</li>
+  <li><strong>Integer: As Octal</strong> (must be an integer)</li>
+  <li><strong>Integer: As Bits</strong> (must be an integer)</li>
+</ul>
+
+<p>If the chosen format is not appropriate for the specified variable (for 
+example, selecting <strong>Integer: As Hex</strong> for a variable that 
+contains a non-numeric string), the format transformation will not be 
+performed.</p> 
+
+<p>When you add a variable to the Watch Variables window, select the desired 
+display format from the drop-down list, then press <strong>Add</strong>. If 
+"No Transformation" is selected, the variable value format will not be transformed.</p>
+
+<p>Once a variable has been added to the list, you cannot change the display 
+format. However, you can add the same variable more than once, specifying a 
+different format each time. If you specify the same variable and variable 
+format twice, the combination will only be displayed once.</p>
+
+<p>When you add an array variable to the Watch Variables window, you cannot 
+specify the variable value format for individual elements. (The format will 
+be inherited from the setting in the 
+<a class="doc" href="#variable_display">Variable pane</a>.) To transform 
+individual elements, add the array variable with the specific element, rather 
+than the entire array variable.  For example, if you specify the array "foo", 
+elements in the array will be displayed in the same format as in the Variable 
+pane.  However, if you specify "foo(bar)", you may specify the variable 
+value format for the "bar" element in the "foo" array.</p>
+
+
+<h3><a name="DisplayingData">Displaying Data</a></H3>
+
+<p>The Data Display is used to see the full unabbreviated value of a 
+variable, which can be helpful if you are looking at long strings. 
+
+<p>To open the Data Display window, double-click a variable in the Variable 
+display in the main window, or double-click a variable in the Watch Variable 
+window. Alternatively, select <strong>View|Data Display</strong>.</p>
+
+<p>By default, the variable that was highlighted when the Data Display window 
+was invoked will be displayed. To display a different variable, double-click 
+the desired variable in the <a class="doc" href="#variable_display">Variable pane</a> 
+or the <a class="doc" href="#watch_var">Watch Variables window</a>. Alternatively, 
+type the variable name in the Data Display window and click 
+<strong>Display</strong>.</LI>
+
+
+<p>The variable is linked to the stack level that is highlighted in the Stack display at the time the variable is
+entered in the Data Display window. Once the variable is entered, changing the stack level in the Stack display
+will not affect the value of the variable. The value that is displayed for the variable is updated each time
+the application stops. If &quot;&lt;No Value&gt;&quot; appears, it means that either the variable was unset
+or the stack level attached to the variable has returned. Like variable breakpoints, a variable in the Data Display
+is associated with a location in memory. Once &quot;&lt;No Value&gt;&quot; appears, the previous memory
+location is no longer reserved for that particular variable, so &quot;&lt;No Value&gt;&quot; for the variable will reappear.</p>
+
+<IMG SRC="images/Debugger-12.gif">
+
+<p><em><u>Variable Value Formats</u></em></p>
+
+<p>In each of the windows where variable values are displayed (the 
+<a class="doc" href="#variable_display">Variable pane</a>, the 
+Data Display window and the <a class="doc" href="#watch_var">Watch Variables 
+window</a>), you can configure the format in which the variable values are displayed. 
+Select the desired format from the <strong>Display</strong> drop-down list.
+The following formats are supported:</p>
+
+<ul>
+  <li><strong>String: As Hex</strong></li>
+  <li><strong>String: As Octal</strong></li>
+  <li><strong>String: As Unicode</strong></li>
+  <li><strong>Integer: As Hex</strong> (must be an integer)</li>
+  <li><strong>Integer: As Octal</strong> (must be an integer)</li>
+  <li><strong>Integer: As Bits</strong> (must be an integer)</li>
+</ul>
+
+<p>If the chosen format is not appropriate for the specified variable (for 
+example, selecting <strong>Integer: As Hex</strong> for a variable that 
+contains a non-numeric string), the format transformation will not be 
+performed.</p> 
+
+<p>The variable value format is inherited from either the 
+<a class="doc" href="#variable_display">Variable pane</a> or the 
+<a class="doc" href="#watch_var">Watch Variables window</a>, depending on 
+where the Data Display window was invoked. To specify a different format, 
+select the desired format from the <strong>Display</strong> drop-down list.</p>
+
+
+
+<p><em><u>View As Menu</u></em></p>
+
+<p>Use the drop-down View As menu to select the format for the variables. The Tcl Dev Kit Debugger attempts to match the
+display to the variable type. For example, if the variable is scalar, it will display with line wraps, and if it is an
+array, it will display as an array. You can view the variable with the following formats:
+<ul>
+    <li><strong>Line wrap</strong> - Wrap the line when it exceeds the length of the display window, which is the default
+    display for scalar variables.</li>
+    <li><strong>Raw data</strong> - Does not modify the display.</li>
+    <li><strong>List</strong> - The Tcl Dev Kit Debugger treats the variable value as a Tcl list, extracts the elements of the list, and
+    displays each element on a separate line.</li>
+    <li><strong>Array</strong> - Each element is displayed as a separate item with a name and value.</li>
+</ul>
+
+<p><strong>Note</strong>: Ordered lists can be displayed as arrays.</p>
+
+<a class="topText" href="#Top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+<h2><a name="ManData">Manipulating Data</a></H2>
+
+<p>To open the Eval console, click the &quot;E&quot; button on the toolbar, or 
+select <strong>View|Eval Console</strong>.</p>
+
+<p>The Eval console is used to pass commands to an application or to call procedures. 
+Any time that the application is paused (either at a breakpoint or as a result of a 
+debugger command like "Step Over" or "Step Out") you may enter commands in the 
+Eval console to be evaluated by the application.</p>
+
+<IMG SRC="images/Debugger-13.gif">
+
+<p>Use the <b>Stack Level</b> drop-down list to select the stack in which you 
+want to evaluate commands.  (The deepest stack level is selected by default 
+when the Eval Console windows is invoked.) You may also change the current 
+stack level by using the keyboard shortcuts Ctrl + Plus (to move to the next 
+higher stack level) and Ctrl + Minus (to move to the next lower stack level). 
+The stack levels correspond to the numerical levels displayed in the 
+<a class="doc" href="#stack_display">Stack Frames</a> window.</p>
+
+<p>The Eval Console maintains a command history.  To invoke a command 
+previously entered in the Eval Console, use the Up Arrow key (or <b>Ctrl + p</b>) 
+to scroll through previous commands. Use the Down Arrow key (or <b>Ctrl + n</b>) 
+to scroll through commands subsequent to the current command.</p>
+
+
+<a class="topText" href="#Top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+<h2><a name="ErrorHandling">Error Handling</a></H2>
+
+<p>The Tcl Dev Kit Debugger detects all errors in the application including runtime and parsing errors.
+
+<h3>Parsing Error Handling</H3>
+
+<p>A <strong>parsing error</strong> is an error that is caused by code that is 
+not syntactically valid. An example of a parsing error is a script that is 
+missing a close brace. The Tcl Dev Kit Debugger detects parsing errors during instrumentation,
+whenever a file is sourced or a procedure is created dynamically by the application.
+
+<p>When a parsing error occurs, the Tcl Dev Kit Debugger cannot understand the script's 
+control flow following the error, and cannot continue instrumenting the code. 
+The Tcl Dev Kit Debugger displays a dialog box in which you choose to either quit the 
+application or continue the application with the partially instrumented script. 
+If you choose to continue debugging the partially instrumented script, the same 
+error appears as a runtime error if the code is executed. See 
+<a class="doc" href="#Instrumentation">About Tcl Dev Kit Instrumentation</a> for 
+details on the implications of continuing despite the parsing error.
+
+<h3>Runtime Error Handling</H3>
+
+<p>An example of a <strong>runtime error</strong> is an attempt to read a 
+non-existent variable. The Tcl Dev Kit Debugger detects all runtime errors, including 
+both those caught and those not caught by a Tcl script. How the Tcl Dev Kit Debugger
+handles runtime errors depends on the Error settings that you specify for your 
+project. See <a class="doc" href="#ChangeProSet">Changing Project Error 
+Settings</a> for more information on specifying your project Error settings. 
+If you have set:
+
+<ul>
+    <li><strong>Always Stop on Errors</strong> - The Tcl Dev Kit Debugger notifies you 
+    each time it encounters an error in the script.</li>
+    <li><strong>Only Stop on Uncaught Errors</strong> - The Tcl Dev Kit Debugger notifies 
+    you only when it encounters an error not caught by the script.</li>
+    <li><strong>Never Stop on Errors</strong> - The Tcl Dev Kit Debugger does not 
+    notify you when it encounters errors in the application.
+    Your application handles errors in the same manner as it would if it were 
+    not running under Tcl Dev Kit Debugger.</li>
+</UL>
+
+<p>When the Tcl Dev Kit Debugger detects a runtime error in accordance with the rules 
+above, it stops execution of your application and displays a dialog box such as 
+the one shown in the Tcl Dev Kit Debugger Tcl Error Dialog.</p>
+
+<IMG SRC="images/Debugger-14.gif">
+
+<p>You have the choice of either delivering the error or suppressing the error:
+
+<ul>
+    <li><strong>Deliver Error</strong> - The application continues and the error is handled in the normal fashion for Tcl.
+    Clicking this button is equivalent to having run the script without any debugger interference.</li>
+    <li><strong>Suppress Error</strong> - The Tcl Dev Kit Debugger suppresses the error, and continues executing the application.
+    The behavior in this case is as if no error had occurred. You can continue to run or step through the application.</li>
+</UL>
+
+<p>While your application is stopped, you can examine your Tcl script, view and change variable values, set breakpoints,
+and use all the other features of the Tcl Dev Kit Debugger. If you single-step or run your application without first selecting
+whether to deliver or suppress the error, the Tcl Dev Kit Debugger delivers the error if your application catches it and
+suppresses it otherwise.</p>
+
+<p>Use the <a class="doc" href="#navigating">Syntax errors</a> dialog 
+to view a list of all the errors contained in the current program. 
+Also, lines containing syntax errors and warnings are colored in the code display 
+window according to the configuration of the <a class="doc" href="#preferences">debugger 
+preferences</a>. If you hover the mouse pointer over a line containing a 
+syntax error or warning, the text of the error will be displayed in the Status 
+Bar in the bottom left corner.</p>
+
+<a class="topText" href="#Top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+<h2><a name="stdout">STDIN, STDOUT and STDERR</a></h2>
+
+<p>The <a class="doc" href="#ManData">Eval Console</a> displays output written 
+to STDOUT or STDERR. When a program calls for input via a <code>[gets]</code> 
+or <code>[read stdin]</code> statement, the Eval Console will display an 
+<code>(STDIN) %</code> prompt where data for STDIN can be entered. (Each 
+subsequent <code>[gets]</code> or <code>[read stdin]</code> statement will 
+generate a new prompt, and will require new input.) The code line which called 
+for input will be indicated in the code display window.</p>
+
+<p>The Eval Console window is opened automatically when  STDOUT or STDERR 
+is generated, or when STDIN input is required.</p> 
+
+
+<a class="topText" href="#Top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+<h2><a name="profiling">Code Profiling and Coverage</a></h2>
+
+<p>The Tcl Dev Kit Debugger includes a tool for analyzing code coverage. 
+Coverage and Profiling settings are specified on the Coverage &amp; Profiling tab in
+the Project dialog box (<strong>File|Project Settings</strong>). For more about
+Coverage and Profiling options, see
+<a class="doc" href="#ChangeProCoverage">Changing Project Coverage and Profiling Settings</a>.</p>
+
+<p>Code Coverage and Profiling has three components:</p>
+
+<ul>
+  <li><strong>Coverage Analysis</strong> - highlights code that has not been 
+  executed by the debugger, depending on the setting in the Code Coverage and
+  Profiling dialog box (<strong>View|Code Coverage</strong>).</li>
+  
+  <li><strong>Profiling</strong> - highlights code that has or has not been
+  executed by the debugger, and reports the time required for the system to
+  execute individual commands.</li>
+  
+  <li><strong>Hot Spots</strong> - highlights code that has been run multiple 
+  times, making it easier to determine areas where code performance can be 
+  optimized.</li>
+</ul>
+
+<p>Coverage information is collected as the debugger runs. The code displayed 
+in the debugger is updated as each line is processed. If you have configured 
+Coverage and Profiling to "Highlight Uncovered Code...", each line that has not
+been processed will highlighted in green (the default color). If you have
+configured Coverage and Profiling to "Highlight Covered Code...", each line that
+has been processed will be displayed in a shade of orange (the default color);
+lines that have been processed a number of times will be highlighted with a darker
+color. The more times a line has been processed, the darker the color.</p>
+
+<p>Select <strong>View|Code Coverage</strong>, or click the "Code Coverage" 
+button on the toolbar, to open the Code Coverage and Profiling dialog. If you 
+have set breakpoints in the file, coverage or profiling coloration will be 
+updated in the code display pane as the debugger stops at each breakpoint. The 
+pane that displays the source code will be colored to indicate either "covered" 
+(code lines that have been processed) or "uncovered" (code lines that have not 
+been processed) based on the selection in the Code Coverage and Profiling 
+dialog.</p>
+
+<p>The coverage function stores the coverage and profiling analysis from the last 
+time the debugger was run in the current session. Unless you manually clear 
+the coverage information (using the <b>Clear All Coverage</b> button in the 
+Code Coverage and Profiling dialog), you will be asked if you wish to save 
+the coverage information from the last debugger run.</p>
+
+<img src="images/debug_cover.gif" border="0"/><br>
+
+<h3><a name="coverage_dialog">Code Coverage and Profiling Dialog</a></h3>
+
+<ul>
+  <li><strong>Files tab</strong> displays all files for which the debugger 
+  collected coverage information.</li>
+  <li><strong>Calls Tab</strong> If the "Plain coverage" option is specified in
+  the <a class="doc" href="#ChangeProCoverage">project settings</a>, this tab
+  displays the number of calls to each line in each file executed by the debugger,
+  along with the file names and line numbers. Lines are color-coded according to
+  the number of times they were executed. The darker the color, the greater the
+  number of times the line was executed. If the "Profiling" option is specified
+  in the <a class="doc" href="#ChangeProCoverage">project settings</a>, data
+  about the time required for the system to execute commands is displayed in the
+  "Min", "Avg", "Max", and "Total". Times shown are in microseconds. To change
+  the order of the columns, click the desired column heading.</li>
+</ul>
+
+
+<h4>Function Buttons</h4>
+
+<p><strong>Highlight Uncovered Code for Selected File</strong> Each line of code 
+in the Code Display that has not been processed will be displayed with a 
+green background.</p>
+
+<p><strong>Highlight Covered Code for Selected File</strong> Each line of code 
+in the Code Display that has been processed will be displayed in orange. Lines
+that have been processed multiple times will be highlighted with a darker shade.
+The darker the shade, the more times the line has been processed.</p>
+
+<p><strong>Show Code</strong> When a file is selected on the <strong>Files</strong> 
+tab, or a call selected on the <strong>Calls</strong> tab, click the 
+<strong>Show Code</strong> button to shift the code display in the debugger to 
+the desired file or call.</p>  
+
+<p><strong>Clear Selected Coverage</strong> When multiple files are displayed 
+on the <strong>Files</strong> tab, you can clear the coverage display for one 
+or more files, rather than clearing the display for all files. Select the file 
+for which you wish to clear coverage, then click <strong>Clear Selected 
+Coverage</strong>. Coverage will be cleared regardless of whether covered 
+or uncovered code has been selected for display.</p>
+
+<p><strong>Clear All Coverage</strong> To clear all coverage information, 
+click <strong>Clear All Coverage</strong>. Coverage will be cleared 
+regardless of whether covered or uncovered code has been selected for 
+display.</p>
+
+<p><strong>Save Data</strong> To export coverage information for the project, 
+click <strong>Save Data</strong>. This will create a file in CSV (comma separated 
+values) format in the specified directory. The file contains the following 
+columns:</p>
+
+<ul>
+  <li><strong>NrCallsToCmd</strong> - Number of calls to the described command</li>
+  <li><strong>Filename</strong> - File containing the command</li>
+  <li><strong>CmdLine</strong> - Line number where the command occurs</li>
+  <li><strong>Min</strong> - Minimum amount of time spent on the executed command</li>
+  <li><strong>Avg</strong> - Average amount of time spent on the executed command</li>
+  <li><strong>Max</strong> - Maximum amount of time spent on the executed command</li>
+  <li><strong>Total</strong> - Accumulated amount of time spent on the executed
+  command</li>
+  <li><strong>CmdCharIndex</strong> - Numerical position of the first character 
+  in the command</li>
+  <li><strong>CmdLength</strong> - Length of the command in characters</li>
+</ul>
+
+<p>For more information about Code Coverage and Profiling, see the 
+<a class="doc" href="README_csv.html">Coverage Analysis Tutorial</a> and 
+the <a class="doc" href="README_mult.html">Hotspot Analysis Tutorial</a>.</p>
+
+<a class="topText" href="#Top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+<h2><a name="preferences">Setting Preferences</a></H2>
+
+<p>You can specify preferences to customize the Tcl Dev Kit Debugger. To modify Preferences, select
+<strong>Edit|Preferences</strong>. Click the tabs to select your preferences for
+Appearance, Windows, Instrumentation, and Startup and Exit, and Browser preferences. 
+
+<h3>Appearance Preferences </H3>
+
+
+<IMG SRC="images/Debugger-15.gif">
+
+<p>You can choose the following Appearance preferences:
+<ul>
+    <li><strong>Type</strong> - The name of the font used to display code, stack frames, variables, etc.</li>
+    <li><strong>Size</strong> - The size of the font used to display code, stack frames, variables, etc.</li>
+    <p><strong>Tip</strong>: The Tcl Dev Kit Debugger attempts to optimize your font and size preferences. If you type a
+    font that is unavailable, the Tcl Dev Kit Debugger finds the most similar font on your computer and substitutes it. ActiveState
+    recommends that you only use fixed-width fonts.</p>
+    <p><strong>Note</strong>: Small font sizes can cause misalignment of the symbols in the Code Bar and their
+    corresponding lines of code. If you experience problems, increase the font size.</p>
+    <li><strong>Highlight</strong> - The color the Tcl Dev Kit Debugger uses when it stops to highlight the next command it will execute.</li>
+    <li><strong>Highlight On Error</strong> - The color the Tcl Dev Kit Debugger uses to highlight a command in which it finds an error.</li>
+    <li><strong>Highlight On Result</strong> - The color the Tcl Dev Kit Debugger uses to highlight code it just executed after a Step To Result</li>
+    <li><strong>Highlight Syntax Error</strong> - The color the Tcl Dev Kit Debugger uses 
+    as the background color for the syntax error counter below the code display.</li>
+    <li><strong>Highlight Syntax Warning</strong> - The color the Tcl Dev Kit Debugger 
+    uses as the background color for the syntax warning counter below the code display.</li>
+    <li><strong>Highlight Not Executed Code</strong> - The color the Tcl Dev Kit Debugger uses
+    to highlight uncovered code.</li>
+    <li><strong>Highlight Profiled Code</strong> - The color the Tcl Dev Kit Debugger uses
+    to highlight covered code.</li>
+</UL>
+
+<p>After changing the Appearance tab settings, click the <strong>OK</strong> button to save your choices and close the Preferences window,
+the <strong>Cancel</strong> button to cancel your choices and close the Preferences window, or the <strong>Apply</strong> button to
+apply your choices and keep the Preferences window open.
+
+<h3>Window Preferences</H3>
+
+
+
+<IMG SRC="images/Debugger-16.gif">
+
+<p>You can modify the following Windows preferences:
+
+<UL>
+    <li><strong>Screen Buffer Size</strong> - The number of lines of output 
+    retained by the Eval console.</li>
+    <li><strong>History Buffer Size</strong> - The number of commands 
+    retained in the Eval console history buffer.</li>
+    <li><strong>Tab Size</strong> - The number of characters between each tab 
+    stop.</li>
+    <li><strong>Use tooltips</strong> - The pop-up hint boxes that describe 
+    components of the interface.</li>
+</UL>
+
+<p>After changing the Windows tab settings, click the <strong>OK</strong> button to save your choices and close the Preferences
+window, the <strong>Cancel</strong> button to cancel your choices and close the Preferences window, or the
+<strong>Apply</strong> button to apply your choices and keep the Preferences window open.
+
+<h3>Startup and Exit Preferences</H3>
+
+
+<IMG SRC="images/Debugger-17.gif">
+
+<p>The Startup preference controls the Tcl Dev Kit Debugger's behavior when you start the debugger:
+<ul>
+    <li>Reload the Previous Project on Startup - the Tcl Dev Kit Debugger reloads the project you had open when you last
+    exited the Tcl Dev Kit Debugger</li>
+</UL>
+
+<p>The Exit preferences control the Tcl Dev Kit Debugger's behavior when you quit the debugger:
+<UL>
+    <li><strong>On exit, ask if the application should be killed</strong> - The Tcl Dev Kit Debugger prompts you to kill the application when
+    you exit the debugger.</li>
+    <li><strong>On exit, always kill the application</strong> - The Tcl Dev Kit Debugger always kills the application when you exit the debugger.</li>
+    <li><strong>On exit, always leave the application running</strong> - The Tcl Dev Kit Debugger leaves the application running when you exit the debugger.</li>
+    <li><strong>Warn Before Killing the Application</strong> - The Tcl Dev Kit Debugger always prompts you when you are about to perform an
+    action that would kill the application.</li>
+</UL>
+
+<p>After changing the Startup &amp; Exit tab settings, click the <strong>OK</strong> button to save your choices and close the
+Preferences window, the <strong>Cancel</strong> button to cancel your choices and close the Preferences window, or the
+<strong>Apply</strong> button to apply your choices and keep the Preferences window open.
+
+<h3>Browser Preferences</H3>
+
+
+<IMG SRC="images/Debugger-18.gif">
+
+<p>The Tcl Dev Kit Debugger uses a Web browser to display the ActiveState Web site when you click on the ActiveState URL in
+the About Tcl Dev Kit Debugger window.
+
+<p>You can select one of the following choices for your Web browser with Tcl Dev Kit:
+<ul>
+    <li><strong>Use default browser</strong> - The Tcl Dev Kit Debugger uses the default browser on your system.</li>
+    <li><strong>Choose an alternative browser</strong> - On Windows, you see the pathname of your default browser. You can
+    enter the pathname of an alternative browser here.</li>
+</UL>
+
+<p>After changing the Browser tab settings, click the <strong>OK</strong> button to save your choices and close the Preferences
+    window, the <strong>Cancel</strong> button to cancel your choices and close the Preferences window, or the
+    <strong>Apply</strong> button to apply your choices and keep the Preferences window open.</p>
+    
+<a class="topText" href="#Top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+<h2><a name="Instrumentation">About Tcl Dev Kit Instrumentation</a></H2>
+
+<p>When you begin running an application, the Tcl Dev Kit Debugger transparently processes the specified Tcl/Tk script. It
+modifies the code to enable communication between the Tcl Dev Kit Debugger and the script. This process is known as 
+instrumentation. The Tcl Dev Kit Debugger launches the application with the instrumented script in place of the
+original script. The instrumentation was designed to be as unobtrusive as possible. However, you can expect
+some slowdown in applications as a result of the instrumentation.
+
+<p>You can specify which procedures to instrument in the Procedures window; see <a class="doc" href="#FindingProc">
+Finding Procedures</a>. You can also specify files and classes of procedures to leave uninstrumented; see
+<a class="doc" href="#ChangeProInst">Changing Project Instrumentation Settings</a>. In addition to the files and
+procedures that you tell the Tcl Dev Kit Debugger not to instrument, there are also some instances of dynamically
+created code that the Tcl Dev Kit Debugger cannot instrument. These include "if" statements with computed bodies
+and callbacks from Tcl commands. When the application is executing uninstrumented code, it cannot communicate with
+the Tcl Dev Kit Debugger. If you want to interrupt or to add a breakpoint to the script while uninstrumented code
+is executing, the application cannot respond until it reaches the next instrumented statement.
+
+<p>The Tcl Dev Kit Debugger indicates that a procedure or file is uninstrumented by listing the procedure or file name
+preceded by an asterisk (&quot;*&quot;) in the Procedures window, Windows menu, and the Code display
+status bar.</p>
+
+<a class="topText" href="#Top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+<h2><a name="DebugRemote">Debugging Remote, Embedded, and CGI Applications</a></h2>
+
+<p>In some cases, the Tcl Dev Kit Debugger can't directly launch your application. Some examples where this is often
+true include CGI applications, embedded applications, and applications that must run on a system other than
+your debugging system.
+
+<p>For applications such as these, the Tcl Dev Kit Debugger supports remote debugging. In remote
+debugging sessions, your application starts as it normally would and then establishes a special connection
+to the Tcl Dev Kit Debugger. You can then use the Tcl Dev Kit Debugger to perform all debugging tasks as you would in a
+local debugging session.
+
+<p>To debug a remote application, you must perform the following steps:
+
+<ol>
+    <li>Modify your Tcl script to work with the Tcl Dev Kit Debugger
+    (using <a href="Cmd_Debugger.html">tcldebugger_attach</a>).</LI>
+    <li>Create a remote debugging project in the Tcl Dev Kit Debugger.</LI>
+    <li>Launch your application as you normally would. Your application establishes a connection to the Tcl Dev Kit
+    Debugger and you can begin your debugging session.
+</ol>
+
+<p>The following sections describe how to perform these tasks.
+
+<h3>Modifying a Tcl Script for Remote Debugging</H3>
+
+<p>For your application to establish and maintain communication with the
+Tcl Dev Kit Debugger, you must modify your application to use the <a
+href="Cmd_Debugger.html">tcldebugger_attach</a> package, which is
+contained in the <i>lib</i> subdirectory of your Tcl Dev Kit
+installation. Use the following package command:</p>
+
+<pre>
+  package require tcldebugger_attach
+</pre>
+
+<p>Your script must call the <strong>debugger_init</strong> procedure
+and, optionally, the <strong>debugger_eval</strong> and <strong>debugger_break</strong> procedures. You can modify your script
+in one of two ways: create a new &quot;wrapper&quot; script that sources your existing script, or modify your existing script.</p>
+
+<h4>Remote Debugging Procedures</h4>
+
+<p>The following procedures are available for remote debugging:</p>
+
+<ul>
+  <li>The <a class="doc" href="Cmd_Debugger.html#init">debugger_init</a> procedure makes the initial connection with the Tcl Dev Kit Debugger.</li>
+  <li>The <a class="doc" href="Cmd_Debugger.html#eval">debugger_eval</a> procedure instruments Tcl code so the Tcl Dev Kit Debugger can control the application
+  while <i>script</i> is evaluated.</li>
+  <li>The <a class="doc" href="Cmd_Debugger.html#break">debugger_break</a> procedure causes your remote application to break in much the same way
+  as if it had encountered a breakpoint.</li>
+  <li>The <a class="doc" href="Cmd_Debugger.html#attached">debugger_attached</a> procedure returns the connection status of the
+  Tcl Dev Kit Debugger.</li>
+</ul>
+
+<p>For more information about these commands see the
+<a class="doc" href="Cmd_Debugger.html">Tcl Dev Kit Command-Line Reference</a>.</p>
+
+<h4>Creating a &quot;Wrapper&quot; Script for Remote Debugging</h4>
+
+<p>If you decide to create a new script, that script should load the tcldebugger_attach package,
+and then source the file that was originally the main script of your application.
+This new script becomes the main script of your application. Your new main script may look
+like the following:
+    
+<blockquote>
+<pre>
+# Source the tcldebugger_attach package
+
+package require tcldebugger_attach
+
+# Assume the variables $host and $port respectively contain
+# the name of the machine on which the Tcl Dev Kit Debugger is
+# running and the port on which it is listening.
+
+debugger_init $host $port
+
+# Assume $myOriginalMainScript contains the path of your
+# original script.
+
+source $myOriginalMainScript
+</pre>
+</blockquote>
+
+<h4>Modifying an Existing Script for Remote Debugging</h4>
+
+<p>If you decide to modify your existing script, you must change it to load 
+the "tcldebugger_attach" package and call the <strong>debugger_init</strong> procedure.
+Once <strong>debugger_init</strong> is called, other files sourced by the script will
+automatically be instrumented. If you want the Tcl Dev Kit Debugger to instrument code
+in the file  that calls <strong>debugger_init</strong>, the code that you wish
+to instrument must be encapsulated in a call to the <strong>debugger_eval</strong>
+procedure. See <a class="doc" href="#Instrumentation">About Tcl Dev Kit
+Instrumentation</a> for more details on instrumentation.</p>
+
+<p>Your new main script may look like the following:
+    
+<blockquote>
+<pre>
+# Source the tcldebugger_attach package
+
+package require tcldebugger_attach
+
+# Assume the variables $host and $port respectively contain
+# the name of the machine on which the Tcl Dev Kit Debugger is
+# running and the port on which it is listening.
+
+debugger_init $host $port
+debugger_eval { 
+# ... your code goes here ...
+}</pre>
+</blockquote>
+
+<h3>Creating a Remote Debugging Project</H3>
+
+<p>Before you begin debugging a remote application, you must create a remote debugging project in the Tcl Dev Kit Debugger.
+This causes the Tcl Dev Kit Debugger to listen on a specified port for your application to establish a connection.
+
+<p>To create a remote debugging project:
+<ol>
+    <li>Create a new project as described in Creating a New Project.</LI>
+    <li>Select the Remote Debugging option of the Project Application Settings Tab. See <a class="doc" href="#ChangeProApp">
+    Changing Project Application Settings</a>.</LI>
+    <li>Enter the port number you specified in the <strong>debugger_init</strong> procedure in the Listen For Remote Connection
+    On Port Number field. The default port is 2576.</LI>
+</ol>
+
+<h3>Launching your Remote Application</H3>
+
+<p>After you have modified your application for remote debugging and created a remote debugging project in 
+the Tcl Dev Kit Debugger, you can launch your remote application for debugging.
+
+<p>Simply run your application as you would normally. Your application stops just before it evaluates
+the first command in the <strong>debugger_eval</strong> script, or the first time it sources a file, whichever comes
+first. The Tcl Dev Kit Debugger displays your script in its main window, and you can begin debugging as you would
+a local application.
+
+<h3>Viewing Connection Status</H3>
+
+<p>You can view the connection status while debugging by selecting <strong>View|Connection Status</strong>.
+The status displays in The Connection Status window.</p>
+
+<IMG SRC="images/Debugger-19.gif">
+
+<p>The Connection Status Window displays the following information:
+
+<UL>
+    <li><strong>Project Type</strong> - Whether the project is local or remote.</li>
+    <li><strong>Connection Status</strong> - Whether or not the application has established a connection to the Tcl Dev Kit Debugger.</li>
+    <li><strong>Listening Port</strong> - The port number on which the Tcl Dev Kit Debugger listens for a connection from a remote
+    application. You can set this port for remote debugging in the Listen For Remote Connection On Port Number
+    field of the Project Application Settings Tab. See <a class="doc" href="#ChangeProApp">Changing Project Application
+    Settings</a>. The default port is 2576.</li>
+    <li><strong>Local Socket Info</strong> - The IP address and socket number on the system running the Tcl Dev Kit Debugger used for
+    communication with a remote application. This is created only after a connection is established.</li>
+    <li><strong>Peer Socket Info</strong> - The IP address and socket number on the system running the remote application
+    used for communication with the Tcl Dev Kit Debugger. This is created only after a connection is established.</li>
+</ul>
+
+<a class="topText" href="#Top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+<h2><a name="UsingCustomTcl">Using Custom Tcl Interpreters with the Tcl Dev Kit Debugger</a></H2>
+
+<p>The Tcl Dev Kit Debugger works properly with most custom Tcl interpreters. However, to properly instrument and execute
+your application, the Tcl Dev Kit Debugger must be able to pass debugging information to your Tcl script as command-line
+arguments. Therefore, if your interpreter doesn't accept as its first command-line argument a Tcl script to execute
+or if it doesn't pass subsequent command-line arguments to the script using the standard <i>argc</i> and <i>argv</i>
+Tcl variables, then you must take special steps to use your interpreter with the Tcl Dev Kit Debugger.</p>
+
+<p>First, you must create a special Tcl wrapper script. The listing below shows 
+a sample implementation of such a script for Unix systems. To use it, you must 
+either change the line setting the <i>cmdPrefix</i> variable, replacing 
+&quot;tclsh&quot; with whatever command you need to run your Tcl interpreter, 
+or you must set your <i>TCLDEBUGGER_TCLSH</i> environment variable to contain that 
+command.</p>
+
+<blockquote>
+<pre>
+#!/bin/sh
+#&#92;
+exec tclsh $0 ${1+&quot;$@&quot;}
+
+if {$argc &lt; 1} {
+    puts stderr &quot;wrong # args: location of appLaunch.tcl is required&quot;
+}
+
+if {[info exists env(TCLDEBUGGER_TCLSH)]} {
+    set cmdPrefix &quot;$env(TCLDEBUGGER_TCLSH)&quot;
+} else {
+    set cmdPrefix &quot;tclsh&quot;
+}
+
+set customScriptName &quot;/tmp/launchScript.[pid]&quot;
+set appLaunchPath [lindex $argv 0]
+
+set f [open $customScriptName w]
+puts $f &quot;
+file delete -force $customScriptName
+set argv0 [list $appLaunchPath]
+set argv [list [lrange $argv 1 end]]
+set argc &#92;[llength &#92;$argv&#92;]
+source &#92;$argv0
+&quot;
+close $f
+
+catch {
+    eval exec $cmdPrefix [list $customScriptName 2&gt;@stderr &gt;@stdout &lt;@stdin]
+}</pre>
+</blockquote>
+
+<p>Then, to debug your application select the wrapper script as your interpreter (that is, type the path and name
+of the wrapper script in the Interpreter field of the Project Application Settings Tab). Specify the script and any script
+arguments for your application in the Project Application Settings Tab as normal.</p>
+
+<p>For an example of wrapping a Tcl script on the Windows platform, see 
+<a class="doc" href="http://mini.net/tcl/2455.html">DOS BAT Magic</a> on  
+<a class="doc" href="http://mini.net/tcl/0.html">The Tcl'ers Wiki</a>.</p> 
+
+<a class="topText" href="#Top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+
+</BODY>
+</HTML>
+

@@ -1,0 +1,436 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<HTML>
+<HEAD>
+<LINK REL="STYLESHEET" HREF="aspn.css" CHARSET="ISO-8859-1" TYPE="text/css">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<TITLE>Tcl Dev Kit - Package Editor</TITLE>
+</HEAD>
+
+<body marginheight="5" topmargin="5" marginwidth="10" leftmargin="10">
+
+@header@
+
+<hr size="1" noshade width="100%">
+
+<a name="top"></a>
+
+<h1><a name="package_editor_overview">Package Editor</a></h1>
+
+<p>The Package Editor is a graphical application used to define Tcl
+packages in TEApot format (.zip and .tm files) or TclApp Package
+format (.tap files). Both types of packages can be used by <a
+class="doc" href="TclApp.html">TclApp</a>. Creating package
+definitions simplifies the creation of applications in TclApp as
+included files do not have to be specified individually. Packages can
+be modified and re-used by multiple applications built with TclApp.</p>
+
+<p>TEApot packages can also be hosted in a TEApot repository and made
+available to ActiveTcl TEAcup clients.</p>
+
+<p>Numerous predefined packages in .tap format are included with
+ActiveTcl 8.4 and earlier. Many more packages are available from
+ActiveState's TEApot repository. These packages can be installed using
+ActiveTcl's <a href="tpm/tpm/files/CTP_teacup.html">TEAcup</a> client.
+The Package Editor can be used to modify existing packages, regardless
+of whether they are custom packages or predefined packages included
+with ActiveTcl.</p>
+
+<p>Multiple packages can be configured within the same Package Editor
+project. Each package will be displayed as an individual entity in the
+TclApp Package Picker dialog; however, by grouping multiple packages
+together into one project, you can easily maintain file sets in
+related packages.</p>
+
+<h3><a name="start_tclpe">Starting the Package Editor</a></h3>
+
+<p>To launch the Package Editor in Windows, select <strong>Tcl Dev Kit
+Package Editor</strong> from the Tcl Dev Kit program group on the
+Windows Start menu. Alternatively, you can invoke the Package Editor
+from the command line. On Windows, enter <code>tclpe.exe</code> at the
+command prompt. On Unix, enter <code>tclpe</code> at the shell prompt.</p>
+
+<p>Project files can be specified at the command line. For example:</p>
+
+<pre>
+  tclpe -gui myproject.tap
+</pre>
+
+<p>Types of files that can be loaded as projects include:</p>
+
+<ul>
+  <li>teapot.txt files (TEApot package descriptors)
+  <li>.tap files (TclApp packages)
+  <li>starkits and starpacks</li>
+  <li>zip archives</li>
+  <li>tcl modules</li>
+</ul>
+
+<p>Use 'Ctrl-plus' and 'Ctrl-minus' to increase or decrease the
+displayed font size. Alternatively, use 'Ctrl-mouse wheel'.</p>
+
+<h2><a name="tea_packages">Teapot Packages</a></h2>
+
+<p>To create a project for packages in TEApot format, select
+<strong>New Project (Teapot)</strong> from the <strong>File</strong>
+menu. A new TEApot package project is created by default when 
+the Package Editor is started.</p>
+
+<h3><a name="tea_create_package">Creating a New TEApot Package</a></h3>
+
+<p>Packages can be added to a project individually by clicking the
+<strong>Create a New Package</strong> button, or imported
+automatically by clicking the </strong>Scan Directory</strong> button.
+In most situations where the Tcl files you want to package exist in
+a particular directory (and nested sub-directories), the <strong>Scan
+Directory</strong> is the simplest way to begin.</p>
+
+<h3><a name="tea_scan_directory">Scanning Directories</a></h3>
+
+<p><strong>Scan Directory</strong> opens a dialog box for choosing a
+source directory. Enter the directory to scan in the
+<strong>Destination</strong> field, or click the
+<strong>Browse</strong> button on the right.</p>
+
+<p>The Package Editor scans the source directory for a
+<em>pkgIndex.tcl</em> file. If present, it will use this as a starting
+point for a heuristic scan for packages and files to be included in
+the project. If it is not present, the path displayed in the
+<strong>Destination</strong> field will be highlighted, indicating
+that scanning is not possible.</p>
+
+<p>Click <strong>Run</strong> to initiate the scan. The output pane
+below displays information on the scanning progress. Warnings
+are highlighted in yellow, errors are highlighted in red.</p>
+
+<p>Packages discovered in the scan are added to the project and appear
+in the left pane where they can be reviewed.</p>
+
+<p><strong>Note</strong>: TEApot projects generate a file called
+<em>teapot.txt</em> in the source directory when the project is saved,
+so the source directory must be writable.</p>
+
+<h3><a name="tea_package_basic">Basic TEApot Package Information</a></h3>
+
+<p>The <strong>Basic</strong> tab is used to record general
+information about the package. This information is for package
+administration purposes; a subset of the information is displayed in
+TclApp's <strong>Package Picker</strong> dialog, and can be used with
+the <code>-pkg</code> option in the command-line version of <a
+href="TclApp.html#cmdline">TclApp</a>.</p>
+
+<img src="images/tea_pkg_desc.png">
+
+<p>This tab includes the following fields:</p>
+
+<ul>
+  <li><strong>Type</strong>: A drop-down list with options for
+  specifying what kind of TEApot <a
+  href=tpm/tpm/files/CTP_introduction.html#entities">entity</a> is
+  being created:
+    <ul>
+      <li>Application: An Tcl based application with meta data.</li>
+      <li>Package (default): A Tcl package.</li>
+      <li>Profile: A named collection of references to other
+      entities (i.e. meta data only).</li>
+    </ul>
+  </li>
+  <li><strong>Name</strong>: The entity name.</li>
+  <li><strong>Version</strong>: A version number for the entity.</li>
+  <li><strong>Platform</strong>: The target platform for the
+  package. By default, this field shows the platform the
+  Package Editor is currently running on.</li>
+  <li><strong>Summary</strong>: A short summary of what the package is
+  or does.</li>
+  <li><strong>Description</strong>: A longer description of the
+  package.</li>
+</ul>
+
+<h3><a name="tea_package_files">TEApot Package Files</a></h3>
+
+<p>The <strong>Files</strong> tab is for specifying files for
+inclusion and exclusion for the package. <strong>Scan
+Directory</strong> will populate the <strong>Included Files</strong>
+list with the relevant files discovered in the scan. The
+<strong>Included Files</strong> and <strong>Excluded Files</strong>
+fields accept glob style wildcards (e.g. "*" and "?") for specifying
+multiple files with a particular extension or text string in the
+name.</p>
+
+<p>To exclude files, use the <strong>Remove</strong> button to take
+files out of the list, or if glob style matching is being used in
+<strong>Included Files</strong>, by adding specific files to the
+<strong>Excluded Files</strong> list.</p>
+
+<h3><a name="tea_package_requirements">TEApot Package Requirements</a></h3>
+
+<p>The <strong>Requirements</strong> tab is for specifying the package
+requirements (Tcl version, module dependencies, etc.). To add a
+requirement, enter the package name or version in the entry field and
+click the <strong>Add</strong> button. Requirements must be entered in
+TEApot's <a
+href="tpm/tpm/files/CTP_metadata.html#entity_references">entity
+reference</a> syntax. If the syntax is incorrect, the text in the
+entry field is highlighted, and a tooltip provides information on the
+error.</p>
+
+<h3><a name="tea_package_recommendations">TEApot Package Recommendations</a></h3>
+
+<p>The <strong>Recommendations</strong> tab is for specifying packages
+which are beneficial to, but absolutely necessary for the functioning
+of the module. The interface is the same as the
+<strong>Requirements</strong> tab.
+
+<h3><a name="tea_package_Indexing">TEApot Package Indexing</a></h3>
+
+<p>TEApot packages can contain Category and Subject meta data to make
+it easier to find them in a TEApot repository (i.e. using <code>teacup
+search ...</code>). The <strong>Category</strong> field is for a one
+line sentence, and the <strong>Subject / Key Phrases</strong> is for a
+list of words and phrases.</p>
+
+<p>Add a Category value by entering it in the
+<strong>Category</strong> text field. Add items to the Subject list by
+entering words or phrases in the <strong>Subject / Key
+phrases</strong> text field, then clicking the <strong>Add</strong>
+button.</p>
+
+<h3><a name="tea_package_other">TEApot Package Other Metadata</a></h3>
+
+<p>In addition to the Category and Subject meta data, other arbitrary
+and predefined meta data can be added to TEApot packages as key/value
+pairs. See <a
+href="tpm/tpm/files/CTP_metadata.html#keywords_with_predefined_semantics">Keywords
+with predefined semantics</a> for more information on TEApot's
+"reserved" keywords.</p>
+
+<p>Enter key/value pairs in the <strong>Keyword</strong> and
+<strong>Value</strong> columns respectively. Hitting 'Enter' adds the
+current pair, clicking the <strong>Remove</strong> button deletes the
+adjacent entry.</p>
+
+<h3><a name="tea_save_project">Saving a TEApot Project</a></h3>
+
+<p>After configuring a TEApot package, select <strong>File | Save
+Project As</strong> to save the package definition in a file called
+<em>teapot.txt</em> in the source directory. This directory must be
+writable.</p>
+
+<h3><a name="tea_generate_archive">Generating a TEApot Archive</a></h3>
+
+<p>Once a project has been configured with all the necessary files and
+data, a TEApot package archive can be created. The <strong>Generate
+TEApot Archives</strong> button brings up a dialog box with the
+following options:</p>
+
+<ul>
+  <li><strong>Destination</strong>: The directory to save the archive
+  to.</li>
+  <li><strong>Archive format</strong>: Choose from tm (Tcl module),
+  zip, or <a
+  href="tpm/tpm/files/CTP_teazip.html#archive_type_selection">auto</a>
+  (default).</li>
+  <li><strong>Compile to bytecode</strong>: Invokes the Tcl compiler
+  on the files in the package.</li>
+  <li><strong>Timestamp the version</strong>: Adds a date/time-stamp
+  to the version metadata.</li>
+</ul>
+
+<p>Once these options have been set, click the <strong>Run</strong> 
+
+
+<a class="topText" href="#top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+<h2><a name="tap_packages">TclApp Packages</a></h2>
+
+<p>To create a project for packages in TclApp (.tap) format, select
+<strong>New Project (Tap)</strong> from the <strong>File</strong>
+menu.</p>
+
+<p>The <strong>Scan Directory</strong> feature works essentially the
+same in a Tap project as in a TEApot project, but does not generate a
+<em>teapot.txt</em> file in the scanned directory. See <a
+href="#tea_scan_directory">Scanning Directories</a> above for more
+information.</p>
+
+<h3><a name="tap_new_package">Creating a New TclApp Package</a></h3>
+
+<p>To add a package to a project, click
+<strong>Create new package</strong>. These packages can be added to a
+new project or added to a project that has already been populated by
+<strong>Scan Directory</strong>.
+
+<p>By default, new packages within the project are named "New Package
+<em>n</em>", where <em>n</em> is an incrementing number. This can be
+modifed in the <strong>Name</strong> field on the
+<strong>Basic</strong> tab.</p>
+
+<h3><a name="tap_package_basic">Basic TclApp Package Information</a></h3>
+
+<p>The <strong>Basic</strong> tab is used to record general
+information about the package. This information is for package
+administration purposes; a subset of the information is displayed in
+the TclApp <a class="doc" href="TclApp.html#files_tab">Package
+Picker</a> dialog, and can be used with the <a class="doc"
+href="TclApp.html#cmdline">-pkg</a> option in the command-line version
+of TclApp.</p>
+
+<img src="images/tap_pkg_desc.png">
+
+<p>This tab includes the following fields:</p>
+
+<ul>
+  <li><strong>Name</strong>: The contents of this field will be displayed in 
+  TclApp's Package Picker dialog. It is also the value specified when using the 
+  <code>-pkg</code> switch with the command-line version of TclApp.</li>
+  <li><strong>Version</strong>: The contents of this field will be displayed in 
+  TclApp's Package Picker dialog. It can also be part of the value specified 
+  when using the <code>-pkg</code> switch with the command-line version of 
+  TclApp (specified in the form of <em>PKGNAME-VERSION</em>).</li>
+  <li><strong>Platform</strong>: The contents of this field will be displayed in 
+  TclApp's Package Picker dialog.</li>
+  <li><strong>Hidden</strong>: If this box is checked, the package will not be 
+  visible in the TclApp Package Picker dialog.</li>
+  <li><strong>Same files as</strong>: This field is used to assign a file set 
+  definition from an existing package to the new package. See <a class="doc" 
+  href="#copying">Copying File Lists from One Package to Another</a> below.</li>
+  <li><strong>Description</strong>: The contents of this field will be 
+  displayed in TclApp's Package Picker dialog.</li>
+</ul>
+
+<h4><a name="copying">Copying File Lists from Another Package</a></h4>
+
+<p>To copy a list of files from an existing package to a new package, first open 
+the existing package using the <strong>File | Load Project</strong> menu 
+option. Then click the <strong>New Package</strong> button.</p>
+
+<p>While the new package is selected in the package list (on the left side of 
+the Package Editor), check the <strong>Same files as</strong> box, and select 
+the desired package from the drop-down list.</p>
+
+<p>If you are creating multiple new packages at the same time, note that only 
+the packages that were opened before the current package will be available 
+in the <strong>Same files as</strong> drop-down list. For example, if you 
+create a new package called "foo", and then create a new package called "bar", 
+the "foo" files will be available to the "bar" package, but the "bar" files 
+will not be available to the "foo" package.</p> 
+ 
+
+<h3><a name="tap_files">Adding Files to the TclApp Package</a></h3>
+
+<p>Use the <strong>Files</strong> tab to add files to the package. Files can 
+be specified individually (beneath a "base" directory), or can be specified 
+as a subset of files under a directory (for example, using wildcards).</p>
+
+<img src="images/tap_pkg_files.png">
+
+<p>Use the arrow buttons on the left side of the file display to move files and 
+directories up and down the list. For example, files can be moved from one 
+directory to another using these buttons.</p>	
+
+<h4><a name="tap_base_dir">Adding Base Directories and Files</a></h4>
+
+<p>Before adding individual files, you must specify a base directory. The 
+base directory can be any directory that is above the desired file(s). To add 
+a base directory, enter the name of the directory in the field at the top of 
+the form, or click the Folder button and browse to the desired directory.</p>
+
+<p>Files can be added by either manually entering the name in the field at 
+the top of the form, or by browsing for the file using the Files button. 
+When manually entering the file name, you may use wildcards to select 
+groups of files with similar name characteristics. You will not be able to
+add a file unless a base directory (that exists above the location of the  
+file in the filesystem hierarchy) is selected in the file list.</p>
+
+<h4><a name="tap_multi_files">Adding Multiple Files in a Directory</a></h4>
+
+<p>Use the "Files in Directory" button to select both a base directory and 
+all the files and directories beneath it. 
+
+<h4><a name="tap_alias_path">Setting an Alias Path or File Name</a></h4>
+
+<p>The alias button is used to specify an alternate name and / or location for 
+a file. This corresponds to TclApp's <code>-alias</code> command-line switch. 
+It can be used in conjunction with the TclApp <code>-relativeto</code> and 
+<code>-anchor</code> switches to configure the destination filesystem.
+
+<h4><a name="tap_include_exclude">Including or Excluding Files or Directories</a></h4>
+
+<p>Use the <strong>Toggle Incl/Excl</strong> button to exclude files 
+or directories from the TclApp application without removing from the 
+package definition.</p>
+
+<h4><a name="using_placeholders">Using Placeholders for Portability</a></h4>
+
+<p>By default, only absolute paths can be specified as the base directory. 
+This reduces the portability of package definition files, as absolute paths 
+are dependent on the configuration of the system where the package definition 
+file was created.</p>
+
+<p>By replacing absolute paths with "placeholders", package definition files can 
+be used on systems that do not necessarily share the same configuration. For 
+example, the image above shows the use of the <code>@TCL_LIBDIR@</code> 
+placeholder. When TclApp builds an application based on this package definition, 
+it will substitute the <code>lib</code> directory beneath the installation 
+directory of the Tcl Dev Kit on the system where TclApp is run.</p>
+
+<p>The following placeholders can be used in place of an absolute directory 
+specification:</p>
+
+<ul>
+  <li><strong>@TDK_INSTALLDIR@</strong>: The directory where the Tcl Dev Kit is 
+  installed on the system where TclApp is run.</li>
+  <li><strong>@TDK_LIBDIR@</strong>: 
+
+The main TAP search path under which a .tap file was found. For
+example: If we have the TAP search paths <code>FOO/lib</code> and
+<code>BAR/lib</code>, then @TDK_LIBDIR@ is set to <code>FOO/lib</code>
+for a tap file named <code>FOO/lib/sub/sub.tap</code>, and set to
+<code>BAR/lib</code> for a file named <code>BAR/lib/pkg/pkg.tap</code>
+
+</li>
+  <li><strong>@TAP_DIR@</strong>: The directory where the package definition 
+  file is located on the system where TclApp is run.</li>
+</ul>
+
+<p>To substitute a placeholder for an absolute path, click on the desired 
+folder in the list, then click <strong>Edit</strong> and enter the desired 
+placeholder.</p>
+  
+<h3><a name="saving_package_definition">Saving a Package Definition</a></h3>
+
+<p>After configuring a package, select <strong>File | Save Project As</strong>
+to save the package definition in a project file with a .tap extension.</p>
+
+
+<a class="topText" href="#top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+<h2><a name="using">Using a Package Definition in TclApp</a></h2>
+
+<p>Packages are added to <a class="doc" href="TclApp.html#files_tab">TclApp</a> 
+projects using the Package Picker button on the <strong>Files</strong> tab of 
+the graphical TclApp. If you are using the
+<a class="doc" href="TclApp.html#wrap_packages">command-line</a> version of TclApp, use the 
+<strong>-pkg</strong> switch followed by the package name.</p> 
+
+<a class="topText" href="#top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+<h2><a name="edit">Editing or Deleting Package Definitions and Files</a></h2>
+
+<p>To edit an existing package, select <strong>File | Load Project</strong>, and 
+open the desired package file. The package descriptions and associated files 
+will be displayed on the relevant tabs. Make the desired changes to the package(s), 
+and then click <strong>File | Save Project</strong> to save the changes.</p>
+
+<p>To edit or delete files from a package, select the <strong>Files</strong> 
+tab. Click on the desired files or directories in the list, then click 
+<strong>Edit</strong> (to change the file or directory name or location) or 
+<strong>Delete</strong> (to delete the file from the package).</p>
+
+<p>To delete an existing package, select <strong>File | Load Project</strong>, 
+and open the desired package file. Click the Delete button.</p>
+
+<a class="topText" href="#top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+ 
+</BODY>
+</HTML>

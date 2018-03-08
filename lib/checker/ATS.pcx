@@ -1,0 +1,311 @@
+# -*- tcl -*- ATS.pcx --
+#
+#	This file contains checkers for the ATS commands.
+#
+# Copyright (c) 2008 ActiveState Software Inc.
+#
+
+# 
+# RCS: @(#) $Id: ATS.tcl,v 1.3 2000/10/31 23:30:53 welch Exp $
+
+# ### ######### ###########################
+## Requisites
+
+package require pcx      ; # PCX API.
+
+# ### ######### ###########################
+## Tcl core version dependencies of the package this checker is for.
+
+pcx::register ATS ATS
+pcx::tcldep   1.0 needs tcl 8.0
+
+# ### ######### ###########################
+
+# ### ######### ###########################
+## Package specific message types and their human-readable
+## translations.
+
+pcx::message badShellHeader      {Shell header format is unrecognized or obsolete} err
+pcx::message badShellTest        {Use $AUTOTEST/bin/tclsh in test scripts}         err
+pcx::message unwantedShellHeader {Packages should not have shell header}           err
+
+# ### ######### ###########################
+# Per-file checker commands.
+
+# Define a set of checkers getting an entire file to check. They are
+# run before and after the command based checkers.
+
+pcx::perfile 1.0 ATS::Filetype
+
+# Regexp patterns to check various types of names against.
+
+# NOTE: It is strongly recommended to have only a single PCX file
+# which contains such style definitions. If there are multiple files
+# the definitions which were read last will be in effect.
+
+pcx::nameStylePattern 1.0 package    {^[A-Z][A-Za-z_-]{2,}$}
+pcx::nameStylePattern 1.0 namespace  {^[:_a-z]:?[A-Za-z_-]+$}
+pcx::nameStylePattern 1.0 proc       {^[_a-z][A-Za-z_-]+$}
+pcx::nameStylePattern 1.0 variable   {^(([_a-z][A-Za-z_]+)|([_A-Z][_A-Z]+))$}
+
+## Note: The patterns are applied to the full namespace, procedure,
+##       variable name, not just a part of it. This means that the
+##       patterns have to take into account that variable/procedure
+##       names can have a namespace prefix. The above patterns don't
+##       do that.
+
+##       The standard patterns do, see below
+#
+#    # Basic variable name, without a namespace prefix
+#    variable varname {[a-z]+}
+#
+#    # Basic procedure name, without a namespace prefix.
+#    variable procname {[a-z][a-zA-Z0-9]*}
+#
+#    # Segment of a namespace path/package name
+#    variable nsitem {[a-z][a-z0-9_-]}
+#
+#    # Package name, consisting of one or more segments,
+#    # all separated by ::
+#    variable pkgname   "${nsitem}(::${nsitem})*"
+#
+#    # Namespace path, like a package name, with an
+#    # optional :: at the beginning (if absolute).
+#    variable nspath "(::)?(${pkgname})"
+#
+#    # Now the final patterns based on these components. The basic
+#    # var/proc names are extended with an optional namespace path.
+#    # All are anchored at beginning and end to cover the whole name.
+#
+#    set p(package)   "^${pkgname}\$"
+#    set p(namespace) "^${nspath}\$"
+#    set p(proc)      "^(${nspath}::)?${procname}\$"
+#    set p(variable)  "^(${nspath}::)?${varname}\$"
+##
+
+# ### ######### ###########################
+
+namespace eval ATS {}
+
+# ### ######### ###########################
+## Initialization
+
+# ### ######### ###########################
+## Per-file hook.
+
+proc ATS::Filetype {when} {
+    # The contents of the current file are available through the
+    # command -> analyzer::getScript, and its name through ->
+    # analyzer::getFile.
+
+    set script [analyzer::getScript]
+    # Create a range spec covering the whole file.
+    set fullrange [list 0 [string length $script]]
+
+    # when in {begin done}
+    if {[analyzer::isScanning]} {
+	if {$when eq "begin"} {
+	    # The file is about to be scanned.
+
+	    # We look at the head of the file, line by line, and look
+	    # for the ATS specific strings which indicate what type of
+	    # file we are looking at (application, package
+	    # (implementation), test script, etc).
+
+	    set lines [split $script \n]
+
+	    set type  {}
+	    if {[IsTestScript $lines]} { set type test }
+
+	    set shell {}
+	    set shrange  $fullrange
+	    set bshrange $fullrange
+	    set badsh [expr {![ShellOk $lines shell shrange bshrange]}]
+
+	    # We remember the info for later. Keyed by file name.
+	    variable Data
+	    set Data([analyzer::getFile]) [list \
+	       type  $type  shell   $shell \
+	       badsh $badsh shrange $shrange \
+	       bshrange $bshrange]
+	}
+
+	return
+    }
+
+    # Analysis ...
+
+    if {$when eq "done"} return
+
+    # Beginning of analysis ... All files have been scanned by now.
+
+    variable Data
+    array set info $Data([analyzer::getFile])
+    # badsh in {0,1}
+    # shell in {central,local,bad,{}}
+    # type  in {{},package,test}
+    upvar 0 info(badsh) badsh
+    upvar 0 info(shell) shell
+    upvar 0 info(type)  type
+    upvar 0 info(shrange)  shrange
+    upvar 0 info(bshrange) bshrange
+
+    # No header for test script, no provide commands, assume that this
+    # is an application.
+    if {$type eq {}} {
+	set type application
+    }
+
+    # Issue errors and warnings based on the remembered shell header
+    # and ATS header comments.
+
+    if {$type ne "package"} {
+	# application or test script - check for good shell header
+	if {$badsh || ($shell eq "bad") || ($shell eq "")} {
+	    # P4.3
+	    analyzer::setCmdRange $bshrange
+	    analyzer::logError ATS::badShellHeader $bshrange {}
+	}
+    } else {
+	# package - shell header missing is ok, having it is bad.
+	if {!$badsh || (($shell ne "") && ($shell ne "bad"))} {
+	    # P4.1
+	    analyzer::setCmdRange $fullrange
+	    analyzer::logError ATS::unwantedShellHeader $fullrange {}
+	}
+    }
+
+    if {$type eq "test"} {
+	if {$shell eq "central"} {
+	    # P4.2
+	    analyzer::setCmdRange $shrange
+	    analyzer::logError ATS::badShellTest $shrange {}
+	}
+    }
+
+    # Activate style warnings for various Tcl commands based on the type of file.
+    switch -exact -- $type {
+	test {
+	    filter::globalSet 0 warnStyleError
+	    filter::globalSet 0 warnStyleExit
+	    filter::globalSet 0 warnStyleSleep
+	}
+	package {
+	    filter::globalSet 0 warnStyleExit
+	}
+	application {
+	}
+    }
+
+    # Done.
+    return
+}
+
+# ### ######### ###########################
+## Helpers.
+
+proc ATS::ShellOk {lines sv srv bsrv} {
+    upvar $sv shell $srv shrange $bsrv bshrange
+
+    # Scan the head of the file and determine what shell, if any, will
+    # be used to run the code. We are using while instead of foreach
+    # to have full control about when to advance to the next line.
+
+    set state sh-header
+    set at    0
+    set badsh 0
+    while {$at < [llength $lines]} {
+	set line [lindex $lines $at]
+	switch -exact -- $state {
+	    sh-header {
+		# Go through the lines of a shell-header, if any.
+		set badsh [expr {$line ne "\#!/bin/sh"}]
+		set state sh-header-empty
+		# Advance if the line was some type of hash-bang
+		if {[string match "\#!*" $line]} { incr at }
+	    }
+	    sh-header-empty {
+		# Check the second line of the shell header
+
+		if {$line eq "\# \\"} {
+		    # Recognized, advance.
+		    incr at
+		} elseif {!$badsh} {
+		    # Not recognized, and previous was ok, move error range one up.
+		    set badsh 1
+		    set bshrange [RangeAt $bshrange $lines $at]
+		}
+		set state sh-header-auto
+	    }
+	    sh-header-auto {
+		# Check the last line of the shell header
+		# Check the general syntax of the tclsh invokation
+		set oldbadsh $badsh
+		if {![string match {exec * "$0" ${1+"$@"}} $line]} {
+		    set badsh 1
+		}
+
+		# Determine which of the two allowed shells was used, if any.
+		set shrange [RangeAt $shrange $lines $at]
+		if {[string match {exec $AUTOTEST/bin/tclsh *} $line]} {
+		    set shell local
+		} elseif {[string match {exec /auto/ttsw/bin/tclsh *} $line]} {
+		    set shell central
+		} else {
+		    set shell bad
+		    set badsh 1
+		}
+
+		if {!$oldbadsh && $badsh} {
+		    # Move error range on up to here.
+		    set bshrange [RangeAt $bshrange $lines $at]
+		}
+		break
+	    }
+	}
+    }
+
+    return [expr {!$badsh}]
+}
+
+proc ATS::RangeAt {r lines at} {
+    set skip [string length [join [lrange $lines 0 ${at}-1] \n]]
+    lassign $r s l
+    incr skip
+    incr s $skip
+    incr l -$skip
+    return [list $s $l]
+}
+
+proc ATS::IsTestScript {lines} {
+    # Scan the file for the comment marker which indicates that this
+    # is a test script.
+    foreach line $lines {
+	if {[regexp "^##Script Header\$" $line]} {
+	    return 1
+	}
+    }
+    return 0
+}
+
+# ### ######### ###########################
+## Hooking ... This is a deep hack using knowledge of checker
+## internals. We intercept the checking of 'package provide' statements
+## and use their occurence as indicator that the file in question
+## contains a package and is thus neither application nor test script.
+
+rename ::coreTcl::checkPackageProvide   ::coreTcl::__checkPackageProvide__
+rename ::coreTcl::checkPackageProvide85 ::coreTcl::__checkPackageProvide85__
+
+proc ::coreTcl::checkPackageProvide {tokens index} {
+    lappend ::ATS::Data([::analyzer::getFile]) type package
+    return [::coreTcl::__checkPackageProvide__ $tokens $index]
+}
+
+proc ::coreTcl::checkPackageProvide85 {tokens index} {
+    lappend ::ATS::Data([::analyzer::getFile]) type package
+    return [::coreTcl::__checkPackageProvide85__ $tokens $index]
+}
+
+# ### ######### ###########################
+pcx::complete

@@ -1,0 +1,95 @@
+# -*- tcl -*- xmlGen.pcx --
+#
+#	This file implements the TclPro Checker extension for the XML
+#	Generation API.
+#
+# Copyright (c) 1999-2000 Ajuba Solutions
+# Copyright (c) 2003-2006 ActiveState Software Inc.
+# All rights reserved.
+# 
+# RCS: @(#) $Id: xmlGen.pcx,v 1.12 2000/05/30 22:28:58 wart Exp $
+
+# ### ######### ###########################
+## Requisites
+
+package require pcx          ; # PCX API
+
+# ### ######### ###########################
+## Tcl core version dependencies of the package this checker is for.
+
+pcx::register xmlGen
+pcx::tcldep   1.0 needs tcl
+
+# ### ######### ###########################
+
+# ### ######### ###########################
+## Package specific message types and their human-readable
+## translations.
+
+# ### ######### ###########################
+# scanCmdsX.X --
+# Define the set of commands that need to be recuresed into when 
+# generating a list of user defiend procs, namespace and Class 
+# contexts and procedure name resolutions info.
+
+pcx::scan 1.0 element
+pcx::scan 1.0 xmlgen::element
+
+# ### ######### ###########################
+# Define the set of command-specific checkers used by this package.
+
+pcx::check 1.0 std startDocument	{checkSimpleArgs 0 -1 {{checkSwitches 1 {
+    {-name {checkWord}}
+    {-channel {checkWord}}
+    {-variable {checkVarNameWrite}}
+    {-noprolog {}}
+    {-pretty {}}
+} {}}}}
+pcx::check 1.0 std endDocument	{checkSimpleArgs 1 1 checkWord}
+pcx::check 1.0 std startElement	{checkSimpleArgs 2 3 {checkWord checkWord checkList}}
+pcx::check 1.0 std endElement	{checkSimpleArgs 1 2 checkWord}
+pcx::check 1.0 std element	{checkSimpleArgs 2 4 {checkWord checkWord checkList checkBody}}
+pcx::check 1.0 std text		{checkSimpleArgs 2 4 {checkWord checkWord checkList checkWord}}
+pcx::check 1.0 std rawText	{checkSimpleArgs 2 2 checkWord}
+
+# ### ######### ###########################
+
+namespace eval xmlGen {
+    # ### ######### ###########################
+
+    # aliasCmds --
+    # Define the set of commands that are created as aliases of the
+    # corresponding xmlgen::* commands.
+    
+    variable aliasCmds {
+	startDocument endDocument startElement endElement element
+	text rawText
+    }
+}
+
+# ### ######### ###########################
+## Initialization
+
+## This package provides its own initialization command to handle
+## special definitions. For the common parts it uses the standard
+## initialization.
+
+proc ::xmlGen::init {ver} {
+    pcx::init xmlGen $ver
+
+    # Add aliased checkers.
+    # Alias the standard xmlgen::* commands so the namespace qualifier 
+    # appears in the command name.
+
+    variable aliasCmds
+    set aliases {}
+    foreach name $aliasCmds {
+	if {[pcx::topDefinition $name] != {}} {
+	    lappend aliases xmlgen::$name [pcx::topDefinition $name]
+	}
+    }
+    pcx::checkers $aliases
+}
+
+# ### ######### ###########################
+pcx::complete

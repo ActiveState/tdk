@@ -1,0 +1,411 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+<head>
+<link rel="stylesheet" href="aspn.css" charset="ISO-8859-1" type="text/css">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Tcl Dev Kit - TclApp Command Line Reference</title>
+<style type="text/css">
+  dd {
+    margin-bottom: 1em;
+  }
+  dt {
+    font-weight: bold;
+  }
+  </style>
+</HEAD>
+
+<body marginheight="5" topmargin="5" marginwidth="10" leftmargin="10">
+
+@header@
+
+<hr size="1" noshade width="100%">
+
+<a name="top"></a>
+<body>
+
+<h1><a name="tclapp_commands">TclApp Command Line Options</a></h1>
+
+<p>This reference outlines the command-line options for TclApp. For
+detailed instructions for wrapping Tcl applications at the command
+line, see <a href="TclApp.html#cmdline">Using TclApp on the
+Command-Line</a> in the TclApp <a href="TclApp.html#top">user
+guide</a>.</p>
+
+<h2><a name="tclapp_grouped_function">Commands by Functional Group</a></h2>
+
+<table style="text-align: left; width: 90%;" border="1" cellspacing="0">
+  <tbody>
+    <tr>
+      <td valign="top"><h3>Files and Paths</h3>
+        <ul style="list-style-type: none">
+        <li><a href="#tclapp-anchor">-anchor <em>PATH</em></a></li>
+        <li><a href="#tclapp-alias">-alias <em>PATH</em></a></li>
+        <li><a href="#tclapp-relativeto">-relativeto <em>DIRECTORY</em></a></li>
+        <li><a href="#tclapp-startup">-startup <em>FILE</em></a></li>
+        </ul>  
+        <h3>Packages</h3>
+        <ul style="list-style-type: none">
+        <li><a href="#tclapp-architecture">-architecture</a></li>
+        <li><a href="#tclapp-archive">-archive <em>LOCATION</em></a></li>
+        <li><a href="#tclapp-follow">-follow</a></li>
+        <li><a href="#tclapp-follow-recommend">-follow-recommend</a></li>
+        <li><a href="#tclapp-force">-force</a></li>
+        <li><a href="#tclapp-notbcload">-notbcload</a></li>
+        <li><a href="#tclapp-pkgfile">-pkgfile <em>FILE</em></a></li>
+        <li><a href="#tclapp-pkgref">-pkgref '<em>NAME ...</em>'</a></li>
+        <li><a href="#tclapp-pkg">-pkg '<em>NAME | NAME-VERSION</em>'</a></li>
+        <li><a href="#tclapp-pkgdir">-pkgdir <em>PATH</em></a></li>
+        <li><a href="#tclapp-pkg-accept">-pkg-accept</a></li>
+        <li><a href="#tclapp-upgrade">-upgrade</a></li>
+      </ul>
+      </td>
+      <td valign="top"><h3>Compiling</h3>
+        <ul style="list-style-type: none">
+        <li><a href="#tclapp-compile">-compile</a></li>
+        <li><a href="#tclapp-compilefile">-compilefile <em>[...] FILE</em></a></li>
+        <li><a href="#tclapp-compilefor">-compilefor <em>TCL-VERSION</em></a></li>
+        <li><a href="#tclapp-nocompilefile">-nocompilefile <em>[...] FILE</em></a></li>
+        </ul>  
+        <h3>Compression</h3>
+        <ul style="list-style-type: none">
+        <li><a href="#tclapp-nocompress">-nocompress</a></li>
+        </ul>
+        <h3>Metadata</h3>
+        <ul style="list-style-type: none">
+        <li><a href="#tclapp-infoplist">-infoplist '<em>DICT</em>'</a></li>
+        <li><a href="#tclapp-metadata">-metadata '<em>DICT</em>'</a></li>
+        <li><a href="#tclapp-stringinfo">-stringinfo '<em>DICT</em>'</a></li>
+      </ul>
+      </td>
+      <td valign="top"><h3>Misc</h3>
+        <ul style="list-style-type: none">
+        <li><a href="#tclapp-app">-a, -app <em>NAME</em></a></li>
+        <li><a href="#tclapp-arguments">-arguments <em>ARGUMENTS</em></a></li>
+        <li><a href="#tclapp-code">-code '<em>SCRIPT ...</em>'</a></li>
+        <li><a href="#tclapp-config">-config <em>FILE</em></a></li>
+        <li><a href="#tclapp-encoding">-encoding <em>NAME</em></a></li>
+        <li><a href="#tclapp-executable">-executable <em>FILE</em></a></li>
+        <li><a href="#tclapp-help">-help</a></li>
+        <li><a href="#tclapp-interpreter">-interpreter <em>PATH</em></a></li>
+        <li><a href="#tclapp-icon">-icon <em>PATH</em></a></li>
+        <li><a href="#tclapp-log">-log <em>PATH</em></a></li>
+        <li><a href="#tclapp-merge">-merge '<em>FILE ...</em>'</a></li>
+        <li><a href="#tclapp-nologo">-nologo</a></li>
+        <li><a href="#tclapp-nospecials">-nospecials</a></li>
+        <li><a href="#tclapp-osxapp">-osxapp</a></li>
+        <li><a href="#tclapp-out">-out <em>FILE</em></a></li>
+        <li><a href="#tclapp-postcode">-postcode '<em>SCRIPT ...</em>'</a></li>
+        <li><a href="#tclapp-prefix">-prefix <em>FILE</em>|<em>REF</em></a></li>
+        <li><a href="#tclapp-temp">-temp <em>DIRECTORY</em></a></li>
+        <li><a href="#tclapp-verbose">-verbose</a></li>
+      </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+      
+<h2><a name="tclapp_commands_alpha">Command List</a></h2>
+<dl>
+
+<a name="tclapp-alias"><dt>-alias <em>PATH</em></dt></a>
+  <dd>Specify wrapped name of file that follows. See <a
+  href="TclApp.html#srcdstdir">Specifying Source and Destination Base
+  Directories</a>.</dd>
+
+<a name="tclapp-anchor"><dt>-anchor <em>PATH</em></dt></a>
+  <dd>Specify base path in archive for files that follow. See <a
+  href="TclApp.html#srcdstdir">Specifying Source and Destination Base
+  Directories</a>.</dd>
+  
+<a name="tclapp-app"><dt>-a, -app <em>NAME</em></dt></a>
+  <dd>Like -pkg, and marks the package as the entrypoint for the
+  application (command-line only). See <a
+  href="TclApp.html#specstartup">Specifying the Startup
+  Application</a>.</dd>
+  
+<a name="tclapp-archive"><dt>-archive <em>LOCATION</em></dt></a>
+  <dd>Specifies the location of additional archives to query for
+  packages. The following types of archive are automatically
+  detected:
+
+  <ul style="list-style-type: none">
+    <li>Transparent repository (repository::localma)</li>
+    <li>Opaque repository	 (repository::sqlitedir)</li>
+    <li>TAP repository	 (repository::tap)</li>
+    <li>http://host:PORT	 (repository::proxy)</li>
+    <li>file://PATH		 - anything but proxy</li>
+  </ul>
+
+  <p>The archives are queried in the order specified (with the
+  standard archives appended). The first matching package is
+  taken.</p>
+
+  <p>The set of .tap search paths (pkgSearchPathList) is used in
+  previous versions of TclApp is now the standard set of archive
+  locations. Automatic type-detection ensures that the old .tap paths
+  found in the list can be used without any conversion or
+  intervention.</p>
+
+  <p><strong>Note</strong>: The -prefix file is always considered the
+  last package archive, making it the ultimate fallback. Without prefix
+  a standard virtual base is used, containing just Tcl and Tk.</p>
+
+  <p>See <a href="TclApp.html#wrap_packages">Wrapping Packages</a>.</p></dd>
+  
+<a name="tclapp-architecture"><dt>-architecture</dt></a>
+  <dd>Specify the target architecture(s) for starkits. Multiple
+  architectures can be specified, this is called <a
+  href="#cross_multi">multi-platform wrapping</a>. Valid architecture
+  names are:
+  <p>TDK distributions:
+  <ul style="list-style-type: none">
+    <li>aix-powerpc</li>
+    <li>hpux-parisc</li>
+    <li>linux-glibc2.2-ix86</li>
+    <li>macosx-universal</li>
+    <li>solaris2.10-ix86</li>
+    <li>solaris2.6-sparc</li>
+  </ul>
+  </p>
+  <p>Other ActiveTcl, ActiveTcl Enterprise and OEM architectures:
+  <ul style="list-style-type: none">
+    <li>hpux-ia64</li>
+    <li>linux-glibc2.3-ia64</li>
+    <li>linux-glibc2.3-x86_64</li>
+    <li>macosx-ix86</li>
+    <li>macosx-powerpc</li>
+    <li>solaris2.8-sparc</li>
+  </ul>
+  </p>
+  User generated platform names can also be specified (see
+  <em>platforms.tcl</em>). If -architecture is not set and no prefix
+  file is present, the architecture is "tcl". If a prefix file is used
+  (i.e. for starpacks), its architecture is assumed.</p>
+
+  <p>Package references are resolved for all architectures
+  specified.<p></dd>
+
+<a name="tclapp-arguments"><dt>-arguments <em>ARGUMENTS</em></dt></a>
+  <dd>Specify additional arguments to application. These are treated
+  as if they were submitted to an unwrapped application on the command
+  line. The arguments are stored in the Tcl <code>argv</code>
+  variable. They are inserted before any command-line arguments
+  entered by the end user when the wrapped application is
+  executed. See <a href="TclApp.html#runtimeargs">Specifying Run-Time
+  Arguments</a>.</dd>
+  
+<a name="tclapp-code"><dt>-code '<em>SCRIPT ...</em>'</dt></a>
+  <dd>Application initialization script(s). If multiple scripts are
+  specified, they are executed in order. See also <a
+  href="#tclapp-postcode">-postcode</a>. See <a
+  href="TclApp.html#postcode">Specifying Code to Execute at
+  Application Startup</a>.</dd>
+
+<a name="tclapp-compile"><dt>-compile</dt></a>
+  <dd>compile tcl files before wrapping them (implies '-pkgref
+  tbcload'). See <a href="TclApp.html#compile">Compiling .tcl
+  Files</a>.</dd>
+
+<a name="tclapp-compilefile"><dt>-compilefile <em>[...] FILE</em></dt></a>
+  <dd>Compiles the next file specified in the command line. Forces the
+  inclusion of '-pkgref tbcload' (if not overridden by
+  -notbcload). See <a href="TclApp.html#compile">Compiling .tcl
+  Files</a>.</dd>
+
+<a name="tclapp-compilefor"><dt>-compilefor <em>TCL-VERSION</em></dt></a>
+  <dd>Compile bytecodes for the specific version Tcl. See <a
+  href="TclApp.html#compile">Compiling .tcl Files</a>.</dd>
+
+<a name="tclapp-config"><dt>-config <em>FILE</em></dt></a>
+  <dd>Get command line arguments from a file. The file can be a '.tpj'
+  file (TclApp project file) or a text file containing command-line
+  options (space or newline separated). This option is useful when
+  adding a specific TclApp wrapping task into a build system. See <a
+  href="TclApp.html#config">Specifying an External Configuration
+  File</a>.</dd>
+  
+<a name="tclapp-encoding"><dt>-encoding <em>NAME</em></dt></a>
+  <dd>Specify additional encoding for starpack. Valid encoding names are
+  the same as those returned by Tcl's 'encoding names' built-in
+  command. See <a href="TclApp.html#encodings">Specifying Encodings</a>.</dd>
+  
+<a name="tclapp-executable"><dt>-executable <em>FILE</em></dt></a>
+  <dd>Name of the basekit (<strong>deprecated</strong>, use <a
+  href="#tclapp-prefix">-prefix</a>).</dd>
+
+<a name="tclapp-follow"><dt>-follow</dt></a>
+  <dd>Requests expansion of the required dependencies. If one or more
+  dependencies have no matching instances, the application will abort
+  after the expansion step unless <a href="#tclapp-force">-force</a>
+  is specified. See <a href="TclApp.html#wrap_packages">Wrapping
+  Packages</a>.</dd>
+
+<a name="tclapp-follow-recommend"><dt>-follow-recommend</dt></a>
+  <dd>Requests expansion of both required and recommended
+  dependencies. If one or more dependencies have no matching
+  instances, the application will abort after the expansion step
+  unless <a href="#tclapp-force">-force</a> is specified. See <a
+  href="TclApp.html#wrap_packages">Wrapping Packages</a>.</dd>
+
+<a name="tclapp-force"><dt>-force</dt></a>
+  <dd>Force the application to perform wrapping even if the expansion
+  step was unable to find instances for all dependencies. This option
+  is ignored when <a href="#tclapp-follow">-follow</a> or <a
+  href="#tclapp-follow-recommend">-follow-recommend</a> is not
+  specified, or if no profile packages are specified. See <a
+  href="TclApp.html#wrap_packages">Wrapping Packages</a>.</dd>
+  
+<a name="tclapp-help"><dt>-help</dt></a>
+  <dd>Print help message.</dd>
+
+<a name="tclapp-interpreter"><dt>-interpreter <em>PATH</em></dt></a>
+  <dd>Name interpreter to insert into starkit. See <a
+  href="TclApp.html#interp">Specifying the Interpreter: Creating
+  Starpacks and Starkits</a>.</dd>
+
+<a name="tclapp-icon"><dt>-icon <em>PATH</em></dt></a>
+  <dd>Path to the icon to embed into the executable. <a
+  href="TclApp.html#custom_icon">Assigning a Custom Icon to the Output
+  File</a>.</dd>
+  
+<a name="tclapp-infoplist"><dt>-infoplist '<em>DICT</em>'</dt></a>
+  <dd>Specify Info.plist metadata for OS X applications in Tcl
+  dictionary format. All keys are optional. See OS X Info.plist
+  documentation. See <a href="TclApp.html#custom_infoplist">Setting
+  Custom Info.plist Information into the Output File</a></dd>
+
+<a name="tclapp-log"><dt>-log <em>PATH</em></dt></a>
+  <dd>Path to logfile. See <a href="TclApp.html#log">Storing Log
+  Output</a>.</dd>
+  
+<a name="tclapp-merge"><dt>-merge '<em>FILE ...</em>'</dt></a>
+  <dd>Merge given files into output file. Cannot be used in
+  conjunction with '-prefix' or '-executable'. See <a
+  href="TclApp.html#merge">Merging the Output</a>.</dd>
+
+<a name="tclapp-metadata"><dt>-metadata '<em>DICT</em>'</dt></a>
+  <dd>Specify TEApot metadata in Tcl dictionary format. See <a
+  href="TclApp.html#custom_metadata">Setting Custom Metadata into the
+  Output File</a>.</dd>
+
+<a name="tclapp-nocompilefile"><dt>-nocompilefile <em>[...] FILE</em></dt></a>
+  <dd>Exempts the next file specified from compilation (overrides the
+  global '-compile'setting). See <a
+  href="TclApp.html#compile">Compiling .tcl Files</a>.</dd>
+
+<a name="tclapp-nocompress"><dt>-nocompress</dt></a>
+  <dd>Do not compress the files in the wrap result. By default
+  starkits and starpacks are compressed during wrapping and
+  decompressed when they are read by the application. This makes for
+  larger filesizes for the resulting starkits and starpacks, but may
+  speed up execution. See <a href="TclApp.html#nocompress">Suppressing
+  Compression</a>.</dd>
+
+<a name="tclapp-nologo"><dt>-nologo</dt></a>
+  <dd>Suppress copyright banner in output during wrapping.</dd>
+
+<a name="tclapp-nospecials"><dt>-nospecials</dt></a>
+  <dd>Prevent generation of 'main.tcl' and application
+  'pkgIndex.tcl'. See <a href="TclApp.html#nospecials">Suppressing
+  Special Files</a>.</dd>
+  
+<a name="tclapp-notbcload"><dt>-notbcload</dt></a>
+  <dd>Suppresses the implicit '-pkgref tbcload' of <a
+  name="#tclapp-compile">-compile</a> above. See <a
+  href="TclApp.html#compile">Compiling .tcl Files</a>.</dd>
+  
+<a name="tclapp-osxapp"><dt>-osxapp</dt></a>
+  <dd>Make the output an OS X .app bundle. If '.app' is not specified
+  in the basename, it will be appended when the directory tree is
+  created. The wrapped executable itself is put in
+  'application.app/Contents/MacOS/'. See <a
+  href="TclApp.html#osxapp">Creating a '.app' Bundle</a>.</dd>
+
+<a name="tclapp-out"><dt>-out <em>FILE</em></dt></a>
+  <dd>Name of output file. The default name is 'tclapp-out'. The file
+  extension inherited from the prefix file or set to '.kit' if none is
+  specified. See <a href="TclApp.html#output">Specifying the Output
+  File Name</a>.</dd>
+
+<a name="tclapp-pkgfile"><dt>-pkgfile <em>FILE</em></dt></a>
+  <dd>Sets the path to a package archive file (a .zip archive or .tm'
+  Tcl module) for inclusion in the wrap result. The package in the
+  file is wrapped without any special processing. Dependency expansion
+  is done only for profile packages. See <a
+  href="TclApp.html#wrap_packages">Wrapping Packages</a>.</dd>
+
+<a name="tclapp-pkgref"><dt>-pkgref '<em>NAME ...</em>'</dt></a>
+  <dd><p>Wrap all files of the named package without specifying the
+  filenames. This option provides access to the full syntax of package
+  references as used by <a
+  href="tpm/tpm/files/CTP_metadata.html#entity_references">TEApot</a>.</p><p>
+  <a
+  href="tpm/tpm/files/CTP_metadata.html#example_entity_references">Example package references</a>.</p><p>
+  See <a href="TclApp.html#wrap_packages">Wrapping
+  Packages</a>.</p></dd>
+
+<a name="tclapp-pkg"><dt>-pkg '<em>NAME | NAME-VERSION</em>'</dt></a>
+  <dd>Wrap all files of the specified package
+  (<strong>Deprecated</strong>, replaced by <a
+  href="#tclapp-pkgref">-pkgref</a>).  See <a
+  href="TclApp.html#wrap_packages">Wrapping Packages</a>.</dd>
+
+<a name="tclapp-pkgdir"><dt>-pkgdir <em>PATH</em></dt></a>
+  <dd>Specify an additional package search path for when the wrapped
+  application is executed. See <a
+  href="TclApp.html#nonstdpkgdir">Specifying a Non-Standard Package
+  Directory</a>.</dd>
+  
+<a name="tclapp-pkg-accept"><dt>-pkg-accept</dt></a>
+  <dd><strong>Deprecated</strong> alias to <a
+  href="#tclapp-upgrade">-upgrade</a> (for backward
+  compatibility).</dd>
+
+<a name="tclapp-postcode"><dt>-postcode '<em>SCRIPT ...</em>'</dt></a>
+  <dd>Application initialization script(s) run <strong>after</strong>
+  the application has started. If multiple scripts are specified, they
+  are executed in order. See also <a
+  href="#tclapp-code">-code</a>. See <a
+  href="TclApp.html#postcode">Specifying Code to Execute at
+  Application Startup</a>.</dd>
+
+<a name="tclapp-prefix"><dt>-prefix <em>FILE</em>|<em>REF</em><dt></a>
+  <dd>Either path of the basekit to use for wrapping a starpack, or a
+  teapot-reference. See <a href="TclApp.html#interp">Specifying the
+  Interpreter: Creating Starpacks and Starkits</a>.</dd>
+
+<a name="tclapp-relativeto"><dt>-relativeto <em>DIRECTORY</em></dt></a>
+  <dd>Specify a relative directory for files that follow. See <a
+  href="TclApp.html#srcdstdir">Specifying Source and Destination Base
+  Directories.</a></dd>
+
+<a name="tclapp-startup"><dt>-startup <em>FILE</em></dt></a>
+  <dd>Declare starting script filename. See <a
+  href="TclApp.html#startup">Specifying the Startup File</a>.</dd>
+
+<a name="tclapp-stringinfo"><dt>-stringinfo '<em>DICT</em>'</dt></a>
+  <dd>Specify Win32 String Resources for Windows applications in Tcl
+  dictionary format. See <a
+  href="TclApp.html#custom_stringinfo">Setting Custom String
+  Information into the Output File</a>.</dd>
+  
+<a name="tclapp-temp"><dt>-temp <em>DIRECTORY</em></dt></a>
+  <dd>Specify an alternate temp directory. See <a
+  href="TclApp.html#tempdir">Specifying a Temporary
+  Directory</a>.</dd>
+
+<a name="tclapp-upgrade"><dt>-upgrade</dt></a>
+  <dd>Indicate that automatic upgrades of the specified version
+  numbers are acceptable. If not present, exact versions are
+  required. See <a href="TclApp.html#wrap_packages">Wrapping
+  Packages</a>.</dd>
+  
+<a name="tclapp-verbose"><dt>-verbose</dt></a>
+  <dd>Produce detailed output during wrapping. See <a
+  href="TclApp.html#verbosity">Verbose versus Quiet Logging</a>.</dd>
+
+</dl>
+
+</body>
+</html>

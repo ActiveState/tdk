@@ -1,0 +1,125 @@
+TDK 3.0 Checker Package Handling
+================================
+
+Command database
+----------------
+
+Current handling: .pcx files, and checker definitions are loaded in
+the startup phase, and immediately entered into the command
+database. This is used in both scan and analyze phases.
+
+The correct handling would be to load the .pcx files when the package
+is actually asked for by the code. This complicates the command
+database, simply because it has to be reset into a clean state
+for each file we scan (CoreTcl).
+
+Note that this applies to the scan phases only. After the scan phase
+for a file we know the packages loaded by it, and are able construct a
+a command database (CDB) tuned to it for the analyze phase. This CDB
+is static, i.e. wil not changed during the analyze phase. The only
+part missing from that database after the scan are the defined user
+commands. They can be added to all these databases before the analyze
+phase is begun, as part of the collate phase which propagates all
+renamed and exported/imported definitions around.
+
+The current structure of the database as singleton can't be used
+anymore. We have to use a class and allow multiple databases.
+
+Information which stays global is the xref information about
+usage. For xref we will also have to merge all file specific command
+databases into one. This is something we can do during the scan phase
+too, simply by adding all definitions to another CDB object which is
+not file-specific.
+
+So, how does the handling change:
+
+-	Define a global command database (xref def)
+	Iff xref is active
+
+Scan phase
+
+-	Per file F create a command database, initialize it
+	using CoreTcl checker definitions.
+
+-	When a package A is required by the file F and is not
+	already known to us for F, then we load the checker package.
+
+	Iff not already loaded => Remember loaded checker packages.
+
+	We resolve which version of checker definitions to use, based
+	on the tcl version we are checkingthe code against, and the
+	version of A asked for by the code, if so. We also have to
+	check this for conflicts with other files. They might use a
+	different version of A for checking, which is bad.
+
+	[FUTURE: Check against the other packages already loaded for
+	the file too. IOW make sure that we chosen version is not in
+	conflict with the other packages.]
+
+	Load the chosen definitions into the per-file database.
+	(Commands, variables, namespaces).
+
+	If the package defined scan-commands then we have to look back
+	into the use database if the command had been used before. Iff
+	this was the case we have to schedule a rescan to pick these
+	up too.
+
+-	After scanning a file we check if we were asked for a
+	rescan. If so the previous item applies again.
+
+-	Any user defined commands picked up during a scan are
+	collected in a separate command database (UCDB).
+
+-	Any scan commands created during the scan-phase by a scan
+	command are user-defined scan commands and will have to cause
+	a re-scan of all files which use this command. In essence the
+	scanner has to go back to all files already scanned and
+	containing the command name and re-scan them in light of this
+	information.
+
+	This happens mainly for object systems where a class
+	definition causes the creation of a scan command for the name
+	of the class so that we can find all objects which were
+	created for this class (if using a static name!).
+
+Variable database
+-----------------
+
+Requires similar changes like for the command database, except that
+the user-defined parts, i.e. the parts shared between files are much
+bigger than for the command database. The issue is actually
+inverted. There are more user-defined variables than package
+variables, in contrast to more opackage commands than user commands.
+
+So while we have to capture exactly which package variables are
+present or not the structure of the database to do so should be
+different from the command database: One big shared database, and many
+per file databases which simply refer to the big one when a variable
+name is not found in them. This is more like traditional, scope based
+resolution.
+
+
+PCX files
+---------
+
+Currently the checker loads a pcx file and then more or less
+immediately calls upon its 'init' routine to load the command
+definition for the package, for the chosen version.
+
+The 'more or less' mentioned above hides that the checker does version
+resolution after loading and before initializing a checker package. To
+support the resolver pcx files currently have to set information
+directly into internal checker data structures (configure::verTable).
+If they don't do this the checker will always resolve to the highest
+version, except if directed to a different version via -use options in
+the command line.
+
+This has to change. An public interface has to be made available to
+allow a checker package to declare all of its version dependencies and
+conflicts.
+
+API's for the definition of checker and scan commands exist, but are
+not really documented. They call upon commands in the analyzer
+namespace, which are more internal than not. This is even more true
+for the API to declare the variables defined by a package (direct use
+of xref commands).

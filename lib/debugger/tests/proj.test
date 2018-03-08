@@ -1,0 +1,557 @@
+# This file contains tests for the proj.tcl file.
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1998-2000 by Ajuba Solutions
+# All rights reserved.
+#
+# RCS: @(#) $Id: proj.test,v 1.5 2001/10/17 19:04:05 andreas_kupries Exp $
+
+if {[string compare test [info procs test]] == 1} {
+    lappend auto_path [file join [file dirname [info script]] ..]
+    package require protest
+    namespace import ::protest::*
+}
+
+catch {parse} parseMsg
+if {[regexp "invalid command" $parseMsg]} {
+    package require parser
+}
+
+if {[string compare testGui [info procs testGui]] == 1} {
+    source [file join [pwd] [file dirname [info script]] guiLaunch.tcl]
+}
+
+set dummy [file join $::tcltest::temporaryDirectory dummy.tcl]
+pref::setGroupOrder {
+    TempProj TempPref Project ProjectDefault GlobalDefault 
+    ProjectFactory GlobalFactory
+}
+
+proc resetProjTest {{initGui 0}} {
+    global dummy
+
+    cleanProject
+    set ::result {}
+
+    initGlobalDefault
+    initProjectDefault
+    initProjectFiles $dummy
+
+    proj::setProjectPath {}
+
+    if {$initGui} {
+	initGui
+    }
+    return
+}
+
+resetProjTest
+
+set oldpwd [pwd]
+cd $::::protest::sourceDirectory
+
+set x {}
+
+test proj-1.1 {openProjCmd} {
+    resetProjTest
+} {}
+
+test proj-2.1 {openProjDialog} {
+    resetProjTest
+} {}
+
+test proj-3.1 {checkOpenProjDialog} {
+    resetProjTest
+} {}
+
+test proj-4.1 {openProj, opening null file name} {
+    resetProjTest
+    list [proj::openProj {}] [proj::getProjectPath] [proj::isProjectOpen]
+} {0 {} 0}
+test proj-4.2 {openProj, opening unreadable file} {unixOnly} {
+    resetProjTest
+    list [proj::openProj $noreadProj] [proj::getProjectPath] \
+	    [proj::isProjectOpen]
+} {1 {} 0}
+test proj-4.3 {openProj, opening corrupt file} {
+    resetProjTest
+    list [proj::openProj $corruptProj] [proj::getProjectPath] \
+	    [proj::isProjectOpen]
+} {1 {} 0}
+test proj-4.4 {openProj, opening corrupt file} {
+    resetProjTest
+    list [proj::openProj $corruptProj] [proj::getProjectPath] \
+	    [proj::isProjectOpen]
+} {1 {} 0}
+test proj-4.5 {openProj, opening local file} {
+    resetProjTest 1
+    set result [list [proj::openProj $localProj] [proj::getProjectPath] \
+		    [proj::isProjectOpen] [proj::isRemoteProj] ]
+    quitGui
+    set result
+} "0 $localProj 1 0"
+test proj-4.6 {openProj, opening local file} {
+    resetProjTest 1
+    proj::openProj $localProj
+    set result [dbg::getServerPortStatus]
+    quitGui
+    set result
+} {{Not connected} n/a n/a n/a}
+test proj-4.7 {openProj, opening local file} {
+    resetProjTest 1
+    proj::openProj $localProj
+
+    makeFile {set x 1} $dummy
+
+    gui::run dbg::step
+    waitForApp
+    waitForApp
+    set result [lindex [dbg::getServerPortStatus] 0]
+    quitGui
+    set result
+} {Connected}
+test proj-4.8 {openProj, opening remote file} {
+    resetProjTest 1
+    set result [list [proj::openProj $remoteProj] [proj::getProjectPath] \
+		    [proj::isProjectOpen] [proj::isRemoteProj]]
+    quitGui
+    set result
+} "0 $remoteProj 1 1"
+test proj-4.9 {openProj, opening remote file} {
+    resetProjTest 1
+    proj::openProj $remoteProj
+    set result [lindex [dbg::getServerPortStatus] 0]
+    quitGui
+    set result
+} {Listening}
+
+test proj-5.1 {closeProjCmd} {
+    resetProjTest
+} {}
+
+test proj-6.1 {closeProjDialog} {
+    resetProjTest
+} {}
+
+test proj-7.0 {closeProj, no project open} {
+    resetProjTest
+    proj::closeProj NONE
+} {0}
+test proj-7.1 {closeProj, cancel project close} {
+    resetProjTest
+    proj::closeProj CANCEL
+} {0}
+test proj-7.2 {closeProj, save open project first, no project open} {
+    resetProjTest
+
+    # Set the project path so the error in saveProj is generated.
+    proj::setProjectPath FOO
+
+    catch {proj::closeProj SAVE}
+} {1}
+test proj-7.3 {closeProj, save open project first, no project open} {
+    resetProjTest
+    proj::closeProj SAVE
+} {0}
+test proj-7.4 {closeProj, save open project first, nothing to save} {
+    resetProjTest 1
+    proj::openProj $localProj
+    proj::closeProj SAVE
+} {0}
+test proj-7.5 {closeProj, save open project first, unwritable file} {
+    resetProjTest 1
+    proj::openProj $nowriteProj
+    proj::closeProj SAVE
+} {1}
+test proj-7.6 {closeProj, save open project first, save succeed} {
+    resetProjTest 1
+    proj::openProj $localProj
+    pref::prefSet Project appScriptList	[list $dummy]
+    proj::closeProj SAVE
+} {0}
+test proj-7.7 {closeProj, make sure the Project group is removed} {
+    resetProjTest 1
+    proj::openProj $localProj
+    proj::closeProj CLOSE
+    pref::groupExists Project
+} {0}
+
+test proj-8.1 {saveProjCmd} {
+    resetProjTest
+} {}
+
+test proj-9.1 {saveAsProjCmd} {
+    resetProjTest
+} {}
+
+test proj-10.1 {saveOnCloseProjDialog} {
+    resetProjTest
+} {}
+
+test proj-11.1 {saveProjDialog} {
+    resetProjTest
+} {}
+
+test proj-12.1 {saveAsProjDialog} {
+    resetProjTest
+} {}
+
+
+test proj-13.1 {saveProj, empty file name} {
+    resetProjTest
+    proj::saveProj {}
+} {0}
+test proj-13.2 {saveProj, no project opened} {
+    resetProjTest
+    catch {proj::saveProj "unopenedfile.tpj"}
+} {1}
+test proj-13.3 {saveProj, verify project file name is preserved} {
+    resetProjTest 1
+    proj::openProj $localProj
+    proj::saveProj $localProj
+    proj::getProjectPath
+} "$localProj"
+test proj-13.4 {saveProj, unwritable file} {
+    resetProjTest 1
+    proj::openProj $nowriteProj
+    proj::saveProj $nowriteProj
+} {1}
+test proj-13.5 {saveProj, save succeed} {
+    resetProjTest 1
+    proj::openProj $localProj
+    proj::saveProj $localProj
+} {0}
+
+test proj-13.6 {saveProj, verify breakpoint are preserved} {
+    resetProjTest 1
+    proj::openProj $localProj
+
+    makeFile {
+	set x 1
+	set x 1
+	set x 1
+	set x 1
+    } $dummy
+
+    gui::run dbg::step
+    waitForApp
+    waitForApp
+
+    # Set the BP and save the project file
+    code::toggleLBP $code::codeBar 2.0 onoff
+    after 1
+    proj::saveProj $localProj
+
+    # Check the value of BP list
+    set result [pref::prefGet breakList Project]
+
+    # Unset the BP and save the file so it is uncahnged.
+    code::toggleLBP $code::codeBar 2.0 onoff
+    after 1
+    proj::saveProj $localProj
+
+    quitGui
+    set result
+} [list [list [file join $::tcltest::temporaryDirectory dummy.tcl] 2 enabled {}]]
+test proj-13.7 {saveProj, verify file name was added to recent proj list} {
+    resetProjTest 1
+    proj::openProj $localProj
+    proj::saveProj $localProj
+    pref::prefGet projectList GlobalDefault
+} [list [file nativename $localProj]]
+test proj-13.8 {saveProj, verify projectNeverSaved is valid} {
+    resetProjTest 1
+    proj::openProj $localProj
+    set proj::projectNeverSaved 1
+    proj::saveProj $localProj
+    set proj::projectNeverSaved
+} {0}
+
+test proj-14.1 {restartProj, when no project is loaded} {
+    resetProjTest
+    gui::setCurrentState new
+    catch {proj::restartProj}
+} {1}
+test proj-14.2 {restartProj, when project is stopped} {
+    resetProjTest 1
+    proj::openProj $localProj
+
+    rename gui::kill gui::kill_original
+    proc gui::kill {} {
+	set ::result KILL
+	gui::kill_original
+    }
+    dbg::register exit {lappend ::result EXIT}
+
+    makeFile {
+	set x 1
+	set x 1
+	set x 1
+	set x 1
+    } $dummy
+
+    gui::run dbg::step
+    waitForApp
+    waitForApp
+
+    pref::prefSet GlobalDefault warnOnKill 0
+    proj::restartProj
+    waitForApp
+    
+    dbg::unregister exit {lappend ::result EXIT}
+    rename gui::kill {}
+    rename gui::kill_original gui::kill 
+    quitGui
+    set result
+} {KILL EXIT}
+
+test proj-14.3 {restartProj, when project is running--bugs 4273 3530} {knownBug} {
+    resetProjTest 1
+    proj::openProj $localProj
+
+    rename gui::kill gui::kill_original
+    proc gui::kill {} {
+	set ::result KILL
+	gui::kill_original
+    }
+    dbg::register exit {lappend ::result EXIT}
+
+    makeFile {
+	while {1} {
+	    set x 1
+	}
+    } $dummy
+
+    gui::run dbg::run
+    waitForApp
+
+    pref::prefSet GlobalDefault warnOnKill 0
+    proj::restartProj
+    waitForApp
+    
+    dbg::unregister exit {lappend ::result EXIT}
+    rename gui::kill {}
+    rename gui::kill_original gui::kill 
+    quitGui
+    set result
+} {KILL EXIT}
+test proj-14.4 {restartProj, when project is dead} {
+    resetProjTest 1
+    proj::openProj $localProj
+
+    rename gui::kill gui::kill_original
+    proc gui::kill {} {
+	set ::result KILL
+	gui::kill_original
+    }
+    dbg::register exit {lappend ::result EXIT}
+
+    makeFile {
+	set x 1
+	set x 1
+	set x 1
+	set x 1
+    } $dummy
+
+    pref::prefSet GlobalDefault warnOnKill 0
+    proj::restartProj
+    waitForApp
+    
+    dbg::unregister exit {lappend ::result EXIT}
+    rename gui::kill {}
+    rename gui::kill_original gui::kill 
+    quitGui
+    set result
+} {}
+
+
+
+test proj-15.1 {isProjectOpen, no project open} {
+    resetProjTest
+    proj::isProjectOpen
+} {0}
+test proj-15.2 {isProjectOpen, project open} {
+    resetProjTest 1
+    proj::openProj $localProj
+    proj::isProjectOpen
+} {1}
+test proj-15.3 {isProjectOpen, open project then close project} {
+    resetProjTest 1
+    proj::openProj $localProj
+    proj::closeProj CLOSE
+    proj::isProjectOpen
+} {0}
+test proj-15.4 {isProjectOpen, open project then close project} {
+    resetProjTest
+    proj::openProj $localProj
+    proj::closeProj CANCEL
+    proj::isProjectOpen
+} {1}
+
+test proj-16.1 {checkProj} {
+    resetProjTest
+
+} {}
+
+test proj-17.1 {isRemoteProj, no project open - get default value} {
+    resetProjTest
+    proj::isRemoteProj
+} {0}
+test proj-17.2 {isRemoteProj, no project open - get default value} {
+    resetProjTest 1
+    proj::openProj $remoteProj
+    proj::closeProj $remoteProj
+    proj::isRemoteProj
+} {0}
+test proj-17.3 {isRemoteProj, local project} {
+    resetProjTest 1
+    proj::openProj $localProj
+    proj::isRemoteProj
+} {0}
+test proj-17.4 {isRemoteProj, remote project} {
+    resetProjTest 1
+    proj::openProj $remoteProj
+    proj::isRemoteProj
+} {1}
+
+set x {
+
+test proj-18.1 {showNewProjWindow, close an open project first -- canceled} {
+    resetProjTest 1
+    projWin::showWindow "I crushed my Wookie"
+    update
+
+    $projWin::okBut invoke
+    
+    quitGui
+    set result
+} {}
+test proj-18.2 {showNewProjWindow, close an open project first -- save} {
+    resetProjTest 1
+    projWin::showWindow "I crushed my Wookie"
+    $projWin::okBut invoke
+    update
+
+    quitGui
+    set result
+} {}
+test proj-18.3 {showNewProjWindow, verify the project path is set} {
+    resetProjTest 1
+    proj::setProjectPath {}
+    projWin::showWindow "I crushed my Wookie"
+    update
+
+    $projWin::okBut invoke
+    set result [proj::getProjectPath]
+    quitGui
+    set result
+} {Untitled}
+test proj-18.4 {showNewProjWindow, verify the Project was created} {
+    resetProjTest 1
+    projWin::showWindow "I crushed my Wookie"
+    update
+
+    $projWin::okBut invoke
+    set result [pref::groupExists Project]
+    quitGui
+    set result
+} {}
+test proj-18.5 {showNewProjWindow, verify projectNeverSaved is true} {
+    resetProjTest 1
+    projWin::showWindow "I crushed my Wookie"
+    update
+
+    $projWin::okBut invoke
+    set result $proj::projectNeverSaved
+    quitGui
+    set result
+} {}
+test proj-18.6 {showNewProjWindow, verify the project was initialized} {
+    resetProjTest 1
+    projWin::showWindow "I crushed my Wookie"
+    update
+
+    $projWin::okBut invoke
+    quitGui
+    set result
+} {}
+
+}
+
+test proj-19.1 {showThisProjWindow} {
+    resetProjTest
+
+} {}
+test proj-20.1 {showDefaultProjWindow} {
+    resetProjTest
+
+} {}
+test proj-21.1 {fileMissingWindow} {
+    resetProjTest
+
+} {}
+test proj-22.1 {saveAsFileWindow} {
+    resetProjTest
+
+} {}
+test proj-23.1 {openFileWindow} {
+    resetProjTest
+
+} {}
+test proj-24.1 {openComboFileWindow} {
+    resetProjTest
+
+} {}
+test proj-25.1 {ShowFileMissingWindow} {
+    resetProjTest
+
+} {}
+test proj-26.1 {BrowseFileMissingWindow} {
+    resetProjTest
+
+} {}
+test proj-27.1 {CancelFileMissingWindow} {
+    resetProjTest
+
+} {}
+test proj-28.1 {InitNewProj} {
+    resetProjTest
+
+} {}
+test proj-29.1 {InitPort} {
+    resetProjTest
+
+} {}
+test proj-30.1 {AddRecentProj} {
+    resetProjTest
+
+} {}
+test proj-31.1 {RemoveRecentProj} {
+    resetProjTest
+
+} {}
+test proj-33.1 {SaveProjCmd} {
+    resetProjTest
+
+} {}
+test proj-34.1 {RestoreProjCmd} {
+    resetProjTest
+
+} {}
+
+
+resetProjTest
+cleanProject
+pref::setGroupOrder {}
+file delete $dummy
+
+cd $oldpwd
+
+cleanupTests
+
+if {[info exists tk_version] && !$tcl_interactive} {
+    exit
+}

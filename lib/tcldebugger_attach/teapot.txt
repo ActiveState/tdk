@@ -1,0 +1,11 @@
+Package tcldebugger_attach 1.4
+Meta entrysource     attach.tcl
+Meta included        attach.tcl
+Meta platform        tcl
+Meta summary         Remote and embedded debugging, attach running process
+Meta summary         to debugger
+Meta description     This package enables the debugging of remote and embedded
+Meta description     processes. It provides commands to establish and
+Meta description     maintain a connection with the Tcl Dev Kit tcldebugger
+Meta category        Remote and embedded debugging
+Meta subject         attach debugger process embedded remote

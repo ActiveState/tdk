@@ -1,0 +1,10 @@
+# Tcl package index file
+
+
+if {[file exists $dir/checker.tbc]} {
+    package ifneeded @PACKAGE@ @VERSION@ [list tclPkgSetup $dir @PACKAGE@ @VERSION@ {{checker.tbc source {::checker::check}}}]
+} else {
+    package ifneeded @PACKAGE@ @VERSION@ [list tclPkgSetup $dir @PACKAGE@ @VERSION@ {{checker.tcl source {::checker::check}}}]
+}
+
+    

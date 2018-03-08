@@ -1,0 +1,115 @@
+# -*- tcl -*- tclCom.pcx --
+#
+#	This file implements the TclPro Checker extension for TclCom.
+#
+# Copyright (c) 1999-2000 Ajuba Solutions
+# Copyright (c) 2003-2006 ActiveState Software Inc.
+# All rights reserved.
+# 
+# RCS: @(#) $Id: tclCom.pcx,v 1.10 2000/05/30 22:28:56 wart Exp $
+
+# ### ######### ###########################
+## Requisites
+
+package require pcx          ; # PCX API
+
+# ### ######### ###########################
+## Tcl core version dependencies of the package this checker is for.
+
+pcx::register tclCom
+pcx::tcldep   1.0 needs tcl
+
+# ### ######### ###########################
+
+# ### ######### ###########################
+## Package specific message types and their human-readable
+## translations.
+
+# ### ######### ###########################
+# scanCmdsX.X --
+# Define the set of commands that need to be recursed into when 
+# generating a list of user defiend procs, namespace and Class 
+# contexts and procedure name resolutions info.
+
+pcx::scan 1.0 foreachitem
+pcx::scan 1.0 tclcom::foreachitem
+
+# ### ######### ###########################
+# Define the set of command-specific checkers used by this package.
+
+pcx::check 1.0 std configure	{checkSimpleArgs 2 2 {{checkOption {
+    {-currencymode {checkOption {
+	{list		{checkSimpleArgs 0 0 {checkWord}}}
+	{numeric	{checkSimpleArgs 0 0 {checkWord}}}
+    } {}}}
+    {-implicitreleasemodel {checkBoolean}}
+} {}}}}
+pcx::check 1.0 std createobject	{checkSimpleArgs 1 5 {
+    checkWord {checkSwitches 1 {
+	{-hostname {checkWord}}
+	{-name {checkWord}}
+    } {}}}
+}
+pcx::check 1.0 std foreachitem	{analyzer::checkTailArgsFirst \
+	{checkSimpleArgs 2 3 {tclCom::checkVarList checkWord}} \
+	{checkSimpleArgs 1 1 {checkBody}} \
+	1}
+pcx::check 1.0 std info		{checkSimpleArgs 2 2 {{checkOption {
+    {functions		{checkSimpleArgs 1 1 {checkWord}}}
+    {iid		{checkSimpleArgs 1 1 {checkWord}}}
+    {name		{checkSimpleArgs 1 1 {checkWord}}}
+} {}}}}
+pcx::check 1.0 std loadtypelib	{checkSimpleArgs 1 1 {checkFileName}}
+pcx::check 1.0 std release	{checkSimpleArgs 1 -1 {checkWord}}
+
+# ### ######### ###########################
+
+namespace eval tclCom {
+    # ### ######### ###########################
+    # aliasCmds --
+    # Define the set of commands that are created as aliases of the
+    # corresponding tclcom::* commands.  These aliases are created only 
+    # for the current version incr Tcl.
+    
+    variable aliasCmds {
+	 configure createobject foreachitem info loadtypelib release
+    }
+}
+
+# ### ######### ###########################
+## Initialization
+
+## This package provides its own initialization command to handle
+## special definitions. For the common parts it uses the standard
+## initialization.
+
+proc ::tclCom::init {ver} {
+    pcx::init tclCom $ver
+
+    # Add aliased checkers.
+    # Alias the standard tclcom::* commands so the namespace qualifier 
+    # appears in the command name.
+
+    variable aliasCmds
+    set aliases {}
+    foreach name $aliasCmds {
+	if {[pcx::topDefinition $name] != {}} {
+	    lappend aliases tclcom::$name [pcx::topDefinition $name]
+	}
+    }
+    pcx::checkers $aliases
+}
+
+# tclCom::checkForeachitemCmd --
+
+proc tclCom::checkVarList {tokens index} {
+    set word [lindex $tokens $index]
+    
+    if {[getLiteral $word literal]} {
+	set index [checkListValues 1 -1 checkVarNameWrite $tokens $index]
+    } else {
+	set index [checkVarNameWrite $tokens $index]
+    }
+    return $index
+}
+

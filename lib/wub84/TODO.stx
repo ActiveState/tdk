@@ -1,0 +1,45 @@
+=== Cookie Implementation ===
+
+Cookies must be implemented as a dict, with value ''and'' date, domain etc.
+
+=== Domain Caching ===
+
+Map URL directly to (file path + one open fd) or content.
+
+=== Sessions ===
+
+How?  Interface?  Relation to pipelining, cookies, persistence?
+
+=== aolserver ===
+
+Write a domain server module which provides an aolserver interface.
+
+=== authentication ===
+
+How to do auth?  is it a domain level thing, a worker thread thing, or both?
+
+How to work in with (is it patthoyts'?) grand authentication thing?
+
+How/where to store auth state?  It's really per Request.
+
+=== Request / Pipeline ===
+
+Request is a misnomer now - a single Request handles a connection which can have many request/response pairs.
+
+=== request parser ===
+
+Is it possible to do this faster than with regexp?  A dedicated parser?
+
+=== refactoring Request ===
+
+Request is a misnomer - it is really a Connection which contains many Requests.
+
+It has several interfaces:
+
+* a connection handling interface
+* an HTTP1.1 parser
+* a response interface
+* a request processing interface.
+
+This doesn't present any processing problems, but it does make documentation difficult.
+

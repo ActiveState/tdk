@@ -1,0 +1,57 @@
+Ideas for TDK 6
+===============
+
+[collected from the emails so far]
+
+- batch mode coverage?
+- refresh interfaces?
+
+	  xref, package handling in TclApp.
+
+- better / updated 8.6 support, like more oo?
+- OS X app store app maker?
+- better speed through supporting only 8.4+?
+
+
+- tclinspector as a more powerful 'inspect variables' tool called on by the debugger when the application is stopped.
+
+- tclinspector calling on checker when showing code pieces (proc bodies)
+
+- GUIs for teapot-admin, maybe teacup ? (Although that would be AT)
+       3rd hand, GUI for teapot, with integration/commuication features for use by TclApp ?
+
+- tclpe (package editor) extended with ability to upload a package into a local repo.
+
+- dash board of tdk apps ? (integrated single TDK app with all the functions?)
+
+- fixing tclsvc tcl 8.5 event handling issues 
+
+[NEW]
+
+- vague: MultiPaaS integration. Problem, my udnerstanding of the
+  multi-pass not good enough yet to see what TDK would need for proper
+  integration.
+
+- Tcl is glue ... what things can we glue to ? glue with ? which are
+  important to developers ? (TDK-only Tcl packages for
+  special/important things).
+
+- sqlite database browser/editor ? (there are some out there, not sure
+  if any are Tcl based, what license, i.e. snarfable)
+
+- templates ? - web-dev template, gui-app template ? Is the community
+  actually using templates a lot, if any ?
+
+- Macro-prcessors like 'expand' and what-not as starpack ...
+
+- Web server as starpack with template setup for quick-start ? (wub,
+  wibble, tclhttpd ?)
+
+- DTP (doctools documentation processor) as starpack, maybe with GUI,
+  editor integration (komodo, emacs) for easier doc writing
+  (continuous syntax check, conversion ?)
+
+- Tcl based Make-replacement ? Would need investigation which of them
+  are good, easy to extend, supportable, possibly usable as package
+  ==> Going in the direction of a Tcl-based TEA/NEXT for packages,
+  pure Tcl and binary.

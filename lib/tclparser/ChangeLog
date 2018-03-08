@@ -1,0 +1,89 @@
+2006-01-25  Andreas Kupries <andreask@activestate.com>
+
+	* tclconfig/tcl.m4: Updated to TEA 3.5
+	* configure.in:     Ditto.
+	* configure:        Regenerated.
+
+2005-03-18  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* Makefile.in (AR): use @AR@
+	* configure, tclconfig/tcl.m4: TEA 3.2 patch update
+
+2005-03-17  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* configure (new):           Updated to TEA 3.2
+	* Makefile.in, configure.in:
+	* tclconfig/tcl.m4, tests/all.tcl:
+	* tclconfig/ChangeLog (removed):
+
+2003-11-20  David N. Welton  <davidw@dedasys.com>
+
+	* doc/parse.n: Added nroff output as a convenience.
+
+	* doc/parse.man: Added doctools man page, to replace old,
+	outdated, and inaccurate Word file.
+
+2003-04-04  Andreas Kupries  <andreask@activestate.com>
+
+	* tclconfig/tcl.m4: Updated to newest tcl.m4, regenerated
+	  configure's.
+
+2002-10-15  Andreas Kupries  <andreask@pliers.activestate.com>
+
+	* configure.in: Changed to propagate an initial CFLAGS value to
+	  the final definition. A TEA condition (SHARED_BUILD == 1)
+	  squashed it, causing it the build system to loose the
+	  +DAportable we specify for the AS PA-RISC2.2 build host. This is
+	  a problem for _all_ TEA and TEA 2 based configure files.
+
+2002-10-04  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
+	* Makefile.in:
+	* configure.in:
+	* aclocal.m4:
+	* tools:
+	* tclconfig: Rewrote build system to use TEA 2.
+
+2001-10-17  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
+	* tclParser.c: Changed name of package from "tclParser" to
+	  "parser". TclXML provides a package called "tclparser" (pure-tcl
+	  parser for xml). Note the different capitalization. There are
+	  also thoughts underway to make [load] and/or [package require]
+	  case-insensitive. Hence the decision to avoid the possible clash
+	  by renaming this package. Note that the bytecode compiler
+	  package is already called "compiler", so there is a precedent
+	  for using such a generic name. This package exposes "the" parser
+	  of the core tcl interpreter.
+
+2001-03-14  Karl Lehenbauer <karl@procplace.com>
+
+	* mkIndex.tcl.in: Altered Nativepath proc to work correctly with 
+	  new Cygwin drive specification syntax when running on Windows.
+	  (Was //d/foo -> D:/foo   Now also /cygdrive/d/foo -> D:/foo)
+
+2001-03-02  Karl Lehenbauer <karl@procplace.com>
+
+    * Changed packageVersion in tclParser.c from 1.0 to 1.4.
+      This has the nice side-effect of causing mkIndex.tcl
+      to generate a valid pkgIndex.tcl file (previously
+      it would not put in the package ifneeded line.)
+
+2000-07-31  Brent Welch <welch@ajubasolutions.com>
+
+    * mkIndex.tcl.in - fixed DLL install/mkIndex for Windows.
+
+2000-07-18  Brent Welch <welch@ajubasolutions.com>
+
+    * Makefile.in - bug fix in install for lib_BINARIES
+
+2000-07-18  David Gravereaux <davygrvy@ajubasolutions.com>
+
+    * tclParser.c: removed #include <tcl.h> because #include <tclInt.h>
+    will do it anyways.  Changed Tcl_InitStubs in Parser_Init() to ask
+    for 8.1 instead of 8.0 as there won't ever be a a stub-enabled 8.0.6.
+
+
+2000-07-16  David Gravereaux <davygrvy@ajubasolutions.com>
+
+    * configure.in: upped version macro to 1.4

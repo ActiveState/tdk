@@ -1,0 +1,154 @@
+2008-12-15  Andreas Kupries  <andreask@activestate.com>
+
+	* cmpWrite.c: Handle TIP#336 addition of API to access
+	interp->errorLine.
+
+2007-06-21  Andreas Kupries  <andreask@activestate.com>
+
+	* cmpWrite.c (CreateInstLocList): Tcl 8.5 specific change.
+	  Compensate for the INST_START_CMD the 8.5 core compiler may emit
+	  before calling our LocalProcCompileProc. Not doing so leaves us
+	  with an incorrect offset to the 'proc' bytecode sequence,
+	  causing us to bytecompile only those procedures specified as the
+	  very first command of a script, and none else.
+
+2007-03-19  Andreas Kupries <andreask@activestate.com>
+
+	* cmpWPkg.c: Added command 'getTclVer'. Returns the version of Tcl
+	  the package was compiled against. Allows us to check this at
+	  runtime against the active Tcl version.
+
+2006-09-11  Andreas Kupries  <andreask@activestate.com>
+
+	* configure.in: Bumped version to 1.6. Regenerated configure.
+	* configure:
+
+	* cmpWrite.c: Applied patch by Uwe Traum to handle the 8.5
+	  specific JumpTableInfo (compiled 'switch'). Made conditional on
+	  the version of Tcl the package is compiled against.
+
+2006-01-25  Andreas Kupries <andreask@activestate.com>
+
+	* tclconfig/tcl.m4: Updated to TEA 3.5
+	* configure.in:     Ditto.
+	* configure:        Regenerated.
+
+2005-03-22  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* Makefile.in (INCLUDES): include $includedir for cmpInt.h
+
+2005-03-18  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* cmpWrite.c: CONST84 corrections
+
+	* cmpWPkg.c: whitespace police
+
+	* Makefile.in, tclconfig/tcl.m4: Updated to TEA 3.2
+	* configure, configure.in:
+	* mkIndex.tcl.in (removed):
+
+2003-04-04  Andreas Kupries  <andreask@activestate.com>
+
+	* configure.in:
+	* tclconfig/tcl.m4: Updated to newest tcl.m4, regenerated
+	  configure's.
+
+2002-12-02  Andreas Kupries  <andreask@pliers.activestate.com>
+
+	* cmpWPkg.c (Tclcompiler_Init): Use 'Tcl_InitStubs' instead of
+	  'Tcl_PkgRequire'. Without this change the stub-table is not
+	  initialized. On windows this crashes the system when trying to
+	  load tclcompiler as shared library.
+
+	* cmpWrite.h (TCL_STORAGE_CLASS): Ensured correct storage class
+	  when compiling on Windows, eliminates several warnings when
+	  compiling on Windows.
+
+	* cmpWrite.c (CompileOneProcBody): Added cast to prevent warning
+	  on Windows when compiled against 8.4. Required to allow a debug
+	  build.
+
+2002-10-25  Andreas Kupries  <andreask@pliers.activestate.com>
+
+	* cmpWrite.c (CompileOneProcBody): Removed unused variable 'nameLen'.
+
+2002-10-15  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* tclconfig/tcl.m4:
+	* configure:
+	* configure.in: move the CFLAGS definition into TEA_ENABLE_SHARED
+	and make it pick up the env CFLAGS at configure time.
+
+2002-10-15  Andreas Kupries  <andreask@pliers.activestate.com>
+
+	* configure.in: Changed to propagate an initial CFLAGS value to
+	  the final definition. A TEA condition (SHARED_BUILD == 1)
+	  squashed it, causing it the build system to loose the
+	  +DAportable we specify for the AS PA-RISC2.2 build host. This is
+	  a problem for _all_ TEA and TEA 2 based configure files.
+
+2002-10-03  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
+	* Makefile.in (INCLUDES): Added -I$(includedir) so that the
+	  package is able to find the headers of tbcload (cmpInt.h,
+	  proTbcLoad.h), which contain macros used by the compiler
+	  too. For example CMP_VERSION.
+
+2002-10-03  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* Makefile.in: converted build system to TEA2 spec.
+	* aclocal.m4:
+	* configure (new):
+	* configure.in: 
+	* tclconfig/README.txt (new):
+	* tclconfig/install-sh (new):
+	* tclconfig/tcl.m4 (new):
+
+2002-10-01  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* cmpWPkg.c (Tclcompiler_Init): ensure version compatability with
+	an exact Tcl_PkgRequire call.
+
+2002-09-30  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* configure.in: update to v1.5.
+
+	* cmpWrite.c (CompilerInit): adapt formatVersion to match interp.
+
+2001-10-15  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
+	* cmpWrite.c (LoadObjRefInfoTable): Adapted to changed signature
+	  of "TclGetInstructionTable" (need an explicit cast now).
+
+2001-10-02  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
+	* Makefile.in (install-lib-binaries): Reactivated the generation
+	  of a pkgIndex.tcl file. Together with the change below the
+	  compiler package is now dynamically loadable.
+
+	* cmpWPkg.c: Changed Compiler_Init to Tclcompiler_Init to remove
+	  the mismatch between function name and library name.
+
+2001-03-14  Karl Lehenbauer <karl@procplace.com>
+
+	* mkIndex.tcl.in: Altered Nativepath proc to work correctly with 
+	  new Cygwin drive specification syntax when running on Windows.
+	  (Was //d/foo -> D:/foo   Now also /cygdrive/d/foo -> D:/foo)
+
+2000-07-24  Brent Welch <welch@ajubasolutions.com>
+
+    * cmpWrite.c - fixed use of uninitialized variable while formatting
+    error message.
+
+2000-07-19  Brent Welch <welch@ajubasolutions.com>
+
+    * Makefile.in - Removed use of mkIndex.tcl script,
+    which is unecessary for static libraries, and broken as well.
+
+2000-07-18  Brent Welch <welch@ajubasolutions.com>
+
+    * Makefile.in - bug fix in install for lib_BINARIES
+
+2000-07-18  Brent Welch <welch@ajubasolutions.com>
+
+    * Initial working version for TclPro 1.4

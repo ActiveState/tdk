@@ -1,0 +1,15 @@
+Package image 0.3
+Meta entrysource image.tcl
+Meta included    image.tcl
+Meta platform    tcl
+Meta require     Tk
+
+Package image::tint 0.1
+Meta entrysource tint.tcl
+Meta included    tint.tcl
+Meta platform    tcl
+Meta require     image
+Meta require     syscolor
+Meta require     Tk
+Meta require     treectrl
+

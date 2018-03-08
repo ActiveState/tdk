@@ -1,0 +1,127 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<HTML>
+<HEAD>
+<LINK REL="STYLESHEET" HREF="aspn.css" TYPE="text/css">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<TITLE>Tcl Dev Kit Tutorial - Debugging Subprocesses</TITLE>
+</HEAD>
+
+<body marginheight="5" topmargin="5" marginwidth="10" leftmargin="10">
+
+@header@
+
+<hr size="1" noshade width="100%">
+
+<a name="top"></a>
+
+<h1>Tutorial: Debugging Subprocesses</h1>
+
+<ul>
+  <li><a class="doc" href="#intro">Introduction</a></li>
+  <li><a class="doc" href="#one">Step One: Opening the Tutorial Program</a></li>
+  <li><a class="doc" href="#two">Step Two: Modifying the Script</a></li>
+  <li><a class="doc" href="#three">Step Three: Setting Spawnpoints</a></li>
+  <li><a class="doc" href="#four">Step Four: Running the Debugger</a></li>
+  <li><a class="doc" href="#five">Step Five: Debugging a Spawned Session</a></li>
+</ul>
+
+<h2><a name="intro">Introduction</a></h2>
+
+<p>This tutorial shows you how to debug multiple processes by "spawning" new sessions
+from a main session in the
+<a class="doc" href="Debugger.html">Tcl Dev Kit Debugger</a>. The new sessions
+are subprocesses of the main session. They are created by setting
+<a class="doc" href="Debugger.html#mult_processes">spawnpoints</a>
+(similar to breakpoints) in the Tcl Dev Kit Debugger's main window. Then, when
+you run the debugger, a new tab displaying each spawned subprocess is launched
+in the <a class="doc" href="Debugger.html#Code_Display">Code display</a> area.</p>
+
+
+<h2><a name="one">Step One: Opening the Tutorial Program</a></h2>
+
+<ul>
+  <li><strong>Unix</strong>: Change to the directory 
+  <CODE>/demos/TclDevKit/TclDebugger/Spawning/</CODE> beneath the root Tcl Dev Kit 
+  installation directory, and run:
+  
+  <pre>tcldebugger spawn.tpj</pre></li>
+  
+  <li><strong>Windows</strong>: Click <STRONG>Start | Programs | ActiveState
+  Tcl Dev Kit | Tcl Dev Kit Demos | Debugging Subprocesses</STRONG></li>
+</ul>
+
+
+<P>The <a class="doc" href="Debugger.html">Tcl Dev Kit Debugger</a> will open
+and load the "spawn" project. The
+<a class="doc" href="Debugger.html#Code_Display">Code display</a> portion of the
+debugger's main window will show the file "main.tcl".</P>
+
+
+
+<h2><a name="two">Step Two: Modifying the Script</a></h2>
+
+<p>To debug multiple processes, your script must contain code
+similar to that used in this tutorial. (See
+<a class="doc" href="Debugger.html#spawn">Spawning a New Session</a> for more
+information about modifying a script.) You must include <code>proc spawn</code>
+as well as a <code>spawn</code> command for each subprocess that you want to
+generate. The script used here launches two new sessions, "subprocess1.tcl" and
+"subprocess2.tcl".</p>
+
+<img border="1" src="images/spawn_modify.gif">
+
+<h2><a name="three">Step Three: Setting Spawnpoints</a></h2>
+
+<p>In addition to including the <code>spawn</code> commands described in Step Two,
+you must set spawnpoints that tell the debugger when to launch a new session.
+For the purpose of this tutorial, spawnpoints (indicated by green arrows) have
+been preset in the project file at lines 23 and 24.</p>
+
+<img border="1" src="images/spawn_spawnpoints.gif">
+
+<h2><a name="four">Step Four: Running the Debugger</a></h2>
+
+<p>Once the script has been modified and spawnpoints have been set, you can run
+the <a class="doc" href="Debugger.html">Tcl Dev Kit Debugger</a> and spawn
+subprocesses.</p>
+
+<p>Select <strong>Debug|Run</strong>. The Tcl Dev Kit Debugger automatically
+launches <a class="doc" href="Debugger.html#Code_Display">Code display</a> tabs
+showing the subprocesses specified in Step Two. Details of the spawn are shown
+in the <a class="doc" href="Debugger.html#ManData">Eval Console</a>. Note that
+the main session and the two subprocesses run in parallel.</p>
+
+
+<img border="1" src="images/spawn_run.gif">
+
+<h2><a name="five">Step Five: Debugging a Spawned Session</a></h2>
+
+<p>Notice that the focus in the
+<a class="doc" href="Debugger.html">Tcl Dev Kit Debugger's</a> main window has
+shifted to the tab containing the code for "subprocess2.tcl". The yellow arrow
+indicates that the Tcl Dev Kit Debugger is stopped at the first executable
+command (<code>proc multiply</code>) on line 11.</p>
+
+<p>To debug the subprocess2.tcl session:</p>
+
+<ol>
+  <li>Set a breakpoint on line 24.</li>
+  <li>Select <strong>Debug|Step In</strong>.<br/><br/>
+  
+  <img border="1" src="images/spawn_stepin.gif"></li><br/><br/>
+  
+  <li>Select <strong>Debug|Kill</strong>.<br/><br/>
+  
+  <img border="1" src="images/spawn_kill.gif"></li><br/><br/>
+  
+  <li>A message box will be displayed advising that this command will kill the
+  running application.</li>
+  <li>Click <strong>OK</strong> to close the Tcl Dev Kit Debugger's connection
+  with the spawned session.</li>
+</ol>
+
+
+</BODY>
+
+</HTML>

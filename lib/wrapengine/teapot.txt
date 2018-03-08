@@ -1,0 +1,170 @@
+Package tclapp 1.0
+Meta author          ActiveState Software Inc.
+Meta copyright       (c) @year@ ActiveState Software Inc.
+Meta description     This application takes a set of files and packages,
+Meta description     and turns them into a wrapped application, starpack,
+Meta description     or starkit.
+Meta entrysource     tclapp.tcl
+Meta included        tclapp.tcl
+Meta license         Tcl Dev Kit License
+Meta platform        tcl
+Meta require         cmdline
+Meta require         compiler
+Meta require         csv
+Meta require         fileutil
+Meta require         log
+Meta require         starkit
+Meta require         tclapp::banner
+Meta require         tclapp::cmdline
+Meta require         tclapp::config
+Meta require         tclapp::cursor
+Meta require         tclapp::files
+Meta require         tclapp::fres
+Meta require         tclapp::misc
+Meta require         tclapp::msgs
+Meta require         tclapp::tmp
+Meta require         tclapp::wrapengine
+Meta require         tcldevkit::config
+Meta require         vfs::mk4
+Meta subject         deployment repository wrapping
+Meta summary         TDK Wrapper Application
+
+Package tclapp::msgs 1.0
+Meta entrysource     tclapp_msgs.tcl
+Meta included        tclapp_msgs.tcl
+Meta platform        tcl
+
+Package tclapp::tmp 1.0
+Meta entrysource     tclapp_tmp.tcl
+Meta included        tclapp_tmp.tcl
+Meta platform        tcl
+Meta require         fileutil
+Meta require         log
+Meta require         tclapp::msgs
+
+Package tclapp::files 1.0
+Meta entrysource     tclapp_files.tcl
+Meta included        tclapp_files.tcl
+Meta platform        tcl
+Meta require         tclapp::msgs
+
+Package tclapp::fres 1.0
+Meta entrysource     tclapp_fres.tcl
+Meta included        tclapp_fres.tcl
+Meta platform        tcl
+Meta require         fileutil
+Meta require         log
+Meta require         tclapp::msgs
+Meta require         vfs::mk4
+
+Package tclapp::misc 1.0
+Meta entrysource     tclapp_misc.tcl
+Meta included        tclapp_misc.tcl
+Meta platform        tcl
+Meta require         fileutil
+Meta require         ico
+Meta require         stringfileinfo
+Meta require         tclapp::files
+Meta require         tclapp::fres
+Meta require         tclapp::msgs
+
+Package tclapp::config 1.0
+Meta entrysource     tclapp_config.tcl
+Meta included        tclapp_config.tcl
+Meta platform        tcl
+Meta recommend       compiler
+Meta require         teapot::reference
+
+Package tclapp::pkg 1.0
+Meta entrysource     tclapp_pkg.tcl
+Meta included        tclapp_pkg.tcl
+Meta platform        tcl
+Meta require         fileutil
+Meta require         pref::devkit
+Meta require         repository::api
+Meta require         repository::localma
+Meta require         repository::mem
+Meta require         repository::pool
+Meta require         repository::prefix
+Meta require         repository::provided
+Meta require         repository::resolve
+Meta require         repository::tap
+Meta require         repository::union
+Meta require         tap::db::paths
+Meta require         tclapp::misc
+Meta require         tclapp::msgs
+Meta require         tclapp::pkg::pool
+Meta require         teapot::config
+Meta require         teapot::instance
+Meta require         teapot::metadata
+Meta require         teapot::metadata::read
+Meta require         zipfile::decode
+
+Package tclapp::cursor 1.0
+Meta entrysource     cursor.tcl
+Meta included        cursor.tcl
+Meta platform        tcl
+
+Package tclapp::wrapengine 1.0
+Meta entrysource     wengine.tcl
+Meta included        wengine.tcl
+Meta platform        tcl
+Meta require         compiler
+Meta require         fileutil
+Meta require         log
+Meta require         osx::bundle::app
+Meta require         starkit
+Meta require         tclapp::files
+Meta require         tclapp::misc
+Meta require         tclapp::msgs
+Meta require         tclapp::pkg
+Meta require         teapot::instance
+Meta require         teapot::metadata::container
+Meta require         teapot::metadata::read
+Meta require         teapot::metadata::write
+Meta require         vfs::mk4
+
+Package tclapp::banner 1.0
+Meta entrysource     banner.tcl
+Meta included        banner.tcl
+Meta platform        tcl
+Meta require         compiler
+
+Package tclapp::cmdline 1.0
+Meta entrysource     cmdline.tcl
+Meta included        cmdline.tcl
+Meta platform        tcl
+Meta require         cmdline
+Meta require         platform
+Meta require         pref::devkit
+Meta require         repository::cache
+Meta require         struct::stack
+Meta require         tclapp::banner
+Meta require         tclapp::files
+Meta require         tclapp::fres
+Meta require         tclapp::misc
+Meta require         tclapp::msgs
+Meta require         tclapp::pkg
+Meta require         tclapp::tmp
+Meta require         teapot::config
+Meta require         teapot::instance
+Meta require         teapot::reference
+
+Package tclapp::pkg::pool 1.0
+Meta entrysource     pkgpool.tcl
+Meta included        pkgpool.tcl
+Meta platform        tcl
+Meta require         snit
+
+Package tclapp::tappkg 1.0
+Meta entrysource     tclapp_tappkg.tcl
+Meta included        tclapp_tappkg.tcl
+Meta platform        tcl
+Meta require         fileutil
+Meta require         log
+Meta require         pref
+Meta require         pref::devkit
+Meta require         starkit
+Meta require         tclapp::fres
+Meta require         tclapp::msgs
+Meta require         tcldevkit::config

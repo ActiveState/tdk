@@ -1,0 +1,6 @@
+Package splash 1.3
+Meta entrysource splash.tcl
+Meta included    splash.tcl
+Meta platform    tcl
+Meta require     help
+

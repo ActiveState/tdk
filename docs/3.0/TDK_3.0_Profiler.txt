@@ -1,0 +1,417 @@
+TDK 3.0 Profiler
+================
+
+-       [prio 3]
+
+        Subtopic of debugger.
+
+        Extend the coverage collection mechanism in the debugger
+        backend into a --> 'Profiler'.  In other words, generate
+        accurate 'timing' information beyond simple call-counting.
+
+        Save this timing data for external tools.
+
+--------------------
+
+Required:
+
+        We have to extend the nub, i.e. the debugger backend, with
+        code which times the application commands it invokes during a
+        debugger run. We store the timing information as part of the
+        coverage data.
+
+Data:
+        Keep (all time in microseconds):
+        -       Accumulated total time over all invokations.
+        -       Minimal time in an invokation.
+        -       Maximal time in an invokation.
+
+        All data is per location and the command at that location.
+
+        We do not keep:
+        -       Average time per invokation.
+
+                This can be computed from the callcount and the total
+                time we kept. It can also be computed in the frontend,
+                or any external tool.
+
+        The standard variance of invokation times for a location can
+        be computed incrementally. Should we do it ? (Cost ?) A
+        possible problem is the loss precision over time (accumulated
+        rounding errors) if we do so.
+
+        The alternative for this and other higher statistics is to
+        keep the total history of execution times for a command,
+        i.e. one value per call, a time series per location, and then
+        to compute them in one go, with maximum precision, and
+        offloaded into the frontend. This is for all commands executed
+        during a run. This will not have that much of an impact on the
+        performance of the debugger, however it does carry a huge cost
+        in the memory required to store this data.
+
+Frontend:
+        Display time data together with call counts
+        (Additional columns: Kept data + Average time)
+
+        Extend the saving of coverage data with the saving of the
+        timing information.
+
+        What other needs are there for the display of this information
+        ?
+
+
+Misc notes:
+
+        We could do a special profiler frontend which runs an
+        application in the same manner as the debugger, except that
+        there are no breakpoints, no error interception, just
+        instrumentation and recording of timing and coverage
+        information.
+
+        Is a simplified instrumentation possible for this ?
+
+        Can we also use a simper nub not tracking as much information
+        in the virtualization layer as the full nub ?
+
+
+See also
+        TDK_3.0_Debugger.txt
+
+
+Data collection, Problems
+--------------------------
+
+Measuring the time spent in a simple statement is trivial. For nested
+statements however, be that lexically (f.e. while), or dynamically
+(procedure calls) measunring the time spent in the compound statement
+is, to understate, difficult.
+
+The reasons for that are manifold:
+
+1.      Taking a [time] inside of an outer [time] incurs overhead in
+        the tcl core itself.
+
+2.      The [time] taken for the subordinate statements of a compound
+        will not only include their own time, but also the time the
+        profiler/debugger will spent with management tasks in the
+        virtualization layer (DbgNub_Do).
+
+        Here we actually get arbitrary delays and times if a
+        breakpoint is triggered and has to wait for the user to
+        respond.
+
+3.      The usage of [time] implies that none of the application code
+        will be bytecompiled, but always directly evaluated. This
+        takes more time than bytecode execution and means that the
+        taken time may have no relation to the actual time spent for
+        the command when running outside of the profiler/debugger.
+
+Example code
+~~~~~~~~~~~~
+This is the example used to demonstrate the problem, and also the code
+used to compare the various proposed data correction algorithms.
+
+--      -----------------------------------------
+ 1
+ 2      proc multiply {n m} {
+ 3          set res 0
+ 4          while {$n > 0} {
+ 5              incr n -1
+ 6              incr res $m
+ 7          }
+ 8          return $res
+ 9      }
+10
+11      puts "    2 x  3 = [multiply     2  3]"
+--      -----------------------------------------
+12      puts "    5 x  2 = [multiply     5  2]"
+13      puts " 5000 x 20 = [multiply  5000 20]"
+14      puts "10000 x 10 = [multiply 10000 10]"
+--      -----------------------------------------
+
+Baseline:
+[  i]   time {unrolled loop} 1           67 microseconds
+[ ii]   time {while {..} {..}} 1         86 microseconds
+[iii]   time {multiply 2 3} 1           107 microseconds
+
+The while loop measured above is the loop of multiply, with the
+variables preset outside of the timing command to n = 2, m = 3, and
+res = 0. 'unrolled loop' means that the lines 5 and 6 were duplicated
+and then the execution time for these 4 commands measured, with the
+used variables preset as for the while loop itself. This executes the
+same statements as the loop, except without the overhead for the loop
+control itself. Lines 12 to 14 are for the extended example.
+
+
+I can currently see only the following possibilities to deal with
+these influences on the measured times.
+
+a)      Do nothing. This is not really an option, as the results
+        clearly demonstrate the distortion generated by the effects
+        described before. This will also serve as a second baseline.
+
+b)      [time] not only the time spent in a command X, but also
+        the time M spent with management tasks before and after X
+        is called. This time is not relevant for X itself, but
+        for the command Y from which X was called.
+
+        Basically we subtract M from the time for Y to get a better
+        approximation of the time spent in the command.
+
+        This method will not remove the influences of 1. and 3., and
+        of 2 only partially. In the end this method will still
+        overstate the time spent in the compound statement Y.
+
+        This method has a disadvantage when used to measure runtime in
+        an interpreter before 64 bit millisecond clocks (*). Because
+        of the arbitrary delays due to breakpoint processing internal
+        clocks may roll over in a relatively short time frame [x] and
+        thus provide inaccurate timing information.
+
+        (*) Does [time] use 64-bit clocks for 8.4 ?
+
+        [x] 32 bit: rollover from + to - is in about 71.6 minutes,
+        i.e. just a bit over one hour. In about 2.33 hours the timer
+        can roll over to zero.
+
+
+c)      We time all statements, but discard anything except for the
+        time taken in the lowest possible level. In otehr words, we
+        keep only the times taken for non-compound statements.
+
+        Additionally we keep a stack of locations as they nest in each
+        other at runtime. Whenever we accept a time interval we go up
+        the stack and add it to all locations on it. Additional code
+        and complexity is required to delineate the statement
+        boundaries in the higher levels for min/max timing.
+
+        This method will most likely understate the time for a
+        compound statement, simply because while it will count the
+        contributions of all the sub-ordinate statements quite
+        accurately it will count nothing for anything of the statement
+        itself not involving the sub-ordinates (f.e. code managing a
+        loop at the C level).
+
+        Another disadvantage: This profiler will be most likely slower
+        than (b), because of the time taken to update the various
+        timers, linear in the depth of the nesting [&], and done per
+        statement.
+
+        [&] A lower bound for that is the depth of the tcl procedure
+        stack. It is more because of the control flow statements in
+        the procedures we can be in (if, while, for, foreach, ...).
+
+Note:
+        These algorithms for the collection and correction of timing
+        data can be completely encapsulated in the nub, in other
+        words, the frontend can be completely left out of this. It
+        just has to take the generated profiling information and show
+        it to the user.
+
+
+Results of the various correction algorithms
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Ad a)   No corrections.
+
+        As can be seen the statements of the loop body (lines 5, 6)
+        are called twice for a measured total of 111
+        microseconds. This overstates the time spent for baseline [i]
+        by a factor of 1.66. The time measured for the loop command
+        itself (line 4) is 1114 microseconds. This overstates the
+        execution time of [ii] by a factor 12.95. For the whole
+        procedure we get 3532 microseconds, about 33 times more than
+        baseline [iii]. It should also be clear that the distortion
+        becomes greater the deeper the nesting has been under a
+        procedure and or compound.
+
+        The distortions for compound statements and procedures simply
+        cannot be ignored, corrective action is required.
+
+        Same as above, just as a table.
+
+                 Measured       Factor over baseline
+        -----    --------       -----------------------
+        [  i]     111            1.66
+        [ ii]    1114           12.95
+        [iii]    3532           33.00
+        -----    --------       -----------------------
+
+        Here the timing data the above text is based on.
+
+        NrCallsToCmd    Filename        CmdLine Min     Avg     Max     Total   CmdCharIndex    CmdLength
+        ------------    --------        ------- ---     ---     ---     -----   ------------    ---------
+        1               mult.tcl        2       2573    2573.0  2573    2573    1               105
+        1               mult.tcl        3       23      23.0    23      23      27              10
+        ------------    --------        ------- ---     ---     ---     -----   ------------    ---------
+        1               mult.tcl        4       1114    1114.0  1114    1114    41              47
+        2               mult.tcl        5       21      26.5    32      53      59              10
+        2               mult.tcl        6       22      24.0    26      48      70              12
+        ------------    --------        ------- ---     ---     ---     -----   ------------    ---------
+        1               mult.tcl        8       21      21.0    21      21      92              12
+        1               mult.tcl        11      3532    3532.0  3532    3532    127             17
+        1               mult.tcl        11      4435    4435.0  4435    4435    107             40
+        ------------    --------        ------- ---     ---     ---     -----   ------------    ---------
+
+
+Ad b)   Measure time spent in management too and subtract it from the
+        measured times for all statements.
+
+        Looking at the timing information in the table below we can
+        see that the numbers are somewhat better, but still quite a
+        large distortion. It is possible that the implementation of
+        the correction does miss places where time is spent in
+        management. The distortion is still variable in the deepness
+        of statement and procedure nesting
+
+        Compared to the baseline
+
+                 Measured       Factor over baseline
+        -----    --------       -----------------------
+        [  i]      97            1.44   (Same order of magnitude as (a), IMHO in variability of system)
+        [ ii]     489            5.68   (Clear effect, still to high)
+        [iii]    2396           22.39   (Also clear effect, still, less change)
+        -----    --------       -----------------------
+
+        Below the raw numbers the above is based on.
+
+        NrCallsToCmd    Filename        CmdLine Min     Avg     Max     Total   CmdCharIndex    CmdLength
+        ------------    --------        ------- ---     ---     ---     -----   ------------    ---------
+        1               mult.tcl        2       2573    2573.0  2573    2573    1               105
+        1               mult.tcl        3       24      24.0    24      24      27              10
+        ------------    --------        ------- ---     ---     ---     -----   ------------    ---------
+        1               mult.tcl        4       489     489.0   489     489     41              47
+        2               mult.tcl        5       20      25.0    30      50      59              10
+        2               mult.tcl        6       22      23.5    25      47      70              12
+        ------------    --------        ------- ---     ---     ---     -----   ------------    ---------
+        1               mult.tcl        8       21      21.0    21      21      92              12
+        1               mult.tcl        11      2396    2396.0  2396    2396    127             17
+        1               mult.tcl        11      3139    3139.0  3139    3139    107             40
+        ------------    --------        ------- ---     ---     ---     -----   ------------    ---------
+
+
+Ad c)   Measure only non-compound times directly, and tally up the times got thusly
+        to derive the timings of the compound statements.
+
+        NrCallsToCmd    Filename        CmdLine Min     Avg     Max     Total   CmdCharIndex    CmdLength
+        ------------    --------        ------- ---     ---     ---     -----   ------------    ---------
+        1               mult.tcl        2       2531    2531.0  2531    2531    1               105
+        1               mult.tcl        3       26      26.0    26      26      27              10
+        1               mult.tcl        4       112     112.0   112     112     41              47
+        2               mult.tcl        5       23      29.0    35      58      59              10
+        2               mult.tcl        6       25      27.0    29      54      70              12
+        1               mult.tcl        8       23      23.0    23      23      92              12
+        1               mult.tcl        11      161     161.0   161     161     127             17
+        1               mult.tcl        11      161     161.0   161     161     107             40
+        ------------    --------        ------- ---     ---     ---     -----   ------------    ---------
+
+        Compared to the baseline
+
+                 Measured       Factor over baseline
+        -----    --------       -----------------------
+        [  i]     112           1.67    (Like for a, b)
+        [ ii]     112           1.30    Same order of magnitude as times measured outside of the profiler
+        [iii]     161           1.50
+        -----    --------       -----------------------
+
+        These numbers are much nearer to the baseline. I consider them
+        acceptable. In discussion of (b) I noted the possibility of it
+        understaing compound statements because of not measuring their
+        own overhead. This has not materialized. In essence the
+        overstatement for the non-compound statements is large enough
+        to cover all overhead in the compounds themselves and still
+        overstate the time spent in them.
+
+        An important pooint is that the distortion factor is near
+        constant, averaging at 1.5. In other words, we might wish to
+        think about simply dividing the numbers we have measured by
+        that factor to get even more near to precise times.
+
+        However as long as we we do only a comparative analysis of run
+        times for various statements this is not necessary.
+
+
+        Now data from an extended example.
+
+                                Baseline        Measured        Factor [=]
+                                --------        --------        ------
+        [multiply     5  2]       111              289           2.60
+        [multiply  5000 20]      6161           223259          36.24
+        [multiply 10000 10]     12141           451887          37.22
+                                --------        --------        ------
+
+        So, for a long running loop and such it seems that the tallied
+        times go out of whack in the same order of magnitude as
+        without any correction at all.
+
+        Also note, the wallclock time for measuring the last multiply
+        was 406404040. This is 899.34 times longer than spent in the
+        actual code. IOW 3 orders of magnitude. Definitely an effect
+        of having to update all the counters for all locations on the
+        stack, for every statement executed. IOW of having an update
+        time linear in the depth of the stack. Unacceptable.
+
+        Is there an implementation alternative ?
+
+        ... Yes ... Update only one counter, which we keep for the
+        parent of the executed statement. When we come back it then we
+        update its parent, using already tallied data. That should cut
+        down on the overhead as the locations in the stack are updated
+        as the stack is unwound, and not for every executed statement.
+
+        We save/reset the counter when executing our statement in case
+        we are compound (The nub does not know at this point).
+
+        Implemented the alternative. Run on the extended example:
+
+                44595866/471928 = 94.50 times wall clock over
+                application time. Better, yet still two orders of
+                magnitude overhead in the management.
+
+        Ditching the log output I had in this code brings us to:
+
+                5105793/442385 = 11.54 wall clock over application
+                time. That is acceptable.
+
+
+        NOTE. When the extended example was executed the command on
+        line 12 took much less time than the first ... 28 vs
+        107. Making it first the time jumped to 111, used above. The
+        reason is the bytecode compiler. The larger times we got are
+        for non-compiled code, thereas the 28 us are measured for
+        bytecompiled execution.
+
+        Under the profiler/debugger bytecompiled execution is
+        virtually impossible. This drives the execution times for the
+        application commands much higher. For better comparison we
+        should try to generate a baseline where multiply is evaluated
+        the while time.
+
+        Tried this (II)
+--      -------------------------
+ 1      
+ 2      proc multiply {n m} {
+ 3          eval {
+ 4              set res 0
+ 5              while {$n > 0} {
+ 6                  incr n -1
+ 7                  incr res $m
+ 8              }
+ 9              return $res
+10          }
+11      }
+--      -------------------------
+
+        Comparing the times from that to the profiler:
+
+                                II              Measured        Factor
+                                --------        --------        ------
+        [multiply     5  2]       172              289           1.68
+        [multiply  5000 20]     24575           223259           9.08
+        [multiply 10000 10]     48216           451887           9.37
+                                --------        --------        ------
+
+        Ok, this looks better. The factor is still going up with
+        longer runtimes, but not nearly as much as thought before. The
+        other factor 3 we had in the earlier comparison at [=] is
+        obviously from the loss of BCC in the profiler/debugger.

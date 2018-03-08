@@ -1,0 +1,148 @@
+# blend.test --
+#
+# This file contains tests for the blend.pdx debugger extension file.
+#
+# Copyright (c) 1998-2000 by Ajuba Solutions
+# All rights reserved.
+#
+# RCS: @(#) $Id: blend.test,v 1.4 2001/10/17 19:04:05 andreas_kupries Exp $
+
+if {[string compare test [info procs test]] == 1} {
+    lappend auto_path [file join [file dirname [info script]] ..]
+    package require protest
+    namespace import ::protest::*
+}
+
+catch {parse} parseMsg
+if {[regexp "invalid command" $parseMsg]} {
+    package require parser
+}
+
+if {[string compare testGui [info procs testGui]] == 1} {
+    source [file join $::tcltest::testsDirectory guiLaunch.tcl]
+}
+source [file join $::tcltest::testsDirectory .. blend.pdx]
+
+test blend-1.1 {bind command} {
+    testGui {
+	namespace eval java {
+	    namespace export bind
+	    proc bind {args} {
+		eval [lindex $args 2]
+	    }
+	}
+	# can't import the java::bind command: namespace import java::*
+	set a 0
+	java::bind dummy dummy {
+	    global a
+	    incr a
+	    incr a
+	    incr a
+	    incr a
+	    incr a
+	    incr a
+	    incr a
+	}
+	exit
+    } {
+	# step over the namespace calls
+	for {set i 1} {$i <= 4} {incr i} {
+	    gui::run {dbg::step over}
+	    waitForApp
+	}
+	
+	# step into the 7 incr calls
+	# if the incr calls were not instrumented, then we'll get an error.
+	for {set i 1} {$i <= 10} {incr i} {
+	    gui::run dbg::step
+	    waitForApp
+	}
+	# get the 1st value in the list: "a"
+	lindex [split [$var::valuText get 1.0 end] "\n"] 0
+    }
+} 6
+test blend-1.2 {bind command doesn't affect Tk bind} {
+    testGui {
+	set a 0
+	bind . <<Test>> {
+	    if {%x == 1} {
+		set a 1
+	    }
+	}
+	exit
+    } {
+	set validLines [blk::getLines $::gui::gui(currentBlock)]
+    }
+} {2 3 8}
+
+test blend-2.1 {try command} {
+    testGui {
+	namespace eval java {
+	    namespace export try
+	    proc try {args} {
+		eval [lindex $args 0]
+		eval [lindex $args 3]
+		eval [lindex $args 6]
+		eval [lindex $args 8]
+	    }
+	}
+	namespace import java::*
+	set a 0
+	try {
+	    global a
+	    incr a
+	    incr a
+	} dummy dummy {
+	    global a
+	    incr a
+	    incr a
+	} dummy dummy {
+	    global a
+	    incr a
+	    incr a
+	} dummy {
+	    global a
+	    incr a
+	    incr a
+	}
+	java::try {
+	    global a
+	    incr a
+	    incr a
+	} dummy dummy {
+	    global a
+	    incr a
+	    incr a
+	} dummy dummy {
+	    global a
+	    incr a
+	    incr a
+	} dummy {
+	    global a
+	    incr a
+	    incr a
+	}
+	exit
+    } {
+	# step over the namespace calls
+	for {set i 1} {$i <= 5} {incr i} {
+	    gui::run {dbg::step over}
+	    waitForApp
+	}
+	
+	# step into the 16 incr calls
+	# if the incr calls were not instrumented, then we'll get an error.
+	for {set i 1} {$i <= 41} {incr i} {
+	    gui::run dbg::step
+	    waitForApp
+	}
+	# get the 1st value in the list: "a"
+	lindex [split [$var::valuText get 1.0 end] "\n"] 0
+    }
+} 15
+
+cleanupTests
+
+if {[info exists tk_version] && !$tcl_interactive} {
+    exit
+}

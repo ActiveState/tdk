@@ -1,0 +1,62 @@
+Use cases for the tap scanner
+=============================
+
+(1) Command line.
+    Point at directory (series of directories)
+    Scanner locates all directories containing
+    packages (presence of -> pkgIndex.tcl),
+    assembles tap definitions and writes the
+    appropriate files ... Into the package
+    directories.
+
+    Alternate: In some global directory.
+    This influences the generator, different
+    placeholders, if any placeholders.
+
+(2) GUI
+
+    The user has a package directory selected.
+    Check that it is, and assemble definition
+    for it. Data goes into the GUI, not a file.
+
+Conclusions
+===========
+
+Use case (2) requires the lower-level operations, whereas the case (1)
+is a UI in its own right.
+
+API
+===
+
+a)	Test if a directory is a package directory.
+b)	List all packages found in a directory.
+c)	List all relevant files found in a directory.
+d)	Determine if there are platform specific
+	files in a directory.
+(c+d)	Combined operator makes more sense.
+
+
+Graphical User Interface
+========================
+
+IOW How To Add Scan Functionality to the GUI of tclpe aka tape.
+
+Possibilities
+-------------
+
+(i)	'New Package From Directory'
+	Button on the left side.
+	User selects directory, system scans and
+	adds packages data for all packages found.
+	Automatically uses a hidden package to share
+	file information if there is more than one
+	package.
+
+(ii)	Filewidget, a base directory is selected, and
+	the system scans it. ... At that point we already
+	have a package, the index might contradict.
+
+... Case (i) seems to be better, from the POV of the user.
+... semi-automatic generation of package data, which can then
+... be edited by the user after the scanner has done its work.
+

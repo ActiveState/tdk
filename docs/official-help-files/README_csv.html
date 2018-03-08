@@ -1,0 +1,144 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<HTML>
+<HEAD>
+<LINK REL="STYLESHEET" HREF="aspn.css" TYPE="text/css">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<TITLE>Tutorial: Coverage Analysis, or How to Write a Complete Testsuite</TITLE>
+</HEAD>
+
+<body marginheight="5" topmargin="5" marginwidth="10" leftmargin="10">
+
+@header@
+
+<hr size="1" noshade width="100%">
+
+<a name="top"></a>
+
+<H1>Tutorial: Coverage Analysis, or How to Write a Complete Testsuite</H1>
+
+<UL>
+  <li><a class="doc" href="#intro">Introduction</a></li>
+  <LI><A class="doc" HREF="#one">Step One: Open the Tutorial Program</A></LI>
+  <LI><A class="doc" HREF="#two">Step Two: View Unexecuted Lines</A></LI>
+  <LI><A class="doc" HREF="#three">Step Three: View Covered Files</A></LI>
+  <LI><A class="doc" HREF="#four">Step Four: View Uncovered Code</A></LI>
+  <LI><A class="doc" HREF="#five">Step Five: A Complete Testsuite</A></LI>
+</UL>
+
+<h2><A NAME="intro">Introduction</a></h2>
+
+
+<P>This tutorial shows how to use the Tcl Dev Kit Debugger with coverage to
+ensure that a tcltest-based testsuite for a Tcl script library
+covers all paths through the code. When the "Plain coverage" option is
+selected in the
+<a class="doc" href="Debugger.html#ChangeProCoverage">Project Settings</a>, the
+Tcl Dev Kit Debugger will highlight covered or uncovered lines in an
+application and generate data about the number of calls to each line, along with
+the file names and line numbers.</P>
+
+<P>The project for this tutorial contains a library of code written 
+in Tcl, and a testsuite written in Tcl that uses the <CODE>tcltest</CODE> 
+package. We'll use the debugger to check which parts of the library 
+are exercised by the testsuite. If we find that there 
+are areas of code that are not covered, we'll extend the test 
+suite to cover those paths as well.</P>
+
+<P>The testsuite and the code library that we'll test come from 
+<CODE>tcllib</CODE>, a Tcl library distributed with ActiveTcl. The module under
+scrutiny is <CODE>csv</CODE>, which is used to read and write CSV ("comma separated 
+values") delimited data and to CSV data to and from Tcl lists.</P>
+<P>The first testsuite we'll run, <CODE>csv.test</CODE>, was extracted from 
+the core Tcl file <CODE>csv_new.test</CODE>.</P>
+
+
+<H2><A NAME="one">Step One: Open the Tutorial Program</A></H2>
+
+<ul>
+  <li><strong>UNIX</strong>: Change to the directory 
+  <CODE>/demos/TclDevKit/TclDebugger/Coverage/</CODE> beneath the root Tcl Dev Kit 
+  installation directory, and run:
+  
+  <pre>tcldebugger csv.tpj</pre></li>
+  
+  <li><strong>Windows</strong>: Click <STRONG>Start | Programs | ActiveState
+  Tcl Dev Kit | Tcl Dev Kit Demos | Profiling and Coverage | Coverage
+  Testsuite I</STRONG></li>
+</ul>
+
+
+<P>The Tcl Dev Kit Debugger will open and load the <CODE>csv</CODE>
+project. The Code display portion of the debugger's main window will show the
+file <CODE>csv_frame.tcl</CODE>.</P>
+
+<H2><A NAME="two">Step Two: View Unexecuted Lines</A></H2>
+
+<P>Run the application in the debugger as usual. You can watch variables,
+use the eval console, and perform all other debugging tasks while 
+coverage information is being gathered in the background.</P>
+
+<P>As the debugger executes lines in the application, lines that have 
+not been executed will be displayed with a yellow background.</P>
+
+<P>When the script has finished running, select <STRONG>View | Code Coverage</STRONG>,
+or click the <strong>Coverage</strong> 
+<img src="images/debug_cover_butt.gif"> button on the toolbar. The 
+<STRONG>Code Coverage and Profiling</STRONG> dialog will be displayed.</P>
+
+<img border="1" src="images/tut_csv_1.gif">
+
+
+<H2><A NAME="three">Step Three: View Covered Files</A></H2>
+
+<P>The Code Coverage and Profiling dialog has two tabs, "Files" and "Calls".
+The Files tab, relevant to this tutorial, is displayed by default. It displays 
+a list of all files for which the system collected coverage information.</P>
+
+<P>Three files are listed:</P>
+
+<ul>
+  <li>csv_frame.tcl</li>
+  <li>csv.tcl</li>
+  <li>csv.test</li>
+</ul>
+
+<P>To view a covered file in the Code display area of the debugger's main
+window, click on the file in the list, then click the <STRONG>Show Code</STRONG> 
+button.</P>
+
+<img border="1" src="images/tut_csv_2.gif">
+
+<P>Two of the files (<CODE>csv_frame.tcl</CODE> and <CODE>csv.test</CODE>) 
+contain the framework to call the testsuite, and the testsuite itself.
+For the testsuite to be comprehensive, all code in the program 
+(<CODE>csv.tcl</CODE>) should have been executed. Otherwise, the test is 
+incomplete.</P>
+
+<H2><A NAME="four">Step Four: View Uncovered Code</A></H2>
+
+<P>View the uncovered code for the file <CODE>csv.tcl</CODE>. In the Code 
+Coverage and Profiling dialog, select the file, then click 
+<STRONG>Show Code</STRONG>. Scroll the Code display down to line 235. 
+Notice that there are code paths that have not been executed.</P>
+
+<img border="1" src="images/tut_csv_3.gif">
+
+<P>If this were a real testsuite, you would analyze the uncovered 
+code and create a test that exercises it. In this example, the 
+original testsuite was deliberately altered by removing 
+the tests for checking the "empty" and "auto" expansion modes 
+of the <CODE>split2matrix</CODE> routine.</P>
+
+<H2><A NAME="five">Step Five: A Complete Testsuite</A></H2>
+
+<P>Open the second tutorial project <CODE>csv_new.tpj</CODE> (Coverage 
+Testsuite II). Follow the procedure you used to <a class="doc" href="#one">open
+Coverage Testsuite I</a>. This project contains the original, complete testsuite.
+As with the previous example, run the program and view the uncovered code in
+<CODE>csv.tcl</CODE>. All paths through the code have been covered by the full
+testsuite.</P>
+
+</BODY>
+
+</HTML>

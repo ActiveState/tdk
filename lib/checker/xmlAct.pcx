@@ -1,0 +1,157 @@
+# -*- tcl -*- xmlAct.pcx --
+#
+#	This file implements the TclPro Checker extension for the XML
+#	Action API.
+#
+# Copyright (c) 1999-2000 Ajuba Solutions
+# Copyright (c) 2003-2006 ActiveState Software Inc.
+# All rights reserved.
+# 
+# RCS: @(#) $Id: xmlAct.pcx,v 1.7 2000/05/30 22:28:58 wart Exp $
+
+# ### ######### ###########################
+## Requisites
+
+package require pcx          ; # PCX API
+
+# ### ######### ###########################
+## Tcl core version dependencies of the package this checker is for.
+
+pcx::register xmlAct
+pcx::tcldep   1.0 needs tcl
+
+# ### ######### ###########################
+
+# ### ######### ###########################
+## Package specific message types and their human-readable
+## translations.
+
+pcx::message badXMLaction {invalid action, must be start children, end, or all} err
+
+# ### ######### ###########################
+# scanCmdsX.X --
+# Define the set of commands that need to be recuresed into when 
+# generating a list of user defiend procs, namespace and Class 
+# contexts and procedure name resolutions info.
+
+# None
+
+# ### ######### ###########################
+# Define the set of command-specific checkers used by this package.
+
+pcx::check 1.0 std xmlact::action	{checkSimpleArgs 3 -1 {checkWord {
+    checkSwitches 0 {-start {} -end {} -text {} -default {}} {checkSimpleArgs 2 -1 {
+	checkWord checkProcName xmlAct::checkValuePatterns}}}
+    }
+}
+pcx::check 1.0 std xmlact::create	{checkSwitches 1 {
+    {-name checkWord}
+    {-progress checkBody}
+    -trim -prune} {}
+}
+pcx::check 1.0 std xmlact::delete	{checkSimpleArgs 1 1 checkWord}
+pcx::check 1.0 std xmlact::parse	{checkSimpleArgs 3 3 {checkWord checkWord checkBoolean}}
+pcx::check 1.0 std xmlact::process	{checkSimpleArgs 2 2 checkWord}
+pcx::check 1.0 std xmlact::reset	{checkSimpleArgs 1 1 checkWord}
+pcx::check 1.0 std xmlact::skip		{checkSimpleArgs 2 2 {checkWord {checkListValues 0 -1 {xmlAct::checkAction}}}}
+
+# ### ######### ###########################
+## Initialization
+
+## This package relies on the standard initialization sequence of
+## 'pcx::init'. This is automatically called if no 'init' command
+## is found in the namespace of the checker package.
+
+# ### ######### ###########################
+
+# ### ######### ###########################
+# Checkers for specific commands --
+
+namespace eval ::xmlAct {}
+
+# xmlAct::checkValuePatterns --
+#
+#	Check to see the -text, -value, and -attributes switch tokens,
+#	starting with index, are followed by the correct number of
+#	arguments (all of which are just words).
+#
+# Arguments:
+#	tokens		The list of word tokens for the current command.
+#	index		The index of the next word to be checked.
+#
+# Results:
+#	Returns the index of the last token + 1 (all have been checked).
+
+proc xmlAct::checkValuePatterns {tokens index} {
+    
+    set argc [llength $tokens]
+
+    while {$index < $argc} {
+	# if the arg is literal and matches -text, -value, or -attributes,
+	# make sure there at least 1, 2, or 1 args follow the switch,
+	# respectively.
+	
+	set word [lindex $tokens $index]
+	if {[getLiteral $word literal]} {
+	    switch -exact -- $literal {
+		"-text" {
+		    if {[expr {$index + 1}] >= $argc} {
+			logError noSwitchArg {} "-text"
+		    } else {
+			incr index
+		    }
+		}
+		"-value" {
+		    if {[expr {$index + 2}] >= $argc} {
+			logError noSwitchArg {} "-value"
+		    } else {
+			incr index
+			set index [checkWord $tokens $index]
+		    }
+		}
+		"-attributes" {
+		    if {[expr {$index + 1}] >= $argc} {
+			logError noSwitchArg {} "-attributes"
+		    } else {
+			incr index
+		    }
+		}
+	    }
+	}
+	set index [checkWord $tokens $index]
+    }
+    return $index
+}
+
+# xmlAct::checkAction --
+#
+#	Check if the token is either nonliteral or one of the following
+#	strings:  start children end all
+#
+# Arguments:
+#	tokens		The list of word tokens for the current command.
+#	index		The index of the next word to be checked.
+#
+# Results:
+#	Returns the index of the last token + 1 (all have been checked).
+
+proc xmlAct::checkAction {tokens index} {
+    
+    set argc [llength $tokens]
+
+    while {$index < $argc} {	
+	set word [lindex $tokens $index]
+	if {[getLiteral $word literal]} {
+	    if {$literal ni {start children end all}} {
+		logError badXMLaction {}
+	    }
+	    incr index
+	} else {
+	    set index [checkWord $tokens $index]
+	}
+    }
+    return $index
+}
+
+# ### ######### ###########################
+pcx::complete

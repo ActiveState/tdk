@@ -1,0 +1,79 @@
+TDK 3.0 Checker Xref
+====================
+
+Action list
+
+[OK]	Add a flag to the system which signals xref mode.
+
+	Use it to suppress the output of all warning or error messages
+	from whatever checker command is generating it, when set.
+
+	Set this flag for xref mode.
+
+[OK]	Investigate the pre-pass commands to understand how they
+	record information. Instrument the pre-pass database.
+
+[OK]	Investigate how the main pass is using the pre-pass database
+	to look up commands and associated checkers.
+
+----	Results can be read in "TDK_3.0_Checkers_Xref_Notes.txt".
+
+[OK]	Change uproc pInfo to dictionary
+
+[OK]	Change system to use uproc as unified database for checker and
+	scan commands.
+
+[OK]	Extend the main pass with code to record command usage in an
+	xref-database. Do this if and only if the xref mode is active
+	- see flag above.
+
+[OK]	Added code to track lexical scope. Required for better
+	description of location of command usage. Always done.
+
+[OK]	Record namespaces: Where used (eval).  _Not_ classes, they are
+	separate. xref only.
+
+[!!]	When handling the scope stack record the location of the scope
+	as well (file, (line), cmdrange). Otherwise it is not possible
+	to distinguish uses of a command in different definitions of
+	the same scope, be it a multiply defined procedure, or a
+	namespace defined in several fragments.
+
+
+[  ]	Extend the pre-pass with commands recording the definition of
+	variables.
+
+[  ]	Extend the main pass with checking of variable usage.
+	"Extended Syntax Check II". Also add code to record the usage
+	of variables in the xref-database. Do the latter if and only
+	if the xref mode is active - see flag above.
+
+[  ]	Track 'package require' in pre-pass. Load rules for such
+	packages when appropriate definition file found.
+
+[  ]	Track 'package provide' for more dependency information.
+	in the x-ref database.
+
+[  ]	Scan iterate when more scan commands where defined.
+
+
+[  ]	Record class instance methods ? ...
+	FUTURE: Part of 'extended scanning' for objects.
+	=> Can be used in object rules.
+
+[  ]	Record unknown commands in xref for proper complaints ...
+
+[  ]	Look for identical files in different paths and merge their
+	information before dumping the database.  Especially file
+	references in other parts of the xref db have to be sanitized.
+
+[@ ]	Add code to dump the regular pre-pass and x-ref databases
+	at the end of the scan to disk, in some format.
+
+	Simple tclish structured format, XML can come later, through
+	conversion.
+
+	Maybe tcllib/graph ? => Frontend tool, as internal
+	database.
+
+=====================

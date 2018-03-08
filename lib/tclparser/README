@@ -1,0 +1,5 @@
+# Copyright (c) 1999-2000 Ajuba Solutions
+
+This is the Tcl parser component used by the checker to
+parse a Tcl script into commands, words and tokens.
+

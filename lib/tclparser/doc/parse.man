@@ -1,0 +1,137 @@
+[comment {-*- tcl -*- doctools manpage}]
+[comment {$Id: parse.man,v 1.1 2003/11/20 19:30:44 davidw Exp $}]
+[manpage_begin parse n 1.4]
+[moddesc {Parse a Tcl script into commands, words, and tokens}]
+[titledesc {System to control logging of events.}]
+[require Tcl 8]
+[require parser [opt 1.4]]
+[description]
+
+[para]
+
+This command parses a Tcl script into [term "commands, words"] and [term tokens].
+Each of the commands below takes a [term script] to parse and a range
+into the script: {[arg first] [arg last]}.  The command parses the script from
+the first index up to and including the [term last] index.  The return of
+each command is a list of tuples indicating the ranges of each
+sub-element.  Use the returned indices as arguments to [cmd "parse getstring"] to
+extract the parsed string from the script.
+
+[para]
+
+The [cmd parse] command breaks up the script into sequentially smaller
+elements.  A [term script] contains one or more [term commands].  A [term command] is a set
+of [term words] that is terminated by a semicolon, newline or end the of the
+script and has no unclosed quotes, braces, brackets or array element
+names.  A [term word] is a set of characters grouped together by whitespace,
+quotes, braces or brackets.  Each word is composed of one or more
+[term tokens].  A [term token] is one of the following types: [term text], [term variable],
+[term backslash], [term command], [term expr], or [term operator].  The type of token
+specifies how to decompose the string further.  For example, a [term text]
+token is a literal set of characters that does not need to be broken
+into smaller pieces.  However, the [term variable] token needs to be broken
+into smaller pieces to separate the name of the variable from an array
+indices, if one is supplied.
+
+[para]
+
+The [term first] and [term last] indices are treated the same way as the indices in
+the Tcl [cmd string] command.  An index of 0 refers to the first character
+of the string.  An index of end (or any abbreviation of it) refers to
+the last character of the string.  If first is less than zero then it
+is treated as if it were zero, and if last is greater than or equal to
+the length of the string then it is treated as if it were end.  If
+first is greater than last then an empty string is returned.
+
+[list_begin definitions]
+
+[call [cmd parse] command [arg script] {[arg first] [arg last]}]
+
+Returns a list of indices that partitions the script into [term commands].
+
+This routine returns a list of the following form: [term commentRange]
+[term commandRange] [term restRange] [term parseTree]. The first range refers to any
+leading comments before the command.  The second range refers to the
+command itself.  The third range contains the remainder of the
+original range that appears after the command range.  The [term parseTree] is
+a list representation of the parse tree where each node is a list in
+the form: [term type] [term range] [term subTree].
+
+[call [cmd parse] expr [arg script] {[arg first] [arg last]}]
+
+Returns a list that partitions an [term expression] into
+subexpressions.  The first element of the list is the token type,
+[term subexpr], followed by the range of the expressions text, and
+finally by a [term subTree] with the words and types of the parse
+tree.
+
+[call [cmd parse] varname [arg script] {[arg first] [arg last]}]
+
+Returns a list that partitions a [term variable] token into words.
+The first element of the list is the token type, [term variable].  The
+second is the range of the variable's text, and the third is a subTree
+that lists the words and ranges of the variable's components.
+
+[call [cmd parse] subcommand [arg script] [arg first] [arg last]]
+
+Returns a list of indices that partitions a subcommand token into
+words. The first element in the list is the beginning index of the
+subcommand token, and the second element in the list is the end index
+of the subcommand token. The pattern is repeated for each subcommand
+token in the script.  The first index must point to the character '[lb]'
+and the last index must point to the '[rb]' character otherwise the
+command will return an empty string.  Each of the partitioned strings
+should be parsed further by using the parse token command.
+
+[call [cmd parse] list [arg script] {[arg first] [arg last]}]
+
+Parses a script as a [term list], returning the range of each element.
+[arg script] must be a valid list, or an error will be generated.
+
+[call [cmd parse] getrange [arg string] [opt [list index length]]]
+
+Gets the range in bytes of [arg string], optionally beginning at [opt index]
+of length [opt length] (both in characters).  Equivalent to [cmd "string bytelength"].
+
+[call [cmd parse] getstring [arg string] {[arg first] [arg last]}]
+
+Get the section of [arg string] that corresponds to the specified
+range (in bytes).  Note that this command must be used instead of [cmd "string range"] 
+with values returned from the parse commands, because the values are
+in bytes, and [cmd "string range"] instead uses characters as its units.
+
+[call [cmd parse] charindex [arg string] {[arg first] [arg last]}]
+
+Converts byte oriented index values into character oriented index
+values, for the string in question.
+
+[call [cmd parse] charlength [arg string] {[arg first] [arg last]}]
+
+Converts the given byte length into a character count, for the string in question.
+
+[list_end]
+
+[section EXAMPLES]
+
+[example  {
+set script {
+    while true {puts [getupdate]}
+}
+
+parse command $script {0 end}
+}]
+
+Returns:
+
+[para]
+
+{0 0} {5 30} {35 0} {{simple {5 5} {{text {5 5} {}}}} {simple {11 4} {{text {11 4} {}}}} {simple {16 18} {{text {17 16} {}}}}}
+
+[para]
+
+Or in other words, a string with no comments, 30 bytes long, beginning
+at byte 5.  It is composed of a series of subwords, which include
+while, true, and {puts [lb]getupdate[rb]}.
+
+[keywords parse parser]
+[manpage_end]

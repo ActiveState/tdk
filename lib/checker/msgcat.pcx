@@ -1,0 +1,79 @@
+# -*- tcl -*- msgcat.pcx --
+#
+#	This file contains type and command checkers for the
+#	"msgcat" commands.
+#
+# Copyright (c) 2004-2006 ActiveState Software Inc.
+
+# 
+# RCS: @(#) $Id: tkTable.tcl,v 1.3 2000/10/31 23:30:55 welch Exp $
+
+# ### ######### ###########################
+## Requisites
+
+package require pcx          ; # PCX API
+
+# ### ######### ###########################
+## Tcl core version dependencies of the package this checker is for.
+
+pcx::register msgcat msgcat
+#pcx::tcldep   1.0 needs tcl 8.x
+#pcx::tcldep   1.1 needs tcl 8.x
+#pcx::tcldep   1.2 needs tcl 8.x
+pcx::tcldep   1.3 needs tcl 8.2
+
+# ### ######### ###########################
+
+# ### ######### ###########################
+## Package specific message types and their human-readable
+## translations.
+
+# ### ######### ###########################
+# scanCmdsX.X --
+# Define the set of commands that need to be recuresed into when 
+# generating a list of user defiend procs, namespace and Class 
+# contexts and procedure name resolutions info.
+
+# ### ######### ###########################
+# checkersX.X --
+# Define the set of command-specific checkers used by this package.
+
+# msgcat 1.3 -> Tcl 8.2
+
+# ### ######### ###########################
+## Initialization
+
+## This package relies on the standard initialization sequence of
+## 'pcx::init'. This is automatically called if no 'init' command
+## is found in the namespace of the checker package.
+
+# ### ######### ###########################
+
+# ### ######### ###########################
+# Checkers for specific commands --
+#
+#	Each checker is passed the tokens for the arguments to 
+#	the command.  The name of each checker should be of the
+#	form tkTable::check<Name>Cmd, where <name> is the command
+# 	being checked.
+#
+# Arguments:
+#	tokens		The list of word tokens after the initial
+#			command and subcommand names
+#	index		The index into the token tree where the 
+#			checkers should start checking.
+#
+# Results:
+#	Return the next index, in the tokens tree, to check.
+
+pcx::check 1.3 std msgcat::mc            {checkSimpleArgs 1 -1 checkWord}
+pcx::check 1.3 std msgcat::mcmax         {checkSimpleArgs 0 -1 checkWord}
+pcx::check 1.3 std msgcat::mclocale      {checkSimpleArgs 0 1 checkWord}
+pcx::check 1.3 std msgcat::mcpreferences {checkSimpleArgs 0 0 {}}
+pcx::check 1.3 std msgcat::mcload        {checkSimpleArgs 1 1 checkWord}
+pcx::check 1.3 std msgcat::mcset         {checkSimpleArgs 2 3 checkWord}
+pcx::check 1.3 std msgcat::mcmset        {checkSimpleArgs 2 2 {checkWord checkList}}
+pcx::check 1.3 std msgcat::mcunknown     {checkSimpleArgs 2 2 checkWord}
+
+# ### ######### ###########################
+pcx::complete

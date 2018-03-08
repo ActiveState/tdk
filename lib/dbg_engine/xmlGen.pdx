@@ -1,0 +1,22 @@
+# xmlGen.pdx --
+#
+#	This file implements the TclPro Debugger extension for the XML
+#	Generation API.
+#
+# Copyright (c) 1998-2000 Ajuba Solutions
+# Copyright (c) 2001-2006 ActiveState Software Inc.
+#
+# All rights reserved.
+# 
+# RCS: @(#) $Id: xmlGen.pdx,v 1.3 2000/05/30 22:54:55 hershey Exp $
+
+# Register the XML Generation extension
+
+instrument::addExtension 2.0 {xmlGen}
+
+# Register handlers for each of the XML Generation commands
+
+instrument::addCommand element		{parseSimpleArgs 2 4 {
+					parseWord parseWord parseWord parseBody}}
+instrument::addCommand xmlgen::element	{parseSimpleArgs 2 4 {
+					parseWord parseWord parseWord parseBody}}

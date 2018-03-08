@@ -1,0 +1,83 @@
+Package analyzer 1.0
+Meta platform    tcl
+Meta summary     Checker core, processing, analysis, extraction
+Meta description The core of the checker, processing script, executing syntax checks, data extraction, etc.
+Meta category    Checker core
+Meta subject     checker script analysis
+
+Package location 1.0
+Meta platform    tcl
+Meta summary     Handling of location references
+Meta description Commands to manipulate and use location information
+Meta category    Checker support
+Meta subject     checker location range
+
+Package context 1.0
+Meta platform    tcl
+Meta summary     Management of dynamic and lexicographical context of commands
+Meta description Management of the dynamic and lexicographical context of commands
+Meta category    Checker support
+Meta subject     checker scope context dynamic lexicographic
+
+Package filter 1.0
+Meta platform    tcl
+Meta summary     Filtering generated messages
+Meta description This package provides the functionality through which the output of the checker is controlled
+Meta category    Checker support
+Meta subject     checker filter message
+
+Package checkerCmdline 1.0
+Meta platform    tcl
+Meta summary     Checker command line handling
+Meta description Command line processing for the checker
+Meta category    Checker support
+Meta subject     checker command-line configuration
+
+Package checker 1.4
+Meta platform    tcl
+Meta summary     Checker application, main controller
+Meta description The main checker application, controls the other packages
+Meta category    Checker frontend
+Meta subject     checker application
+
+Package pcx 1.0
+Meta platform    tcl
+Meta summary     Handling of checker extensions in .pcx files
+Meta description Storage and handling checker extensions, aka checker packages holding command definitions for packages.
+Meta category    Checker support
+Meta subject     checker pcx {checker definition} {checker extension}
+
+Package cdb 1.0
+Meta platform    tcl
+Meta summary     Handling of checker commands
+Meta description Storage for all checker command definitions, the basic informaiton needed by the frontend to check command syntax.
+Meta category    Checker support
+Meta subject     checker commands database
+
+Package userproc 1.0
+Meta platform    tcl
+Meta summary     Handling of checker procedure definitions
+Meta description Storage for the procedures found by the checker frontend in the analyzed code.
+Meta category    Checker support
+Meta subject     checker proc user-defined
+
+Package xref 1.0
+Meta platform    tcl
+Meta summary     Handling checker cross-reference data
+Meta description Storage for the cross-reference information extracted by the checker frontend
+Meta category    Checker support
+Meta subject     checker xref
+
+Package configure 1.0
+Meta platform    tcl
+Meta summary     Storage for checker command line handling
+Meta description Storage for the configuration obtained by the command line processor of the checker
+Meta category    Checker support
+Meta subject     checker command-line configuration
+
+Package message 1.0
+Meta platform    tcl
+Meta summary     Checker message handling
+Meta description Message output routines, and ocntainer for the standard message codes and strings
+Meta category    Checker support
+Meta subject     checker messages

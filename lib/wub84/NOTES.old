@@ -1,0 +1,31 @@
+interp and thread in http.
+
+Http protocol falls into four distinct phases:
+1) acquiring a Request
+2) acquiring an associated Entity
+3) Processing the request
+4) Replying to request
+
+Request acquisition is i/o bound and event driven.  It involves
+parsing an initial header and mime headers.  Until the request header
+is acquired, we don't know what host and domain might claim the
+request, so (1) is done in the main thread.  Conceivably, once host
+and url is determined we could pass further parsing off to the
+handler, but since we potentially have to handle the whole request
+anyway, and header parsing isn't processor bound anyway it seems to be
+needless complexity.
+
+When Request is complete, we have a header, some mime and (possibly)
+an entity.
+
+Processing involves interaction with filesystems, other sockets,
+possibly cpu-intensive calculation.  It is a good candidate for
+threading, and for interpreter-specific processing.  Note that if the
+backing store is a r/w metakit, processing serialises around metakit
+access anyway (metakit will have to be in a distinct thread) however
+this presumably applies to any file system access - they have to be
+serialised anyway.
+
+Replying is like Request processing, and is handled by the
+per-connection Http object.
+

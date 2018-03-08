@@ -1,0 +1,245 @@
+# -*- tcl -*- oratcl.pcx --
+#
+#	This file implements the TclPro Checker extension for OraTcl.
+#
+# Copyright (c) 1999-2000 Ajuba Solutions
+# Copyright (c) 2003-2006 ActiveState Software Inc.
+# All rights reserved.
+# 
+# RCS: @(#) $Id: oratcl.pcx,v 1.5 2000/05/30 22:28:53 wart Exp $
+
+# ### ######### ###########################
+## Requisites
+
+package require pcx          ; # PCX API
+
+# ### ######### ###########################
+## Tcl core version dependencies of the package this checker is for.
+
+pcx::register oratcl
+pcx::tcldep   2.5 needs tcl
+
+# ### ######### ###########################
+
+# ### ######### ###########################
+## Package specific message types and their human-readable
+## translations.
+
+pcx::message badConnectStr {invalid Oracle connect string} err
+pcx::message badSubstChar  {invalid Oracle substitution character} err
+pcx::message badOnOff      {invalid \"on\" or \"off\" value} err
+pcx::message missingColon  {varName must be preceded by ':'} err
+
+# ### ######### ###########################
+# scanCmdsX.X --
+# Define the set of commands that need to be recuresed into when 
+# generating a list of user defiend procs, namespace and Class 
+# contexts and procedure name resolutions info.
+
+pcx::scan 2.5 orafetch
+
+# ### ######### ###########################
+# Define the set of command-specific checkers used by this package.
+
+pcx::check 2.5 std oraautocom		{checkSimpleArgs 2 2 {
+    checkWord oratcl::checkOnOff}
+}
+pcx::check 2.5 std orabindexec		{checkSimpleArgs 1 -1 {
+    checkWord {checkSwitches 1 {-async} {oratcl::checkColonVarValPairs}}}
+}
+pcx::check 2.5 std orabreak		{checkSimpleArgs 1 1 checkWord}
+pcx::check 2.5 std oracancel		{checkSimpleArgs 1 1 checkWord}
+pcx::check 2.5 std oraclose		{checkSimpleArgs 1 1 checkWord}
+pcx::check 2.5 std oracols		{checkSimpleArgs 1 1 checkWord}
+pcx::check 2.5 std oracommit		{checkSimpleArgs 1 1 checkWord}
+pcx::check 2.5 std orafetch		{checkSimpleArgs 1 -1 {
+    checkWord checkBody oratcl::checkSubstChar
+    oratcl::checkVarValPairs}
+}
+pcx::check 2.5 std oralogoff		{checkSimpleArgs 1 1 checkWord}
+pcx::check 2.5 std oralogon		{checkSimpleArgs 1 1 oratcl::checkConnectStr}
+pcx::check 2.5 std oraopen		{checkSimpleArgs 1 1 checkWord}
+pcx::check 2.5 std oraplexec		{checkSimpleArgs 2 -1 {
+    checkWord checkWord oratcl::checkColonVarValPairs}
+}
+pcx::check 2.5 std orapoll			{checkSimpleArgs 1 2 {
+    checkWord {checkSwitches 1 {-all} {}}}
+}
+pcx::check 2.5 std orareadlong		{checkSimpleArgs 5 5 {
+    checkWord checkWord checkWord checkWord checkFileName}
+}
+pcx::check 2.5 std oraroll		{checkSimpleArgs 1 1 checkWord}
+pcx::check 2.5 std orasql		{checkSimpleArgs 2 4 {
+    checkWord checkWord
+    {checkSwitches 1 {-async -parseonly} {}}}
+}
+pcx::check 2.5 std orawritelong		{checkSimpleArgs 5 5 {
+    checkWord checkWord checkWord checkWord checkFileName}
+}
+
+# ### ######### ###########################
+## Initialization
+
+## This package relies on the standard initialization sequence of
+## 'pcx::init'. This is automatically called if no 'init' command
+## is found in the namespace of the checker package.
+
+# ### ######### ###########################
+
+# ### ######### ###########################
+# Checkers for specific commands --
+
+namespace eval ::oratcl {}
+
+# oratcl::checkConnectStr --
+#
+#	Check to see the next token is a legal connect string
+#	(or nonliteral).  If not, log an badConnectStr error.
+#
+# Arguments:
+#	tokens		The list of word tokens for the current command.
+#	index		The index of the next word to be checked.
+#
+# Results:
+#	Returns the index of the next token to be checked.
+
+proc oratcl::checkConnectStr {tokens index} {
+    set word [lindex $tokens $index]
+
+    # Check to see if it matches one of the following patterns:
+    #     ""
+    #     name
+    #     name/password
+    #     name@server
+    #     name/password@server
+    #     name@n:host:server
+    #     name/password@n:host:server
+
+    if {![getLiteral $word literal]} {
+	return [checkWord $tokens $index]
+    }
+    set connectList [split $literal "@"]
+    set len [llength $connectList]
+    if {$len > 2} {
+	logError oratcl::badConnectStr [getTokenRange $word]
+    } elseif {$len > 0} {
+	set name [lindex $connectList 0]
+	if {(![regexp {^\w+(/\w+)?$} $name])} {
+	    logError oratcl::badConnectStr [getTokenRange $word]
+	} elseif {$len == 2} {
+	    set server [lindex $connectList 1]
+	    if {![regexp {^(\w:\w+:)?\w+$} $server]} {
+		logError oratcl::badConnectStr [getTokenRange $word]
+	    }
+	}
+    }
+    return [incr index]
+}
+
+# oratcl::checkSubstChar --
+#
+#	Check to see the next token is a either a single character, empty
+#	string, or nonliteral.  If not, log an badSubstChar error.
+#
+# Arguments:
+#	tokens		The list of word tokens for the current command.
+#	index		The index of the next word to be checked.
+#
+# Results:
+#	Returns the index of the next token to be checked.
+
+proc oratcl::checkSubstChar {tokens index} {
+
+    set word [lindex $tokens $index]
+
+    if {![getLiteral $word literal]} {
+	return [checkWord $tokens $index]
+    }
+    if {[string length $literal] > 1} {
+	logError oratcl::badSubstChar [getTokenRange $word]
+    }
+    return [incr index]
+}
+
+# oratcl::checkOnOff --
+#
+#	Check to see the next token is "on", "off", or nonliteral.
+#	If not, log an badOnOff error.
+#
+# Arguments:
+#	tokens		The list of word tokens for the current command.
+#	index		The index of the next word to be checked.
+#
+# Results:
+#	Returns the index of the next token to be checked.
+
+proc oratcl::checkOnOff {tokens index} {
+
+    set word [lindex $tokens $index]
+
+    if {![getLiteral $word literal]} {
+	return [checkWord $tokens $index]
+    }
+    if {($literal != "on") && ($literal != "off")} {
+	logError oratcl::badOnOff [getTokenRange $word]
+    }
+    return [incr index]
+}
+
+# oratcl::checkVarValPairs --
+#
+#	Check to see the tokens starting with index are ?variable value?
+#	pairs.  If checkColon is given, variables must begin with a colon,
+#	otherwise, a missingColon error is flagged.
+#
+# Arguments:
+#	tokens		The list of word tokens for the current command.
+#	index		The index of the next word to be checked.
+#	checkColon	Tells whether vars must be preceded by a colon.
+#
+# Results:
+#	Returns the index of the last token + 1 (all have been checked).
+
+proc oratcl::checkVarValPairs {tokens index {checkColon 0}} {
+    
+    set argc [llength $tokens]
+
+    while {$index < $argc} {
+	# if varname is literal, make sure the first char is a ':'
+	
+	set word [lindex $tokens $index]
+	if {[getLiteral $word literal]} {
+	    if {$checkColon} {
+		if {[string index $literal 0] != ":"} {
+		    logError oratcl::missingColon [getTokenRange $word]
+		}
+	    }
+	}
+	set index [checkVarName $tokens $index]
+	if {$index < $argc} {
+	    set index [checkWord $tokens $index]
+	} else {
+	    logError numArgs {}
+	}
+    }
+    return $index
+}
+
+# oratcl::checkColonVarValPairs --
+#
+#	Check to see the tokens starting with index are ?:variable value?
+#	pairs.
+#
+# Arguments:
+#	tokens		The list of word tokens for the current command.
+#	index		The index of the next word to be checked.
+#
+# Results:
+#	Returns the index of the last token + 1 (all have been checked).
+
+proc oratcl::checkColonVarValPairs {tokens index} {
+    return [checkVarValPairs $tokens $index 1]
+}
+
+# ### ######### ###########################
+pcx::complete

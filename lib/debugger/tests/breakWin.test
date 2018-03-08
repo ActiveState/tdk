@@ -1,0 +1,75 @@
+# This file contains tests for the breakWin.test file.
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1998-2000 by Ajuba Solutions
+# All rights reserved.
+#
+# RCS: @(#) $Id: breakWin.test,v 1.3 2001/10/17 19:04:05 andreas_kupries Exp $
+
+if {[string compare test [info procs test]] == 1} {
+    lappend auto_path [file join [file dirname [info script]] ..]
+    package require protest
+    namespace import ::protest::*
+}
+
+catch {parse} parseMsg
+if {[regexp "invalid command" $parseMsg]} {
+    package require parser
+}
+
+if {[string compare testGui [info procs testGui]] == 1} {
+    source [file join [pwd] [file dirname [info script]] guiLaunch.tcl]
+}
+
+test breakWin-1.1 {creating variable breakpoints} {
+    testGui {
+	proc x {} {
+	    set y 1
+	    set y 2
+	}
+	x
+	exit
+    } {
+	for {set i 0} {$i < 3} {incr i} {
+	    gui::run dbg::step
+	    waitForApp
+	}
+	bp::showWindow
+	watch::toggleVBP $var::valuText 1.0 onoff
+	set result [list [break::getType $bp::breakpoint(1)] \
+		[icon::getVBPOrigName  $bp::breakpoint(1)]]
+    }
+} {var y}
+test breakWin-1.2 {variable breakpoints going out of scope} {
+    testGui {
+	proc x {} {
+	    set y 1
+	    set y 2
+	}
+	x
+	exit
+    } {
+	for {set i 0} {$i < 3} {incr i} {
+	    gui::run dbg::step
+	    waitForApp
+	}
+	bp::showWindow
+	watch::toggleVBP $var::valuText 1.0 onoff
+	set result [list [break::getType $bp::breakpoint(1)] \
+		[icon::getVBPOrigName  $bp::breakpoint(1)]]
+	gui::run dbg::step
+	waitForApp
+	gui::run dbg::step
+	waitForApp
+	lappend result [info exists bp::breakpoint(1)]
+    }
+} {var y 0}
+
+cleanupTests
+
+if {[info exists tk_version] && !$tcl_interactive} {
+    exit
+}

@@ -1,0 +1,16 @@
+Package protest 1.0
+Meta entrysource protest.tcl
+Meta included    all.tcl defs.tcl protest.tcl startup.tcl
+Meta platform    tcl
+Meta recommend   {licdata -version 2.0}
+Meta require     analyzer
+Meta require     checker
+Meta require     cmdline
+Meta require     configure
+Meta require     {lclient -version 1.0}
+Meta require     {licgen -version 1.1}
+Meta require     parser
+Meta require     projectInfo
+Meta require     protest
+Meta require     tcltest
+

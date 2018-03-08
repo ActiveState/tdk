@@ -1,0 +1,141 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<HTML>
+<HEAD>
+<LINK REL="STYLESHEET" HREF="aspn.css" CHARSET="ISO-8859-1" TYPE="text/css">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<TITLE>Tcl Dev Kit - Service Manager</TITLE>
+</HEAD>
+
+
+<body marginheight="5" topmargin="5" marginwidth="10" leftmargin="10">
+
+@header@
+
+<hr size="1" noshade width="100%">
+
+<a name="top"></a>
+
+<h1>Service Manager</H1>
+
+<p>Windows Services are applications that run in the background on Windows 
+systems. These applications have no user interface, as they are designed to 
+run with no user intervention. Sometimes a service has an administrative tool 
+for configuration and interaction; however, the service itself runs 
+independently.</p>
+
+<p>Services are usually automatically loaded whenever the system boots. 
+They run outside of the context of the user (if any) who is currently logged 
+in on the system. Therefore, the service's privileges are separate from the 
+user login, and are tied to the service itself, not the user who launches the 
+service.</p>
+
+<p>The <a class="doc" href="TclApp.html">TclApp</a> component of the Tcl Dev 
+Kit is used to create Tcl applications that will be deployed as services. The 
+<strong>Service Manager</strong> is used to install the service onto the current 
+system, or to remove a Tcl service that was previously installed. The 
+Tcl Dev Kit includes a base kit (<code>Tcl/bin/base-tclsvc*</code>) for 
+creating portable services. These must be installed according to the instructions 
+in the section <a class="doc" href="#non_tdk">Installing a Service 
+on a System Without the TDK</a>.</p>
+
+<p>To run the Tcl Dev Kit Service Manager, select <strong>Tcl Dev Kit Tcl Service
+Manager</strong> from the Tcl Dev Kit program group on the Windows Start menu.
+Alternatively, launch the Service Manager from the command line. On Windows
+systems, enter <code>tclsvc.exe</code>.</p>
+
+<h2><a name="install">Installing or Removing a Service</a></h2>
+
+<p>To install a new service, select <strong>File | New Tcl Service</strong> 
+from the menu, or click the <strong>New Service</strong> button. The following 
+dialog will be displayed.</p>
+
+<img src="images/tclsvc_new.gif">
+
+<ul>
+  <li><strong>Tcl Script</strong>: Enter the name of the script, or click 
+  the <strong>Browse</strong> button to find the script in the filesystem.</li>
+  
+  <li><strong>Tcl Starpack</strong>: Applications built (using 
+  <a class="doc" href="TclApp.html">TclApp</a>) with the 
+  base-tclsvc* prefix file can be installed on machines other than those 
+  they were built on. Enter the name of the starpack generated with this 
+  prefix file, or click the <strong>Browse</strong> button to find the 
+  application in the filesystem.</li>
+  
+  <li><strong>Service Display Name</strong>: The value in this field will be 
+  displayed in the <strong>Service Name</strong> field of the Tcl Dev Kit 
+  Service Manager, and in the <strong>Name</strong> field of the Windows 
+  Services dialog (<strong>Control Panel | Administrative Tools | 
+  Services</strong>).</li>
+  
+  <li><strong>Service Description</strong>: The value in this field will be 
+  displayed in the  <strong>Description</strong> field of the Tcl Dev Kit 
+  Service Manager, and in the <strong>Description</strong> field of the Windows 
+  Services dialog.</li>
+</ul>
+
+<p>To remove a service, in the main Service Manager display, select the service 
+in the list and click the <strong>Remove</strong> button.</p>
+
+<h3><a name="non_tdk">Installing a Service on a System Without the TDK</a></h3>
+
+<p>It is not necessary to use the Tcl Dev Kit Service Manager to install 
+services (although the Service Manager provides greater control over the 
+installed service, such as the ability to stop or start it). Services built 
+with <a class="doc" href="TclApp.html">TclApp</a> using the base-tclsvc* 
+prefix file can be installed on machines other than those they were built on, 
+including systems where the Tcl Dev Kit is not installed.</p>
+
+<p>On systems where the Tcl Dev Kit Service Manager is not installed, use 
+the following syntax to install a service:</p>
+
+<code>service.exe ServiceName -install</code>
+
+<p><code>service.exe</code> is the application built with TclApp. 
+<code>ServiceName</code> corresponds to the <strong>Service Display 
+Name</strong> in the Service Manager, and will determine the name displayed 
+in the Windows Service Manager. The <code>-install</code> switch installs 
+<code>service.exe</code> as a service. To remove a service, substitute the 
+<code>-remove</code> switch; to test a service, substitute the 
+<code>-debug</code> switch. Use the Windows Service Manager (<strong>Control 
+Panel | Administrative Tools | Services</strong>) to perform other 
+administrative tasks.</p>
+
+
+
+<a class="topText" href="#top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+<h2><a name="start">Starting or Stopping a Service</a></h2>
+
+<p>Services can be started, stopped or paused using either the Tcl Dev Kit 
+Service Manager, or using the Windows Services tool (generally accessible 
+via the <strong>Administrative Tools</strong> menu option in the Control Panel). 
+The interface for the Tcl Dev Kit Service Manager is shown below.</p>
+
+<img src="images/tclsvc_main.gif">
+
+<p>Use the <strong>Start</strong>, <strong>Stop</strong> and 
+<strong>Pause</strong> buttons to change the current status of the service.</p>
+
+<p>To change the font size displayed in the Service Manager, press
+<code>Ctrl-plus</code> to increase the font size or <code>Ctrl-minus</code> to
+decrease the displayed font size. If using Windows with a mouse wheel, you can
+alternatively press the <code>Ctrl</code> key and then rotate the mouse wheel to
+increase or decrease the font size displayed in the Service Manager.</p>
+
+
+<h3>Refreshing the Service Status</h3>
+
+<p>Because services can be started and stopped using the Windows Service dialog, 
+the Tcl Dev Kit Service Manager includes a refresh function for refreshing the 
+display of the service status. To refresh the display, select 
+<strong>File | Refresh</strong> from the menu, or click the 
+<strong>Refresh</strong> button.</p>
+
+<a class="topText" href="#top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+ 
+</BODY>
+</HTML>
+

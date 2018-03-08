@@ -1,0 +1,12 @@
+Package platform 1.0.9
+Meta entrysource platform.tcl
+Meta included    platform.tcl
+Meta platform    tcl
+Meta license BSD
+
+Package platform::shell 1.1.4
+Meta entrysource shell.tcl
+Meta included    shell.tcl
+Meta platform    tcl
+Meta require     platform
+Meta license BSD

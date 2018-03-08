@@ -1,0 +1,24 @@
+
+help::page string
+	Set page containing the help, stem only
+	system will add .html
+	Search will in predefined paths relative
+	to package and executable.
+
+help::appname string
+	Set a string used in error messages.
+	Defaults to 'my' for message which is
+	not application specific
+
+help::helpfile path
+	Set the name of the .chm file containing the help
+	on windows. Defaults to 'TclDevKit.chm'.
+
+
+help::open
+	Locate and open the help.
+	win:		Assumes that page is in .chm
+	unix/mac:	Open system browser with file url.
+
+help::openUrl url
+	Opens an arbitrary url.

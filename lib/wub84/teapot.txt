@@ -1,0 +1,46 @@
+Package dictcompat 0.1
+Meta entrysource dictcompat.tcl
+Meta included    dictcompat.tcl
+Meta platform    tcl
+
+Package Timer 1.0
+Meta entrysource Timer.tcl
+Meta included    Timer.tcl
+Meta platform    tcl
+Meta require     snit
+
+Package Pool 1.0
+Meta entrysource Pool.tcl
+Meta included    Pool.tcl
+Meta platform    tcl
+Meta require     snit
+Meta require     struct::pool
+
+Package Listener 1.0
+Meta entrysource Listener.tcl
+Meta included    Listener.tcl
+Meta platform    tcl
+Meta require     Httpd
+Meta require     logger
+Meta require     Pool
+Meta require     snit
+
+Package Httpd 1.0
+Meta entrysource Httpd.tcl
+Meta included    Httpd.tcl
+Meta platform    tcl
+Meta require     Entity
+Meta require     HttpUtils
+Meta require     Timer
+
+Package Entity 1.0
+Meta entrysource Entity.tcl
+Meta included    Entity.tcl
+Meta platform    tcl
+Meta require     snit
+
+Package HttpUtils 1.0
+Meta entrysource HttpUtils.tcl
+Meta included    HttpUtils.tcl
+Meta platform    tcl
+

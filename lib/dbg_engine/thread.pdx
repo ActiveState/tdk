@@ -1,0 +1,202 @@
+# exec.pdx -*- tcl -*-
+#
+#	Define nub handling of 'thread::create' command for spawning.
+#
+# Copyright (c) 2008 ActiveState Software Inc.
+#
+# All rights reserved.
+# 
+# RCS: @(#) $Id: uplevel.pdx,v 1.2 2000/05/30 22:54:54 hershey Exp $
+
+# Register the extension
+
+instrument::addExtension 2.0 {thread::create}
+
+# thread::create --
+#
+#	A replacement for the standard 'thread::create' command.
+
+#	The code here performs all the operations of the original
+#	code, and additionally asks the frontend to open a new
+#	debugger window for the new thread if a spawnpoint was set.
+
+#	If that request is granted the command will launch the new
+#	thread so that it will be under debugger control too. The
+#	information about the new session is transfered to the
+#	application through the environment.
+
+# Arguments:
+#	args	Arguments for the internal 'exec'
+#
+# Results:
+#	Returns the result of the exec statement.
+
+instrument::spawnCommand  thread::create
+instrument::nubCmdWrapper thread::create {args} {
+    global DbgNub
+
+    if {[DbgNub_SpawnInfo AtSpawnpoint]} {
+	# Spawn point set here by the user. Ask the frontend for
+	# a sub-debugger. This operation can fail. A failure is
+	# indicated by '$port == {}'.
+
+	if {$DbgNub(debug) & 1} {
+	    DbgNub_Log "Spawn Thread::Create Request"
+	}
+
+	DbgNub_SpawnRequest [list thread::create $args]
+
+	set port    [DbgNub_SpawnInfo Port]
+	set cdata   [DbgNub_SpawnInfo CData]
+	set host    [DbgNub_SpawnInfo Host]
+
+	if {$DbgNub(debug) & 1} {
+	    DbgNub_Log "Spawn Thread::Create = Host  ($host)"
+	    DbgNub_Log "Spawn Thread::Create = Port  ($port)"
+	    DbgNub_Log "Spawn Thread::Create = CData ($cdata)"
+	}
+    } else {
+	# For test purposes we ignore the command entirely if there
+	# is no spawn point here.
+
+	if {$DbgNub(debug) & 1} {
+	    DbgNub_Log "Spawn Thread::Create Not at Spawnpoint"
+	}
+
+	set port  {}
+    }
+
+    if {$port == {}} {
+	# The request for sub-debugger failed. We perform the regular
+	# spawn which is not under debugger control. In the scope of
+	# the caller.
+
+	if {$DbgNub(debug) & 1} {
+	    DbgNub_Log "Spawn Thread::Create Regular Execution"
+	}
+
+	return [uplevel 1 [linsert $args 0 thread::DbgNub_createCmd]]
+    }
+
+    if {$DbgNub(debug) & 1} {
+	DbgNub_Log "Spawn Thread::Create Prepare for Spawning"
+    }
+
+    # The request is good. We now have to launch the thread in such a
+    # manner that the nub will be loaded and initialized. This is easy
+    # as thread::create accepts a script as last argument. This is
+    # complex because the user may have specified it own script.
+
+    # We assemble our script, setting the launch configuration (host,
+    # port, client data), and standard launch code coming after, and
+    # then append the user's script. If the user did not specify a
+    # script we append thread::wait to simulate thread::create's
+    # default behaviour without a script.
+
+    set lines {}
+    lappend lines [list set host $host]
+    lappend lines [list set port $port]
+    lappend lines [list set data $cdata]
+    lappend lines {
+	# ### ### ### ######### ######### #########
+	# The code here is derived, well copied, from
+	# "appLaunch.tcl". Keep it in sync.
+
+	# The following code needs to be kept in sync with
+	# initdebug.tcl
+
+	if {[catch {set socket [socket $host $port]}] != 0} {
+	    exit 1
+	}
+	fconfigure $socket -blocking 1 -translation binary
+
+	# On 8.1 and later versions we should ensure the socket is not
+	# doing any encoding translations.
+
+	if {$tcl_version >= 8.1} {
+	    fconfigure $socket -encoding utf-8
+	}
+
+	# Attach to the debugger as a local app.
+
+	set msg [list HELLO 1.0 $tcl_version $data]
+	puts $socket [string length $msg]
+	puts -nonewline $socket $msg
+	flush $socket
+
+	# Get the rest of the nub library and evaluate it in the
+	# current scope.  Note that the nub code assumes there will be
+	# a "socket" variable that contains the debugger socket
+	# channel.
+
+	if {[gets $socket bytes] == -1} {
+	    exit 1
+	}
+	set msg [read $socket $bytes]
+
+	eval [lindex $msg 1]
+
+	if {$DbgNub(debug) & 1} {
+	    DbgNub_Log "Spawn Thread::Create Child Run User Code"
+	}
+
+	# ### ### ### ######### ######### #########
+	# The user's script follows
+	# ### ### ### ######### ######### #########
+    }
+
+    set newargs {}
+    set at 0
+    set max [llength $args]
+
+    if {$DbgNub(debug) & 1} {
+	DbgNub_Log "---- thread::create arguments ($max)"
+	foreach a $args { DbgNub_Log "**** $a" }
+	DbgNub_Log "---- -"
+    }
+
+    while {$at < $max} {
+	set a [lindex $args $at]
+	if {[string match -* $a]} {
+	    lappend newargs $a
+	    if {$a eq "--"} {
+		incr at
+		break
+	    }
+	} else break
+	incr at
+    }
+
+    if {$DbgNub(debug) & 1} {
+	DbgNub_Log "---- @ $at"
+    }
+
+    if {$at < $max} {
+	while {$at < ($max - 1)} {
+	    lappend newargs [lindex $args $at]
+	    incr at
+	}
+	# Now at == max-1 == end, and this is a script.
+	lappend lines [lindex $args end]
+    } else {
+	# Standard script if the user did not specify one. We have to
+	# make this explicit because of us specifying our own script,
+	# causing the default to not be used.
+	lappend lines thread::wait
+    }
+
+    # We always have a script here, even if the caller did not specify
+    # one.
+
+    if {$DbgNub(debug) & 1} {
+	DbgNub_Log "Spawn Thread::Create CODE\n%%\t[::join $lines \n%%\t]\n%%CODE"
+    }
+
+    lappend newargs [::join $lines \n]
+
+    if {$DbgNub(debug) & 1} {
+	DbgNub_Log "Spawn Thread::Create Execute Spawn"
+    }
+
+    return [uplevel 1 [linsert $newargs 0 thread::DbgNub_createCmd]]
+}

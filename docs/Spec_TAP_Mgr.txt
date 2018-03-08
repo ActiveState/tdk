@@ -1,0 +1,303 @@
+TAP File Creation Tool
+======================
+
+[This tool is related to a full-blown package-manager and may be
+subsumed in that in the future].
+
+Naming
+------
+
+... Anybody have a nice name for the tap editor ... ?
+
+Chosen           Tcl Dev Kit Package Editor
+
+Internal         'tape'
+                 =      .tap Editor
+                 or =   TclApp Package Editor
+
+
+TAP Files
+---------
+
+.tap files are 'TclApp Package definition's. They contain all the
+information required by TclApp to enable that application to wrap
+packages in a manner painless to the user.
+
+Currently TclApp has a scan-mode which allows it to generate draft
+.tap files by scanning a directory hierarchy for pkgIndex.tcl files.
+This scanner is very rudimentary, and the results do need manual
+editing to be actually useable.
+
+(See "TclApp_PackageDefs.txt": tclapp -scan directory)
+
+Beyond that there is no support for the creation of .tap files, except
+that their format is text-based and completely documented, making
+their creation with a text editor possible.
+
+(See "TclApp_FileFormats.txt" for the definition).
+
+All of the above mean that the process of creating package definitions
+is not very easy. On the other hand the easy creation of such
+definitions for packages outside of ActiveState is an essential
+feature for making the TDK useable, simply because users will not wish
+to depend on AS to provide them with definitions for their own
+packages.
+
+Therefore a tool is needed which enables the easy creation
+of package definitions.
+
+Functionality
+-------------
+
+Maintenance of the following state information
+
+.       Selection of directories and files belonging to the package,    |       Ok
+        paths may contain the placeholder strings recognized by TclApp. |
+
+        -       Alias information per file                              |       Ok
+
+.       Management of the additional package attributes
+
+        -       Name                                                    |       Ok
+        -       Version                                                 |       Ok
+        -       Platform dependency                                     |       Ok
+        -       Description                                             |       Ok
+
+        Management of multiple packages in one .tap file, including     |       Ok
+        the special features of 'hidden' definitions ('Hidden') and     |
+        definition references ('See') for multiple packages in one      |
+        directory, either relatively separate, or dependent on each     |
+        other.                                                          |
+
+.       Loading existing .tap files into the application.               |       Ok
+
+.       Saving current state as .tap file.                              |       Ok
+
+.       Scan a directory (not the full hierarchy) for a package.        |       Ok
+        Similar to TcllApp -scan, except that it doesn't recurse,       |
+        and the scan result is made available in the UI, for direct     |
+        editing and finetuning.                                         |
+
+        << Implemented a bit different than thought.
+           Essentially the recursive browse we have in TclApp. No
+           automatic extraction of package name and version Easier to
+           let the user write it explicitly, especially if the
+           automatic extraction gets it wrong more often than not.
+        >>
+
+
+User Interface
+---------------
+
+There will only be a graphical interface. This is by its nature an
+interactive application and a batch mode is not required. Also note
+that the scan-mode of TclApp is already a batch mode, despite the need
+for manual adjustment of the resulting .tap files. A command line
+interface would be not much differenbt form writing the file with a
+text editor.
+
+Structure of the interface
+
+        Only one window containing the whole interface.                 |       Ok
+        Workarea:
+                "Bwidget List-Notebook",                                |       Ok
+                with the list placed at the left.                       |       Ok
+                (i18n: switchable left/right ?)
+
+        Notebook Details:
+                One tab/item per package in the TAP file.               |       Ok
+                Each tab labeled with the name of the package           |       Ok
+                the tab is associated with.                             |       Ok
+
+        Notebook pages (One per package):
+
+                Entry field:    Version number.                         |       Ok
+                Textbox:        Description                             |       Ok
+                Entry field:    Platform        (or restricted          |       OK (Entry)
+                                                through a combobox ?)   |       No restrict.
+                Checkbox:       Hidden                                  |       Ok
+                Checkbox:       Reference                               |       Ok
+                                checked =>      Combobox - select referenced package
+                                                        restricted to packages in the
+                                                        file, excluding itself.
+                                not checked =>  FileWidget similar to the one used in
+                                                TclApp
+
+        Menus:
+                Standard menus
+                File                                    |       Ok
+                        Save    \                       |       Ok
+                        Save as  > TAP files            |       OK
+                        Load    /                       |       OK
+                        Scan Directory                  |               NO - s.a.
+                        Exit                            |       Ok
+
+                Help                                    |       Ok
+                        About                           |       Ok
+                        Help                            |       Ok
+
+
+        File Widget:
+                The data in the file widget is the part of the state
+                handling base paths, include and exclude patterns.
+
+                "x Level Children" == x_lC
+
+                ------------------------+--------------------------------       |
+                Root node               | Invisible, unchangeable.              |       Ok
+                ------------------------+--------------------------------       |
+                First level children    | Directories == "Base" [1].            |       Ok
+                ------------------------+--------------------------------       |
+                Second level children   | Include and Exclude Paths.            |       Ok
+                                        | = Files and Directories found         |
+                                        |   under the Base path.                |
+                ------------------------+--------------------------------       |
+                Third level children    | Display and handling of special       |       Ok
+                                        | attributes for the second level       |
+                                        | children - "Alias" [2].               |
+                ------------------------+--------------------------------       |
+
+                The widget employs icons to give additional visual              |       Ok
+                feedback on the type of the various nodes in th tree.           |
+
+                Actions == Buttons
+                (a)     Add directory                                           |       Ok
+                (b)     Add file                                                |       Ok
+                (c)     Toggle include/exclude                                  |       Ok
+                (d)     Set alias                                               |       Ok
+                ===     Add directory hierarchy === NEW
+                            Replaces 'Scan directory' menu item, s.a.
+
+                /// The exact logic for the actions is a bit different ///
+
+                Ad a)   Depending on selection.
+                        Nothing selected:       Add new base path.              |       ///
+                        1_lC selected:          Add child of base.              |       ///
+                        2_lC selected:          Add child for same base         |       ///
+                        3_lC:                   Add new base path               |       ///
+
+                Ad b)   Depending on selection.
+                        Nothing selected:       Error                           |       ///
+                        1_lC selected:          Add child of base.              |       ///
+                        2_lC selected:          Add child for same base         |       ///
+                        3_lC:                   Error                           |       ///
+
+                Ad c)   Depending on selection.
+                        Nothing selected:       Disabled                        |       Ok
+                        1_lC selected:          Disabled                        |       Ok
+                        2_lC selected:          Toggle include/exclude flag     |       Ok
+                        3_lC:                   Disabled.                       |       Ok
+
+                Ad d)   Depending on selection.
+                        Nothing selected:       Disabled                        |       Ok
+                        1_lC selected:          Disabled                        |       Ok
+                        2_lC selected:          Add alias to node               |       Ok
+                        3_lC:                   Disabled.                       |       Ok
+
+                Editing the labels of nodes. Is allowed.                        |       Ok
+
+                --------
+                [1]     Keyword, TclApp_FileFormats.txt, line 180
+                [2]     Keyword, TclApp_FileFormats.txt, line 199
+
+
+
+???     >>> *** Handling of placeholders *** <<<         ???
+        Definitions below ... Not in first version of the editor.
+        =>          Only absolute paths generated by tapE
+
+
+        *       @TDK_INSTALLDIR@         Installation directory of Tcl Dev Kit.
+        *       @TDK_LIBDIR@             @TDK_INSTALLDIR@/lib
+        *       @TAP_DIR@                Directory the .tap file was found in.
+
+        [*]     The basepath may contain any the following placeholders. They
+                will be substituted by TclApp at runtime:
+
+        [x]     The argument to Path or ExcludePath may contain any the
+                following placeholders. They will be substituted by TclApp at
+                runtime:
+
+        *       @DLLEXT@                 [info sharedlibextension] 1 end], without leading '.'
+
+
+
+
+
+Implementation issues
+---------------------
+
+Reusing the fileWidget in TclApp would have been nice. It is not
+possible however. There are similarities (directories ~ -relativeto =
+base path for example), but there are major differences as well
+(exclude paths for example). Still, the existing code in that widget
+can be probably used as a starting point for the tap editor file
+widget.
+
+
+
+
+======================
+Scratch pad
+
+        Note that placing a .tap file parallel to the pkgIndex.tcl
+        file of a package allows TclApp to find it without the need
+        for environment variables, provided that the package itself
+        would be found when searching auto_path and tcl_pkgPath. This
+        behaviour of TclApp makes the management of a set of installed
+        packages much easier because .tap files are near/part of their
+        packages.
+
+
+======================
+FileWidget, handling of adding data to it.
+
+GUI elements...
+
+*	Three special-case buttons:
+	Add file, directory, directory hierarchy
+
+*	One generic entry field.
+
+The buttons can be described in terms of the entry field (+
+preprocessing).
+
+1.	Add file
+
+	Select a file via dialog. If a 'directory' is selected in the
+	tree the dialog starts in that directory. The selected directory
+	is also stripped from the returned path, if that path is in that
+	directory. The final result is placed in the entry field and then
+	added as per the rules for that field.
+
+2.	Add directory.
+	Ditto.
+
+3.	Add directory hierarchy.
+	The directory is added as per 2., then all files in that directory
+	are added as its children.
+
+Entry field
+-----------
+
+Input			Selected in tree	Chosen class for input		Action
+--------------------------------------------------------------------------------------
+*			More than one		unknown, Error			No action.
+
+Empty			*			none, Error			No action.
+
+Relative path		None			none, Error			No action.
+			Alias under dir X	include				Add as child under X
+			File under X		s.a.				s.a.
+			Directory X		s.a.				s.a.
+Absolute path
+	directory	None			directory			Add base path
+			Alias under dir X	s.a.				s.a.
+			File under X		s.a.				s.a.
+			Directory X		s.a.				s.a.
+
+	file		None			none, Error			No action
+			Alias under dir X	include				Add as child under X
+			File under X		s.a.				s.a.
+			Directory X		s.a.				s.a.
+---------------------------------------------------------------------------------------

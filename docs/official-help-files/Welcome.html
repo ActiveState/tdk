@@ -1,0 +1,184 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+
+<head>
+<title>Tcl Dev Kit - Welcome</title>
+<link rel="stylesheet" type="text/css" href="aspn.css">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head>
+
+<body marginheight="5" topmargin="5" marginwidth="10" leftmargin="10">
+
+@header@
+
+<hr size="1" noshade width="100%">
+
+<a name="top"></a>
+
+<h1>Welcome</h1>
+
+
+<p>The ActiveState Tcl Dev Kit development environment is a set of powerful development 
+tools and an extended Tcl platform for professional Tcl developers.</p>
+
+<table border="0" cellpadding="5" cellspacing="10">
+   <tr>
+      <td class="startupBox" width="33%" valign="top">
+        <p class="subheading">Quick Links</p>
+         
+        <p><b>Installing?</b> Read the <a href="Installation.html">Installation Guide</a>.</p>
+        <p><b>Upgrading?</b> See what's <a href="Release.html">new in this release</a>.</p>
+        <p><b>New to the TDK?</b> Check out the <a href="Demos.html">demos</a>.</p>
+        <p><b>Questions?</b> Contact <a href="Contact.html">ActiveState</a>.</p>
+        
+      </td>
+      <td class="startupBox" width="33%" valign="top">
+         <p class="subheading">Tcl Dev Kit Components</p>
+            <ul>
+               <li><a class="doc" href="#tpm_summary">TEA Package Management</a></li>
+               <li><a class="doc" href="#debug_summary">Debugger</a></li>
+               <li><a class="doc" href="#checker_summary">Checker</a></li>
+               <li><a class="doc" href="#compiler_summary">Compiler</a></li>
+               <li><a class="doc" href="#tclapp_summary">TclApp</a></li>
+               <li><a class="doc" href="#package_summary">Package Editor</a></li>
+               <!-- <li><a class="doc" href="#tclvfse_summary">VFS Explorer</a></li> -->
+               <li><a class="doc" href="#servman_summary">Service Manager</a></li>
+               <li><a class="doc" href="#inspector_summary">Inspector</a></li>
+               <li><a class="doc" href="#xref_summary">Cross Reference Tool</a></li>
+               <!-- <li><a class="doc" href="#browser_summary">Browser Plugin</a></li> -->
+            </ul>
+         <br />
+      </td>
+      <td class="startupBox" width="33%" valign="top">
+         <p class="subheading">Tcl Dev Kit Tutorials</p>
+            <ul>
+               <li><a class="doc" href="README_csv.html">Coverage Analysis</a></li>
+               <li><a class="doc" href="README_mult.html">Hotspot Analysis</a></li>
+               <li><a class="doc" href="README_spawn.html">Debugging Subprocesses</a></li>
+            </ul>
+         <br />
+      </td>
+   </tr>
+</table>
+
+
+<h2><a name="tpm_summary"></a>TEA Package Management</h2>
+
+<p>The new Tcl Extension Architecture (TEA) is a framework for Tcl
+package management. Download and install Tcl packages from the
+ActiveState repository, or create your own repository with packaged
+versions of your own Tcl extensions.</p>
+
+<ul>
+ <li><strong><a
+ href="tpm/tpm/files/CTP_introduction.html">Introduction</a></strong>:
+ A quick introduction to the most important pieces of the TEApot
+ system and their relationships. </li>
+ <li><strong><a
+ href="tpm/tpm/files/CTP_glossary.html">Glossary</a></strong>: The
+ glossary of all terms relevant to TEApot.</li>
+ <li><strong><a
+ href="tpm/tpm/files/CTP_metadata.html">Meta data
+ specification</a></strong>: The specification of the meta data
+ format, its embedding into various forms of package archives, and
+ the keywords ActiveState has laid claim to and given meaning.</li>
+ <li><strong><a
+ href="tpm/tpm/files/CTP_activetcl.html">ActiveTcl</a></strong>: How
+ TEApot and ActiveTcl interact with each other.</li>
+ <li><strong><a href="TEA_Apps.html">more...</a></strong></li>
+</ul>
+
+<h2><a name="debug_summary"></a>Tcl Dev Kit Debugger (with 
+Coverage and Profiling)</h2>
+ 
+<p>No more puts statements! Breakpoints, single-stepping, variable/stack display, 
+code coverage analysis, extensive code profiling and other features help you to 
+track down bugs quickly. The Tcl Dev Kit Debugger provides
+a convenient graphical user interface for debugging local, remote and
+embedded Tcl applications as well as multiple processes.
+<a href="Debugger.html">more...</a></p>
+
+<h2><a name="checker_summary"></a>Tcl Dev Kit Checker</h2>
+
+  
+<p>Our static code analyzer helps you find syntax and
+other common usage errors quickly, without having to run
+your program. If you are using older versions of Tcl and Tk
+(as far back as Tcl 7.3 and Tk 3.6), the Tcl Dev Kit Checker helps
+you upgrade by warning about potential incompatibilities. 
+<a href="Checker.html">more...</a></p>
+
+<h2><a name="compiler_summary"></a>Tcl Dev Kit Compiler</h2>
+
+<p>Do you want to keep your customers from seeing and modifying
+your source code? The Tcl Dev Kit Compiler converts a Tcl script into a bytecode
+representation for distribution, so that your source code doesn't leave your
+site. The Tcl Dev Kit Compiler, which includes both a command-line and a
+graphical interface, supports Tcl versions 8.4 and later. 
+<a class="doc" href="Compiler.html">more...</a></p>
+
+<h2><a name="tclapp_summary"></a>Tcl Dev Kit TclApp</h2>
+
+<p>TclApp replaces the Tcl Dev Kit Wrapper, which was based on 
+<strong>prowrap</strong>. The TclApp tool collects all the files required
+for a Tcl application and creates a single executable file. Making use of the
+Virtual Filesystem (VFS) support included in Tcl version 8.4, TclApp vastly
+simplifies the wrapping process, letting developers specify packages as well as
+individual files. In addition, you can use the command-line version of TclApp
+to convert starkits to starpacks. <a class="doc" href="TclApp.html">more...</a></p>
+
+<h2><a name="package_summary"></a>Tcl Dev Kit Package Editor</h2>
+
+<p>The Package Editor makes it easy to define groups of files for inclusion 
+in applications generated with TclApp. <a class="doc" href="Package.html">more...</a></p>
+
+<!--  
+<h2><a name="tclvfse_summary"></a>Virtual Filesystem Explorer</h2>
+
+<p>The Virtual Filesystem Explorer (VFSE) provides a convenient way to analyze
+the contents of filesystems, starkits, starpacks and .zip files. Items are mounted
+for viewing in the tool's virtual directory. This is especially useful
+when you want to view files that are not visible in Windows Explorer, such as
+those wrapped inside starkits and starpacks. You can also move or copy mounted
+files and directories to a new location and view them with another application.
+The VFSE works with Tcl version 8.4 or greater. 
+<a class="doc" href="TclVFSE.html">more...</a></p>
+-->
+
+<h2><a name="servman_summary"></a>Tcl Dev Kit Service Manager</h2>
+
+<p>The Service Manager is used to register services (built with TclApp). The 
+Service Manager provides a graphical interface for registering services on a 
+Windows system. <a class="doc" href="ServMgr.html">more...</a></p>
+  
+<h2><a name="inspector_summary"></a>Tcl Dev Kit Inspector</h2>
+
+<p>The Inspector is an inspector for Tk applications. It uses Tk's send 
+command to retrieve information from other Tk applications. Previously, aspects 
+of the Inspector were only available when running the Tcl Dev Kit Debugger
+with coverage. The complete Inspector functionality is now included with the Tcl
+Dev Kit. <a class="doc" href="Inspector.html">more...</a></p>
+
+<h2><a name="xref_summary"></a>Cross Reference Tool</h2>
+
+<p>The Cross Reference Tool builds a database from programs and packages, making
+it easy to drill down into your code and examine relationships and dependencies.
+This graphical tool extracts various elements, including packages, files, namespaces,
+commands and variables, and displays them on individual tabs for convenient
+viewing. The Cross Reference Tool works with Tcl version 8.4 or greater. 
+<a class="doc" href="Xref.html">more...</a></p>
+
+<!--
+<h2><a name="browser_summary"></a>Tcl Browser Plug-In</h2>
+
+<p>The Tcl Browser Plugin allows "Tclets" (Tcl scripts embedded in HTML web 
+pages) to be executed within the context of a web browser. The plugin can 
+be configured to provide a flexible and efficient environment for executing 
+and distributing Tcl applications over the Web. 
+<a class="doc" href="Browser.html">more...</a></p>
+-->
+
+
+
+</body>
+</html>

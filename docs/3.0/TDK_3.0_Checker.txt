@@ -1,0 +1,154 @@
+TDK 3.0 Checker
+===============
+
+-       Extend to check usage of variables
+        (typos, use before declare, etc.)
+
+-       autoscan files for source'd files, and required packages
+        =>       -recursive, -follow
+        =>       import checker definitions for further checks
+        =>       generate .tpj for wrapper
+                 (auto-include required packages)
+
+-       scan sources and generate rules file (for package).
+
+-       [prio 3]
+        Expose a public rules API.
+
+-       Graphical rules editor (3.1 ?)
+
+===================
+
+New:
+
+-	[prio 1]
+	New mode:  Xref scan
+
+	No checking, just scanning the code for declarations and usage
+	of commands, variables
+
+	Output:
+		A report listing all the found declarations, etc.
+
+	Use 'required' packages and their rules files for better
+	analysis of command usages.
+
+	Specify the output format.
+
+
+-	New mode: Package scan.
+
+	No checking. Just looking for 'package require' statements.
+
+	Output:
+		List of packages found.
+
+	Alternate output:
+		A .tpj file listing all scanned files and the
+		packages they require.
+
+	Alternate output II:
+		A .tap file instead of a .tpj
+		=> Extend .tap by keywords for dependency information.
+
+	Extended mode
+		 Consult a package database to locate dependency
+		 information for required packages and generate
+		 transitive closure, use that in the output.
+
+		 Note: Extended mode does _not_ make sense when
+		 generating a .tap file.
+
+-	New mode: Rule generation
+
+	No checking. Find all command definitions (procs) instead and
+	generate a basic rules file which allows the checking of
+	these commands in other places.
+
+
+-	Extended syntax check I:
+
+	When encountering 'package require' statements locate
+	a rules file for that package (and version), load it, and
+	use it to check occurences of package commands.
+
+-	Extended syntax check II:
+
+	Extend the coreTcl.tcl rules and/or analyzer.tcl with
+	functionality which is able to track variable declarations,
+	and usage, and check them against each other.
+
+
+-	[prio 3]
+	Expose an API for writing checker rules.
+	
+===================================================
+
+Handling of checker packages for packages
+=========================================
+
+The system currently has a number of checker packages built into
+it. It will also find packages in .pcx files. They are used only if
+explicitly asked for. The builtins are always used. A complicated
+algorithm is used to reconcile which checker version for some package
+to use in conjunction with the basic tcl code.
+
+For automatic use of rules for packages we have to check the sources
+for package require statements.
+
+This complicates the scan and analysis phases, because multiple scans
+may be required to find all required packages. This happens if a
+package defines scan commands for at least of its commands. This means
+that the file has to re-scanned for this command as it now exposes a
+script which was not sen before. An optimization is possible: Activate
+the scan commands for the new package immediately, so that they will
+be used for all code not yet scanned. As a command is available only
+after loading the package commands are usually found only after its
+'require'. Possible exceptions to this: A package require in a proc
+definition. The command can be in the proc, or in a called proc,
+defined before. Same for package require's at the end of a file, and
+the commands are used in procs defined before that. Mitigation: We can
+keep tabs on used command names and schedule a rescan iff the name of
+the command to be scanned appeared before.
+
+When loading package definitions we also have to apply the
+reconciliation algorithm to find the correct checker version. This
+also influences what and how many scan commands are defined (version
+dependent). Iff no version was asked for explicitly by the [require]
+command. The algorithm should know Tcl's rules for getting a version
+too.
+
+Second complication: The commands of a package are available only
+after it was loaded. This means that the checker needs a mechanism to
+precisely activate the command definitions for a package during a scan
+and analysis. Currently the system will use [Incr Tcl] definitions
+even if the code does not contain them. This can cause the system to
+misinterpret code as incr tcl while it is not. Especially if for
+example a different object system is loaded (snit, xotcl).
+
+We already have the basics of such a mechanism: The database of
+commands, and its ability to stack definitions: IOW it allows to
+overload a definition with a new checker. This is currently used to
+set temporary definititions (=> commands visible in a class or method
+scope, for example). A second mechanism is the ability to have
+multiple definitions for a single command in parallel, and one of them
+accepts the commands ... This handles imports, and renames, which can
+overwrite other definitions. Done in parallel because the checker does
+not know about the relative timing of the rename/import versus other
+definitions. Therefore the checking assumes that both can be valid and
+have to be checked.
+
+The problem is that this database not only contains the builtins, but
+also the definitions for all user defined procedures. This is a
+problem because it is necessary to reset the database into a defined
+null state (Tcl only) whenever we start scanning and/or analyzing a
+file. But we must not throw away the user-defined commands we
+collected in the scan phase, nor the imported and/or renamed commands.
+
+We need a separate database to remember this information, then
+we can use it during the reset to re-enter these commands into
+the command database.
+
+That, or a completely different organization which handles all
+the possible manipulations in one.
+

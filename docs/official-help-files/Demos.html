@@ -1,0 +1,386 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+<head>
+<link rel="STYLESHEET" href="aspn.css" charset="ISO-8859-1" type="text/css">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Tcl Dev Kit - Demos</title>
+</head>
+
+
+<body marginheight="5" topmargin="5" marginwidth="10" leftmargin="10">
+
+@header@
+
+<hr size="1" noshade width="100%">
+
+<a name="top"></a>
+
+<h1>Demos</h1>
+
+<ul>
+  <li><a class="doc" href="#demos_intro">Introduction</a></li>
+  <li><a class="doc" href="#demos_debug">Debugger</a></li>
+  <li><a class="doc" href="#demos_tclapp">TclApp</a></li>
+  <li><a class="doc" href="#demos_servman">Service Manager</a></li>
+  <li><a class="doc" href="#demos_vfs">Virtual Filesystem Explorer</a></li>
+  <li><a class="doc" href="#demos_xref">Cross Reference Tool</a></li>
+  <!-- <li><a class="doc" href="#demos_plugin">Tcl Plugin</a></li> -->
+</ul>
+  
+  
+<h2><a name="demos_intro">Introduction</a></h2>
+
+<p>The Tcl Dev Kit provides a number of demonstration applications to help you
+get started with the TDK. In addition to the Tcl demos included with
+ActiveTcl, the following demos can be found in the <code>demos</code>
+directory beneath your Tcl installation directory, or, on Windows, in the
+<strong>Tcl Dev Kit Demos</strong> menu item in the <strong>ActiveState
+Tcl Dev Kit</strong> program group.</p>
+
+<a class="topText" href="#top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+<h2><a name="demos_debug">Debugger</a></h2>
+
+<h3>Coverage Testsuites</h3>
+
+<p>The <strong>Coverage Testsuites</strong> demonstrate how to use the
+Tcl Dev Kit <a class="doc" href="Debugger.html">Debugger</a> to ensure that
+a <code>tcltest</code> package for a Tcl script library covers all paths through
+the code. These demos are described in detail in the 
+<a class="doc" href="README_csv.html">Coverage Analysis Tutorial</a>.</p>
+
+<p>To access the demo:</p>
+<ul>
+  <li><strong>Windows Start Menu:</strong> 
+    <code>Start | Programs | ActiveState Tcl Dev Kit | Tcl Dev Kit Demos |
+    Profiling and Coverage | </code></li>
+  <li><strong>Windows Path:</strong>
+    <code>&lt;install_dir&gt;\demos\TclDevKit\TclDebugger\Coverage\</code></li>
+  <li><strong>Unix Path:</strong>
+    <code>&lt;install_dir&gt;/demos/TclDevKit/TclDebugger/Coverage/</code></li>
+</ul>
+<br>
+
+<h3>Hotspot Multiplication</h3>
+
+<p>The <strong>Hotspot Multiplication</strong> demos show how to use the Tcl
+Dev Kit Debugger's "profiling" feature to analyze the efficiency of your code.
+These demos are described in detail in the 
+<a class="doc" href="README_mult.html">Hotspot Analysis Tutorial</a>.</p>
+
+<p>To access the demo:</p>
+<ul>
+  <li><strong>Windows Start Menu:</strong> 
+    <code>Start | Programs | ActiveState Tcl Dev Kit | Tcl Dev Kit Demos |
+    Profiling and Coverage | </code></li>
+  <li><strong>Windows Path:</strong>
+    <code>&lt;install_dir&gt;\demos\TclDevKit\TclDebugger\Profiling\</code></li>
+  <li><strong>Unix Path:</strong>
+    <code>&lt;install_dir&gt;/demos/TclDevKit/TclDebugger/Profiling/</code></li>
+</ul>
+<br>
+
+<h3>Debugging Subprocesses</h3>
+
+<p>The <strong>Debugging Subprocesses</strong> demo shows how to use the Tcl
+Dev Kit <a class="doc" href="Debugger.html">Debugger</a> to spawn and debug
+subprocesses. This demo is described in detail in the
+<a class="doc" href="README_spawn.html">Debugging Subprocesses Tutorial</a>.</p>
+
+<p>To access the demo:</p>
+
+<ul>
+  <li><strong>Windows Start Menu:</strong> 
+    <code>Start | Programs | ActiveState Tcl Dev Kit | Tcl Dev Kit Demos |
+    Debugging Subprocesses</code></li>
+  <li><strong>Windows Path:</strong>
+    <code>&lt;install_dir&gt;\demos\TclDevKit\TclDebugger\Spawning\</code></li>
+  <li><strong>Unix Path:</strong>
+    <code>&lt;install_dir&gt;/demos/TclDevKit/TclDebugger/Spawning/</code></li>
+</ul>
+<br>
+
+<h3>See also:</h3>
+
+<ul>
+
+    <li>User Guide:
+    <a class="doc" href="Debugger.html">Debugger</a></li>
+    
+</ul>
+
+<a class="topText" href="#top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+<h2><a name="demos_tclapp">TclApp</a></h2>
+
+<h3>BWidget</h3>
+
+<p>The <strong>BWidget</strong> demo shows how to use the BWidgets package with
+the Tcl Dev Kit's <a class="doc" href="TclApp.html">TclApp</a> tool to generate
+a stand-alone program that contains all the files needed to run an application.</p>
+
+
+<p>To access the demo:</p>
+<ul>
+  <li><strong>Windows Start Menu:</strong> 
+    <code>Start | Programs | ActiveState Tcl Dev Kit | Tcl Dev Kit Demos |
+    Wrapping | BWidget Demo |</code></li>
+  <li><strong>Windows Path:</strong>
+    <code>&lt;install_dir&gt;\demos\TclDevKit\TclApp\BWidgets\</code></li>
+  <li><strong>Unix Path:</strong>
+    <code>&lt;install_dir&gt;/demos/TclDevKit/TclApp/BWidgets/</code></li>
+</ul>
+<br>
+
+<h3>TclDom</h3>
+
+<p>The <strong>TclDom</strong> demos show how to
+"<a class="doc" href="TclApp.html">wrap</a>" an application containing a package that relies
+on external DLLs (that are not stub-enabled).</p>
+
+<p>To access the demo:</p>
+<ul>
+  <li><strong>Windows Start Menu:</strong> 
+    <code>Start | Programs | ActiveState Tcl Dev Kit | Tcl Dev Kit Demos |
+    Wrapping | Advanced |</code></li>
+  <li><strong>Windows Path:</strong>
+    <code>&lt;install_dir&gt;\demos\TclDevKit\TclApp\Tcldom\</code></li>
+  <li><strong>Unix Path:</strong>
+    <code>&lt;install_dir&gt;/demos/TclDevKit/TclApp/Tcldom/</code></li>
+</ul>
+<br>
+
+<h3>Expect Weather</h3>
+
+<p>The <strong>Expect Weather</strong> demo (Unix only) retrieves weather
+forecasts.</p>
+
+<p>To access the demo:</p>
+<ul>
+  <li><strong>Unix Path:</strong>
+    <code>&lt;install_dir&gt;/demos/TclDevKit/TclApp/Expect/</code></li>
+</ul>
+<br>
+
+<h3>Img</h3>
+
+<p>The <strong>Img</strong> demo uses <a class="doc" href="TclApp.html">TclApp</a> 
+to generate a <a class="doc" href="FAQ.html#starkitstarpack">Starpack</a>.</p>
+<p>To access the demo:</p>
+<ul>
+  <li><strong>Windows Start Menu:</strong> 
+    <code>Start | Programs | ActiveState Tcl Dev Kit | Tcl Dev Kit Demos |
+    Wrapping | Img Demo -- As Starpack</code></li>
+  <li><strong>Windows Path:</strong>
+    <code>&lt;install_dir&gt;\demos\TclDevKit\TclApp\Img\</code></li>
+  <li><strong>Unix Path:</strong>
+    <code>&lt;install_dir&gt;/demos/TclDevKit/TclApp/Img/</code></li>
+</ul>
+<br>
+
+<h3>Klondike</h3>
+
+<p>The <strong>Klondike</strong> demo (a solitaire-type card game) 
+uses <a class="doc" href="TclApp.html">TclApp</a> to generate a 
+<a class="doc" href="FAQ.html#starkitstarpack">Starpack</a>.</p>
+
+<p>To access the demo:</p>
+<ul>
+  <li><strong>Windows Start Menu:</strong> 
+    <code>Start | Programs | ActiveState Tcl Dev Kit | Tcl Dev Kit Demos |
+    Wrapping | Klondike -- As Starpack</code></li>
+  <li><strong>Windows Path:</strong>
+    <code>&lt;install_dir&gt;\demos\TclDevKit\TclApp\Klondike\</code></li>
+  <li><strong>Unix Path:</strong>
+    <code>&lt;install_dir&gt;/demos/TclDevKit/TclApp/Klondike/</code></li>
+</ul>
+<br>
+
+<h3>Tkcon</h3>
+
+
+<p>The <strong>Tkcon</strong> demo builds a standard console by using 
+<a class="doc" href="TclApp.html">TclApp</a> to "wrap" the portable Tkcon functions.
+The Tkcon console functions on all platforms where Tcl/Tk is available.</p>
+
+<p>To access the demo:</p>
+<ul>
+  <li><strong>Windows Start Menu:</strong> 
+    <code>Start | Programs | ActiveState Tcl Dev Kit | Tcl Dev Kit Demos |
+    Wrapping | Tkcon -- As Starkit</code></li>
+  <li><strong>Windows Path:</strong>
+    <code>&lt;install_dir&gt;\demos\TclDevKit\TclApp\Tkcon\</code></li>
+  <li><strong>Unix Path:</strong>
+    <code>&lt;install_dir&gt;/demos/TclDevKit/TclApp/Tkcon/</code></li>
+</ul>
+<br>
+
+<h3>Miscellaneous</h3>
+
+<p>Miscellaneous TclApp demos include the hexplode game, the doctools 
+processor and tkchat. All are available from the <strong>ActiveState Tcl 
+Dev Kit | Tcl Dev Kit Demos | Wrapping</strong> Windows menu, or from the 
+<code>demos/TclDevKit/TclApp/TclApps</code> directory.</p>
+
+
+
+<h3>See also:</h3>
+
+<ul>
+    <li>User Guide:
+    <a class="doc" href="TclApp.html">TclApp</a></li>
+</ul>
+
+
+<a class="topText" href="#top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+<h2><a name="demos_servman">Service Manager</a></h2>
+
+<p>The <strong>TclSvc Register ExprServer</strong> Service Manager demo (Windows
+only) installs a Windows service on a target system. The
+<a class="doc" href="TclApp.html">TclApp</a> component of the Tcl Dev Kit is used to
+create Tcl applications that will be deployed as services. The
+<a class="doc" href="ServMgr.html">Service Manager</a> component is used to install
+the service on a target system (or to remove a Tcl service that was
+previously installed).</p>
+
+<p>To access the demo:</p>
+<ul>
+  <li><strong>Windows Start Menu:</strong> 
+    <code>Start | Programs | ActiveState Tcl Dev Kit | Tcl Dev Kit Demos |
+    TclSvc Register ExprServer</code></li>
+  <li><strong>Windows Path:</strong>
+    <code>&lt;install_dir&gt;\demos\TclSvc\</code></li>
+  <li><strong>Windows Path:</strong>
+    <code>&lt;install_dir&gt;\demos\TclDevKit\TclApp\Tkcon\</code></li>
+  <li><strong>Unix Path:</strong>
+    <code>&lt;install_dir&gt;/demos/TclDevKit/TclApp/Tkcon/</code></li>  
+</ul>
+<br>
+
+<h3>See also:</h3>
+
+<ul>
+    <li>User Guide:
+        <ul>
+            <li><a class="doc" href="TclApp.html">TclApp</a></li>
+            <li><a class="doc" href="ServMgr.html">Service Manager</a></li>
+        </ul>
+    </li>
+</ul>
+
+<a class="topText" href="#top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+<h2><a name="demos_vfs">Virtual Filesystem Explorer</a></h2>
+
+<p>The <strong>Explore Starkit</strong> and <strong>Explore Starpack</strong>
+demos both make use of the Virtual Filesystem Explorer (VFSE). Before you can run
+these demos, you must generate the associated starkits and starpacks by
+running the TclApp BWidgets demo.</p>
+
+
+<p>To access the demos:</p>
+<ul>
+  <li><strong>Windows Start Menu:</strong> 
+    <code>Start | Programs | ActiveState Tcl Dev Kit | Tcl Dev Kit Demos |
+    Wrapping | BWidget Demo | Explore Starkit </code></li><br/><br/>
+    
+    and<br/><br/>
+    
+    <code>Start | Programs | ActiveState Tcl Dev Kit | Tcl Dev Kit Demos |
+    Wrapping | BWidget Demo | Explore Starpack</code><br/><br/>
+    
+    <p>Alternatively, run the executables created in the Building TclApps Tutorial
+    from the command line by launching them from the directory in which the
+    executables were created.</p>
+    
+    <li><strong>Windows Path for Starkits:</strong>
+    <code>&lt;install_dir&gt;\bwdemo.tcl</code></li>
+    <li><strong>Unix Path for Starkits:</strong>
+    <code>&lt;install_dir&gt;/bwdemo.tcl</code></li>
+    <li><strong>Windows Path for Starpacks:</strong>
+    <code>&lt;install_dir&gt;\bwdemo.exe</code></li>
+    <li><strong>Unix Path for Starpacks:</strong>
+    <code>&lt;install_dir&gt;/bwdemo.exe</code></li>
+    
+</ul>
+<br>
+
+
+
+
+
+<h3>See also:</h3>
+
+<ul>
+    <li>User Guide:
+    Virtual Filesystem Explorer</li>
+    
+</ul>
+
+<a class="topText" href="#top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+
+<h2><a name="demos_xref">Cross Reference Tool</a></h2>
+
+<p>The <strong>Xref BWidgets</strong> demo uses the Cross Reference Tool to
+extract component information (such as packages, namespaces, commands, etc)
+from the BWidgets package. (See also the <a class="doc" href="#demos_tclapp">TclApp
+BWidgets</a> demo.)</p>
+
+
+<p>To access the demo:</p>
+<ul>
+  <li><strong>Windows Start Menu:</strong> 
+    <code>Start | Programs | ActiveState Tcl Dev Kit | Tcl Dev Kit Demos |
+    Xref BWidgets</code></li>
+  <li><strong>Windows Path:</strong> <code>&lt;install_dir&gt;\bin\tclxref.tcl -tap &lt;install_dir&gt;\lib\bwidget1.6\bwidget.tap</code></li>
+  <li><strong>Unix Path:</strong> <code>&lt;install_dir&gt;/bin/tclxref -tap &lt;install_dir&gt;/lib/bwidget1.6/bwidget.tap</code></li>
+</ul>
+<br>
+
+<h3>See also:</h3>
+
+<ul>
+    <li>User Guide:
+    <a class="doc" href="Xref.html">Cross Reference Tool</a></li>
+
+</ul>
+
+<a class="topText" href="#top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+<!--
+<h2><a name="demos_plugin">Tcl Plugin</a></h2>
+
+<p>The <strong>Tcl Plugin</strong> demos are a series of Tclet applications
+that run via a Web browser. Tclets are Internet applications written in
+Tcl/Tk; they function similarly to Java applets.</p>
+
+<p><strong>Note:</strong> During the Tcl Dev Kit installation, you are
+given the option to install the Tcl Plugin. The link to the demos is only
+installed if the installation option is selected. The plugin demos page
+contains links to Tclets running on http://tcl.activestate.com.</p>
+
+<p>To access the demo:</p>
+<ul>
+  <li><strong>Windows Start Menu:</strong> 
+    <code>Start | Programs | ActiveState Tcl Dev Kit | Tcl Dev Kit Demos |
+    Tcl Plugin Demos</code></li>
+</ul>
+<br>
+
+<h3>See also:</h3>
+
+<ul>
+    <li>User Guide: <a class="doc" href="Browser.html">Browser Plugin</a></li>
+</ul>
+
+
+<a class="topText" href="#top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+-->
+
+ 
+</body>
+</html>
+

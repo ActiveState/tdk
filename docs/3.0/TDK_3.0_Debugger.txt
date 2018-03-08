@@ -1,0 +1,30 @@
+TDK 3.0 Debugger [prio 2]
+=========================
+
+[OK]	Added ability to handle connections to more than one backend
+	(nub). This can be used to debug multiple processes, provided
+	the additional processes are [spawn]ed from the main debugged
+	application. 'spawn' is a tcl procedure for exec'ing tcl
+	scripts using the same interpreter it is run on.
+
+	Have to distribute definition of proc [spawn].  Have to
+	distribute 'spawn.pdx' to extend nub with ability to handle
+	spawn.
+
+=========================
+
+-       Port multiplexer ?
+
+-       Handle the debugging of concurrently running scripts.
+
+        [[ We need more information from Cisco about the intended
+           configuration ]]
+
+	This is not specified good enough by the customer to allow the
+	definition of details.
+
+	=> See mail exchange.
+
+See also
+	TDK_3.0_Profiler.txt
+

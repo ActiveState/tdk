@@ -1,0 +1,2174 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<HTML>
+<HEAD>
+<LINK REL="STYLESHEET" HREF="aspn.css" CHARSET="ISO-8859-1" TYPE="text/css">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<TITLE>Tcl Dev Kit - TclApp</TITLE>
+</HEAD>
+
+
+<body marginheight="5" topmargin="5" marginwidth="10" leftmargin="10">
+
+@header@
+
+<hr size="1" noshade width="100%">
+
+<a name="top"></a>
+
+<h1>TclApp</H1>
+
+<p>An application that you write in Tcl can consist of many components, such as:</p>
+
+<ul>
+    <li>One or more Tcl scripts</LI>
+    <li>Either a standard or a custom Tcl interpreter</LI>
+    <li>The standard Tcl libraries and support files (for example, <i>init.tcl</i>)</LI>
+    <li>Optionally, the standard Tk libraries and support files</LI>
+    <li>Optionally, one or more extensions implemented as libraries of Tcl scripts</LI>
+    <li>Optionally, additional data files such as bitmaps</LI>
+</ul>
+
+<p>Traditionally, if you wanted to distribute an application that you wrote in 
+Tcl, you would need to make sure that all of the files that your application 
+used were installed on the target system. You would also need to make sure that 
+the system was configured so that your application could find all of the files it 
+needed.</p>
+
+<p>Tcl Dev Kit's TclApp can greatly simplify the process of distributing an 
+application that you write in Tcl. TclApp is a tool that collects all of the 
+files needed to run a Tcl application--such as Tcl scripts, graphics and other data
+files, Tcl extensions, a Tcl interpreter, and the standard Tcl and Tk 
+libraries--into a single executable file. A user can then install this file 
+anywhere on their system and execute it without installing any other packages 
+or otherwise configuring their system.</p>
+
+<p>TclApp includes both a graphical and a command-line interface. To launch
+the graphical interface, on Windows, select <strong>Tcl Dev Kit TclApp</strong>
+from the Tcl Dev Kit program group on the Windows Start menu. Alternatively,
+enter <code>tclapp.exe</code> at the command prompt. On Unix, enter
+<code>tclapp</code> at the shell prompt. To use the command-line version of
+TclApp, follow the <code>tclapp.exe</code> (or <code>tclapp</code>, on Unix)
+command with switches.</p>
+
+<p>For example, the command shown below creates an executable named <i>myApp.exe</i> 
+containing the standard Tcl and Tk libraries, the Tcl scripts 
+<i>myApp.tcl</i> and <i>help.tcl</i>, and several GIF images from a 
+subdirectory named <i>images</i>. The following example assumes the command is
+run on a Windows system. To run the same command on a Unix system, substitute
+the appropriate command-line syntax (<code>tclapp</code> without the .exe file
+extension).</p>
+
+<blockquote><code>
+C:\&gt; tclapp.exe -prefix base-tk.exe -out myApp.exe myApp.tcl help.tcl images&#92;*.gif
+</code>
+</blockquote>
+
+<p>Executing the resulting <i>myApp.exe</i> file is equivalent to entering:
+
+<blockquote><code>
+C:\&gt; wish myApp.tcl
+</code>
+</blockquote>
+
+<p>To learn about TclApp in a tutorial, see
+<a class="doc" href="demos.html#demos_tclapp">TclApp</a> on the Demos page for
+more information.</p>
+
+
+
+<h2><a name="star">About Starkits and Starpacks</a></h2>
+
+<p>A <strong>starkit</strong> is a single file that packages a set of Tcl
+scripts, platform-specific compiled code and application data. It relies on
+an external run-time interpreter. A <strong>starpack</strong> is a single
+executable file that contains both a starkit and an interpreter.</p>
+
+<p>TclApp generates a starpack when a basekit is specified as a build
+option. Specify a basekit in the <strong>Prefix file</strong> field on the
+<a class="doc" href="#basic_tab">Basic Tab</a> in the graphical
+TclApp, or using the <a class="doc" href="#interp">-prefix</a> option on
+the command line. See <a class="doc" href="#interp">Specifying the Interpreter:
+Creating Starpacks and Starkits</a> for more information.</p>
+
+<p>See <a class="doc" target="_blank"
+href="http://www.equi4.com/191">http://www.equi4.com/191</a> for an
+<strong>Anatomy of a starkit</strong>.</p>
+
+<h3>Converting Starkits to Starpacks</h3>
+
+<p>The command-line version of TclApp includes a <strong>-genpak</strong>
+option used to convert an existing starkit to a starpack. The command syntax
+is as follows:</p>
+
+<pre>
+  tclapp -genpak \
+         basekit \  (Like -prefix in regular use)
+         starkit \  (The starkit to convert)
+         result  \  (Like -output in regular use)
+         ...        (Aditional regular options)
+         
+</pre>
+
+<p>For example, <code>tclapp -genpak mybasekit mystarkit myresult</code> will
+generate a file called "myresult" that uses the prefix file "mybasekit" and
+contains the contents of "mystarkit".</p>
+
+<p>This command is the equivalent of:</p>
+
+<ol>
+  <li>Unpacking the starkit into a temporary directory.</li>
+  <li>Running the command:
+  <pre>
+  tclapp -prefix basekit -out result \
+			-anchor / -nospecials -relativeto TempDir \
+			_All_Files_Under_TempDir_
+  </pre>
+  </li>
+  <li>Deleting the temporary directory.</li>
+</ol>
+
+<h3>Splitting Starpacks</h3>
+
+<p>The command-line version of TclApp includes a
+<strong>-splitpak</strong> option used to split a starpack into the
+runtime and the attached filesystem. The command syntax is as
+follows:</p>
+
+<pre>
+  tclapp -splitpak   \
+         starpack    \ (The starpack to split)
+         runtime     \ (Where to store the runtime)
+         filesystem  \ (Where to the attached filesystem)
+</pre>
+
+<p>For example, <code>tclapp -splitpak mystarkit myruntime myfs</code> will
+generate two files called "myruntime" and "myfs" that are the interpreter
+and attached filesystem of the starpack "mystarpack".</p>
+
+
+<h3>Removing wasted space</h3>
+
+<p>The command-line version of TclApp includes a <strong>-vacuum</strong>
+option to remove wasted space from starkits and starpacks. The command syntax
+is as follows:</p>
+
+<pre>
+  tclapp -vacuum starkit
+  tclapp -vacuum starpack
+</pre>
+
+<p>For example, <code>tclapp -vacuum mybasekit</code> will remove all
+wasted space inside of "mybasekit". The result is written back to
+"mybasekit".</p>
+
+
+<h4>Note about Starpacks</h4>
+
+<p>Tclkits and basekits (files matching base-* in ActiveTcl's
+<em>bin</em> directory, and ActiveState's <a
+href="http://teapot.activestate.com">TEApot repository</a>) limit
+<code>::auto_path</code> by default to only look in the wrapped
+application's <em>lib</em> directory upon startup. This means the
+application in the starpack is unable to find packages outside of
+itself. To circumvent this restriction, the application can extend
+<code>::auto_path</code> to include the location the unwrapped
+additional packages that it needs.</p>
+
+<p>This solution has compatibility and security implications. This
+default behavior exists to ensure that starpacks are seen as completely
+self-contained. By allowing them to search externally for packages, it
+becomes possible to substitute the packages it uses with incompatible
+versions or arbitrary code by incrementing the minor version number.
+This is independent of the order of paths in <code>::auto_path</code>. Use
+<code>package require -exact</code> in the application and its
+dependencies to prevent this from happening if you extend
+<code>::auto_path</code>.</p>
+
+<h2><a name="prepare">Preparing an Application for Wrapping</a></h2>
+
+<p>There are minor differences in the way an application runs when it is wrapped 
+versus when it runs unwrapped. However, it is relatively easy to modify your 
+application so that you can test it in unwrapped form, and then wrap the
+same files for distribution. This section shows you how to change your 
+application to ensure that it works properly both unwrapped and wrapped. This
+section also covers <a href="#wrap_custom">wrapping custom packages</a>.</p>
+
+<h3>Detecting when an Application Is Wrapped</h3>
+
+<p>Because TclApp supports the Virtual Filesystem, the 
+<code>tcl_platform(isWrapped)</code> variable is no longer 
+required. Conditional code that relies on this variable should generally 
+be rewritten to make use of standard filesystem operations.</p>
+
+<p>If you have a special case where you need to check the status of an 
+application (wrapped or unwrapped), use the following code in the
+application:</p>
+
+<pre>
+  set iswrapped [expr {[lindex [file system [info script]] 0] ne "native"}] 
+</pre>
+
+<p>The status variable <code>iswrapped</code> will be true or false
+depending on the result of the test.</p>
+
+<h3>Modifying Custom Shells</h3>
+
+<p>TclApp can use specially written Tcl interpreters to work with 
+wrapped applications in Starpacks. When using the command-line TclApp, 
+specify interpreters using the <strong>-prefix</strong> switch.</p>
+
+<h4>Creating a Statically Linked Wrapped Application with a Standard Interpreter 
+and Custom Initialization Files</h4>
+
+
+<p>When creating a statically linked wrapped application with a standard 
+interpreter and custom Tcl initialization files, your <strong>tclapp</strong> 
+command line must include the following:</p>
+
+<ul>
+    <li>All of your custom Tcl initialization files</li>
+    <li>Any <strong>-code</strong> options that are required to initialize
+    other Tcl configuration variables such as <i>tk_library</i>.</li>
+</ul>
+
+<p>For example, the following wraps an application with the basekit 
+and a set of initialization files contained in the directory 
+<i>/usr/local/siteTcl/lib</i>:
+
+</p><blockquote><code>
+% tclapp -prefix base-tcl-win32-ix86.exe -out myApp myApp.tcl img/*.gif \<br>
+/usr/local/siteTcl/lib/tcl8.2/*.tcl \<br>
+/usr/local/siteTcl/lib/tcl8.2/tclIndex \<br>
+/usr/local/siteTcl/lib/tcl8.2/encoding/*.enc \<br>
+/usr/local/siteTcl/lib/tk8.2/*.tcl \<br>
+/usr/local/siteTcl/lib/tk8.2/tclIndex \<br>
+-code "set tk_library usr/local/siteTcl/lib/tk8.2"
+</code></blockquote>
+
+<h3>Accessing Files from a Shared Directory</h3>
+
+<p>Files shared by multiple applications or projects are typically put in a 
+shared directory, often on a file server. An application <i>myscript.tcl</i> 
+might then access those files as follows:</p>
+
+<blockquote><code>
+set shared {Z:\tcl\common}<br>
+source [file join $shared help.tcl]<br>
+source [file join $shared display.tcl]
+</code></blockquote>
+
+<p>Unfortunately, because of the absolute pathname, the code above no longer 
+works if you wrap the files in the shared directory with the application.</p>
+
+<p>However, you can easily modify this code to work either unwrapped or wrapped 
+by testing to see whether the application is wrapped and modifying the value of 
+<i>shared</i> appropriately. For example:</p>
+
+<blockquote><code>
+if {[info exist starkit::startup]} {<br>
+    set shared [file join starkit::topdir ... common]<br>
+} else {<br>
+    set shared {Z:\tcl\common}<br>
+}<br>
+source [file join $shared help.tcl]<br>
+source [file join $shared display.tcl]
+</code></blockquote>
+
+
+<p>You would then need to wrap the shared files using the 
+<strong>-relativeto</strong>, <strong>-anchor</strong> and <strong>-alias</strong> 
+flags (if using the command-line TclApp) or by 
+specifying relative paths (if using the graphical TclApp wrapper), as in the 
+following example:</p>
+
+<blockquote><code>
+C:&gt; tclapp myscript.tcl -relativeto Z:\tcl Z:\tcl\common\*.tcl
+</code></blockquote>
+
+<h4>Accessing Wrapped Files Relative to a Script's Directory</h4>
+
+<p>A common trick to avoid hard-wiring pathnames into scripts is to figure out 
+where the script is located with the <strong>info script</strong> command and 
+then accessing files relative to the script's directory. For example:</p>
+
+<blockquote><code>
+set home [file dirname [info script]]<br>
+source [file join $home help.tcl]<br>
+source [file join $home display.tcl]
+</code></blockquote>
+
+
+<h3><a name="wrap_custom">Wrapping Custom Packages and Definition Files</a></h3>
+
+<p>When wrapping an application containing custom packages, you must create a
+custom TclApp Package definition (.tap) file for each package. The
+.tap file specifies the files contained within each custom package.
+Use the TDK Package Editor to
+<a class="doc" href="package.html#create">create a new package</a> or to
+<a class="doc" href="package.html#saving_package_definition">save a package definition</a>
+(.tap) file.</p>
+
+<h4><a name="locating_custom_tap">Locating Custom Packages and Definition Files with TclApp</a></h4>
+
+<p>To ensure TclApp finds all custom packages and .tap files when wrapping
+an application, choose from the following options below. Note that TclApp finds
+custom .tap files for packages not included with the Tcl Dev Kit using
+either option.</p>
+
+<ul>
+
+  <li><strong>Set the TclApp Preferences</strong>: Open the <a
+  class="doc" href="#preference_dialog">preference dialog</a> and
+  enter a list of paths to search for packages. TclApp
+  will find all .tap files placed in these directories and all their
+  subdirectories <strong>one</strong> level deep.
+
+  <p>and/or</p>
+
+  <li><strong>Set the Environment Variable to the
+  Directories</strong>: Set the environment variable
+  <code>TCLAPP_PKGPATH</code> to a list of paths to search for package
+  definition files. TclApp will find all .tap files placed in these
+  directories and all their subdirectories <strong>one</strong> level
+  deep.
+
+  <p>Put all your custom .tap files into these custom directories.</p>
+  </li>
+</ul>
+
+<!-- 
+<strong>Set a Placeholder</strong>: In your .tap files, use the
+  <code>@TAPDIR@</code> placeholder as a reference for the package directory,
+  and then put the .tap file in the same directory as the package files. TclApp
+  finds the correct files to wrap, relative to the location of the .tap file.</li>
+-->
+
+<p>For information on moving packages and .tap files, see
+<a class="doc" href="package.html#using_placeholders">Using Placeholders for Portability</a>
+in the Package Editor guide.</p>
+
+<h4><a name="Tcl_InitStubs">Using Tcl_InitStubs in Compiled Packages</a></h4>
+
+<p>Custom binary packages must be built with the Tcl stubs mechanism
+initialized (i.e. using <code>Tcl_InitStubs(<em>interp, version,
+exact</em>)</code>) to work with TclApp. For more information, see <a
+target="_blank" href="http://www.tcl.tk/doc/howto/stubs.html">How to
+Use the Tcl Stubs Library</a> and the <a target="_blank"
+href="http://www.tcl.tk/man/tcl8.4/TclLib/InitStubs.htm">Tcl_InitStubs</a>
+man page.</p>
+
+<a class="topText" href="#Top"><img src="images/top.gif" height="11" width="11" border="0">Top</a>
+
+
+<h2><a name="application_gui">Using the Graphical TclApp</a></H2>
+
+<p>Tcl Dev Kit TclApp is a graphical interface for the 
+TclApp wrapper.  To launch the graphical wrapper, select <strong>Tcl Dev Kit 
+TclApp</strong> from the Tcl Dev Kit program 
+group on the Windows Start menu, or enter <strong>tclapp</strong> on the 
+command-line. (To launch the command-line wrapper, you must specify arguments 
+with the <strong>tclapp</strong> command.)</p>
+
+<p>When running the graphical wrapper on Unix systems, the 
+<strong>DISPLAY</strong> environment variable must be configured in order 
+to launch the program.</p>
+
+<p><strong>Field and Color Conventions</strong></p>
+
+<ul>
+  <li><strong>Case Sensitivity:</strong> Path and file name specifications 
+  are not case-sensitive on the Windows platform, but are case-sensitive on 
+  Unix platforms.</li>
+  <li><strong>Directory Slashes:</strong> Either frontslashes or backslashes 
+  can be used to indicate directories on the Windows platform. On Unix platforms, 
+  directories can only be specified with frontslashes.</li>
+  <li><strong>Field Colors:</strong> When a non-existent path or file
+  is specified or an invalid value is given, the text is highlighted
+  (yellow background on Windows and OS X, red text on Linux).</li>
+  <li><strong>Tooltips:</strong> Context-sensitive tooltips are displayed when 
+  the mouse pointer hovers over the graphical wrapper fields. These are 
+  especially useful on highlighted errors. The 
+  tooltip will provide explanatory information about the error.</li>
+  <li><strong>Changing Font Size:</strong> Use <code>Ctrl-plus</code>
+  to increase and <code>Ctrl-minus</code> to decrease the displayed
+  font size. On Windows, you can also use <code>Ctrl</code> with the
+  mouse wheel.</li>
+</ul>
+
+<h3>TclApp Projects</h3>
+
+<p>TclApp project definitions are stored in text files with <i>.tpj</i> extensions. 
+When the graphical version of TclApp is first invoked, no project is loaded.</p>
+
+
+<blockquote>
+
+<p><strong>To load an existing project:</strong> select <strong>Load 
+Project</strong> from the File menu.</p>
+
+<p><strong>To save a project:</strong> select <strong>Save Project</strong> from 
+the File menu, and specify a directory location and project name for the 
+project file.</p>
+
+<p><strong>To create a new project:</strong> select <strong>New Project</strong> 
+from the File menu.  This will reset the fields in TclApp to their 
+default state.</p>
+
+</blockquote>
+
+<h3><a name="basic_tab">Basic Tab</a></h3>
+
+<p>The Basic tab is for specifying general characteristics of the
+wrapped executable.</p>
+
+<img border="1" src="images/tclapp_basic_tab.png">
+
+<blockquote>
+
+<p><strong>Prefix file</strong>: Use this field to include an 
+interpreter in the output file (thus creating a starpack).</p>
+
+<p>The specified file must exist, must to be readable, and must
+contain a Metakit Filesystem (MFS). The presence of additional data
+before the MFS is allowed, and makes starkits and starpacks
+possible.</p>
+
+<p><strong>New in 5.0</strong>: Use the form <strong>
+<code>teapot:<em>NAME</em>/<em>VERSION</em>/<em>PLATFORM</em></code>
+</strong> to directly select a basekit from the TEApot repositories
+configured for the project. TclApp will get the selected basekit
+automatically, obviating the need for explicit downloads. Note that
+most validations are defered until the basekit has been retrieved.</p>
+
+<p>If no prefix is specified, the output will include the starkit
+header by default, and will require an external interpreter to
+run.</p>
+
+<p>To create a starpack, use a basekit as prefix file. ActiveTcl
+includes basekits located in the <code>bin</code> directory: base-tcl*
+and base-tk* (which is base-tcl plus tk) are included for each
+platform; base-tclsvc* is included with Tcl Dev Kit on Windows, and is
+used to create portable <a class="doc"
+href="ServMgr.html">Services</a>. You may also specify a custom
+basekit (most newer starkits are compatible), or a basekit for a
+different platform (available from the ActiveState TEApot repository
+via <a href="tpm/tpm/files/CTP_teacup.html"><code>teacup
+get</code></a>). The basekit could also be generated by TclApp.</p> 
+
+<p>If an icon file is associated with the prefix file, it will be displayed 
+to the left of the <strong>Prefix file</strong> field. The text "no icon" will 
+be displayed if no prefix file has been specified or if no icon is associated 
+with the specified file.</p>
+
+<ul class="icon-list">
+  <li style="background: URL(images/tclapp_encodings_button.png)
+  no-repeat"><strong>Select Encodings</strong>: Select encodings to add to those
+already supported by the basekit specified above (normally standard
+European encodings). You may specify multiple encodings using
+'Ctrl-click' (add a single encoding) or 'Shift-click' (select block).
+Although the encodings are always added to the wrapped application,
+they will have an effect at runtime only if a basekit was specified.
+Selection of additional encodings is relevant only when generating a
+starpack.</li>
+
+<li style="background: URL(images/tclapp_prefix_pkgs_button.png)
+  no-repeat"><strong>Show Prefix Packages</strong>: Brings up a dialog box
+showing all packages provided by the specified basekit.</li>
+</ul>
+
+<p><strong>Custom icon:</strong> Custom icons can be assigned to
+wrapped applications using the <strong>Custom icon</strong> field.
+Icon files are specified with an ".ico" (Windows and Unix) or ".icns"
+(OS X) extension. The selected prefix file must support the icon file
+type you are using. Selecting a custom icon will override any icon
+associated with the prefix file. TclApp will check geometry and color
+depth (bits per pixel, bpp) of the specified icon file against the
+icon specified in the prefix file. (Results of the comparison will be
+displayed in a tooltip generated when the mouse hovers over the
+<strong>Custom icon</strong> field.) It will replace only the parts
+which match, and leave the remainder untouched.</p>
+
+<p><strong>Note</strong>: ".icns" images cannot be previewed in the
+<strong>Custom icon</strong> panel.</p>
+
+<p>For an exact description of the comparison between the custom icon and 
+the prefix file icon, see <a class="doc" href="#custom_icon">Assigning a 
+Custom Icon to the Output File</a> in the command-line section.</p>
+
+<p><strong>Interpreter:</strong> If no <strong>Prefix file</strong> is 
+specified, use the <strong>Interpreter</strong> field to specify the  
+interpreter that should be used to run the starkit.</p>
+
+<p>If a <strong>Prefix file</strong> is specified, that file will be used to 
+run the application. However, within the <strong>Prefix file</strong>, it 
+may be possible to specify an interpreter. If the prefix file contains the 
+string <code>@__interpreter__@</code> in the first 200 characters of the 
+file, then the value specified in the <strong>Interpreter</strong> field 
+will replace the <code>@__interpreter__@</code> string during wrapping.</p>
+
+<p>Note that on Windows, the file extension is used to determine the
+interpreter; information in the header is ignored. However, the
+interpreter specification would be relevant when building applications
+that will be deployed on platforms other than windows.</p> 
+
+<p><strong>Modifiers</strong>:</p>
+
+<ul>
+<li><p><strong>Compile .tcl files</strong>: If this option is selected, 
+all files with the extension .tcl (except for files named 'pkgIndex.tcl') 
+are compiled to tcl bytecodes before they are stored in the output metakit 
+filesystem. Tcl files specified in <a class="doc" href="#wrap_packages">packages</a>
+are not compiled. To wrap a package in compiled format, use the
+<a class="doc" href="Compiler.html">Tcl Dev Kit Compiler</a> to compile the files specified
+in the package, then create a package that includes the compiled files.</p>
+
+<p>For the execution of such a starkit, the package tbcload has to be 
+present. To ensure this, tclapp wraps that package automatically (unless the
+<strong>no tbcload</strong> option is enabled).</p></li>
+
+<li><p><strong>no tbcload</strong>: By default, if 
+<strong>Compile .tcl files:</strong> is specified, the 'tbcload' package 
+is automatically included. To prevent the 'tbcload' package from being 
+wrapped, check <strong>(no tbcload)</strong>. If the 'tbcload' package 
+has been added on the <a class="doc" href="#files_tab">Files Tab</a>, it 
+will be included regardless of this setting.</p></li>
+
+<li><p><strong>Suppress special files</strong>: TclApp normally stores
+a '<em>./main.tcl</em>' file. This file contains code telling the
+tclkit running the wrapped application which package or file to load
+to invoke the application. Specifying this option suppresses the
+generation of the file. Specifying this option effectively cancels out
+the effects of the <strong>Set Main</strong> button on the Files
+tab.</p>
+
+<p>Use this option to wrap a code base that already provides
+<em>main.tcl</em>.</p>
+</li>
+
+<li><p><strong>Suppress list of packages wrapped in the
+prefix</strong>: Useful for most wrapped applications where the list
+of provided packages is not used. If you are creating a basekit, leave
+this option de-selected.</p></li>
+</ul>
+
+<p><strong>Output File Options</strong>:</p>
+
+<ul>
+<li><p><strong>Merge selected files:</strong> This option will merge the specified 
+files and packages into the file specified by the <strong>Output File</strong> 
+option. It cannot be used in conjunction with the <strong>Prefix</strong> 
+field.</p></li>
+
+<li><p><strong>Output file:</strong> The default name of the output file generated 
+by TclApp is <strong>tclapp-out</strong>. To specify an alternative name, 
+enter the desired path and name in this field. The file does not need to exist, 
+but if you specify a directory, the directory must exist and must be 
+writable. (If the <strong>Merge</strong> option is specified, the file must 
+exist and must be writable.)</p>
+
+<p>If no file extension is specified, TclApp will use the same file extension 
+as the <strong>Prefix file</strong>. (If the prefix file has no extension,
+the output file will have no extension.) If no prefix file is specified, on
+Windows, TclApp will automatically add the extension '.tcl'. On all
+other platforms, no extension will be added.</p>
+</li>
+
+<li><p><strong>Make an OS X Application Bundle</strong>: Creates an OS X
+'.app' directory structure for the wrapped application. This is
+recommended for user interface applications on OS X, but not neccessary
+for command line applications.</p></li>
+
+<li><p><strong>Target Architecture</strong>: The <img class="icon"
+src="images/tclapp_arch_button.png" alt="Target Architecture"> button
+brings up a dialog box which allows you to manually configure the
+target architecture(s) for Starkits. When a basekit is specified (i.e.
+for building a Starpack) the target architecture is automatically set
+to that of the basekit. Multiple architectures can be specified, this
+is called <a href="#cross_multi">multi-platform wrapping</a>. The
+following values can be used.</p>
+<table width="90%">
+  <tr>
+    <td>
+      <p>TDK distributions:
+        <ul style="list-style-type: none">
+          <li>aix-powerpc</li>
+          <li>hpux-parisc</li>
+          <li>linux-glibc2.2-ix86</li>
+          <li>macosx-universal</li>
+          <li>solaris2.10-ix86</li>
+          <li>solaris2.6-sparc</li>
+        </ul>
+        </p>
+      </td>
+    <td>
+      <p>ActiveTcl, ActiveTcl Enterprise and OEM:
+        <ul style="list-style-type: none">
+          <li>hpux-ia64</li>
+          <li>linux-glibc2.3-ia64</li>
+          <li>linux-glibc2.3-x86_64</li>
+          <li>macosx-ix86</li>
+          <li>macosx-powerpc</li>
+          <li>solaris2.8-sparc</li>
+        </ul>
+      </p>
+    </td>
+  </tr>
+</table>
+
+</li>
+
+<li><p><strong>Metadata and String Resources</strong>: The three buttons
+at the bottom-center of the <strong>Output file</strong> panel are for
+specifying:</p>
+
+  <ul class="icon-list">
+    <li style="background: URL(images/tclapp_metadata_button.png)
+    no-repeat"><a href="tpm/tpm/files/CTP_teazip.html#meta_data_requirements">TEApot metadata</a></li>
+    <li style="background: URL(images/tclapp_metadata_button.png)
+    no-repeat">OS X Info.plist metadata (OS X applications only)</li>
+    <li style="background: URL(images/tclapp_stringres_button.png)
+    no-repeat">Win32 String Resources (Windows applications only)</li>
+  </ul>
+</li>
+</ul>
+
+</blockquote>
+
+<h3><a name="files_tab">Files Tab</a></h3>
+
+<p>Use the Files tab to specify the packages, files and directories you wish 
+to include in the output. Files and directories may be specified as 
+either absolute (by specifying the entire drive and path) or relative (by 
+specifying only the relative directories or filename).</p>
+
+<img border="1" src="images/tclapp_files_tab.png">
+
+<blockquote>
+
+<p><strong>To add individual files:</strong> Click the File button to
+the right of the files field. Navigate to the desired file, and then
+double-click to add the file to the list. (Select multiple files by
+using the Ctrl or Shift keys.) Files added by this method will have
+absolute paths. Alternatively, specify the file name of the desired
+file (and, optionally, the full or relative path) and click the
+<strong>Add</strong> button or press the Enter key. Files added by
+this method will have absolute or relative paths depending on how they
+were specified.</p>
+
+<p><strong>To add individual files using wildcards:</strong> Enter the
+file specification in the field at the top of the
+<strong>Files</strong> tab. For example, to add all files with the
+extension ".tcl", enter "*.tcl" in the file field.</p>
+
+<p><strong>To add a directory:</strong> Click the Folder button to the
+right of the files field. Navigate to the desired directory, then
+double-click to add the directory to the list. Alternatively, specify
+the directory (and, optionally, the complete path) in the field at the
+top and click the <strong>Add</strong> button or press the Enter key.
+Adding a directory will not add any files; to do this, select the
+directory in the file list, then use the field at the top of the
+dialog to specify one or more files in that directory for inclusion.
+File specifications may include wild cards (see above).</p>
+
+<p><strong>To add all files and directories beneath a
+directory:</strong> Click the folder/file button on the far right. All
+files and directories located beneath the specified directory will be
+added to the archive.</p>
+
+<p><strong>To remove a file or directory:</strong> Select the file or
+directory in the list, then click the <strong>Remove</strong> button
+or press the Delete key.</p> 
+
+<p><strong>To specify the startup file:</strong> In the list field, click 
+the file you wish to run when the output file is executed, then click the 
+<strong>Set Main</strong> button.</p>
+
+<p><strong>To edit an entry in the file list:</strong> Select the
+desired item, and click the <strong>Edit</strong> button.</p>
+
+</blockquote>
+
+
+<h3><a name="packages_tab">Packages Tab</a></h3>
+
+<p>The Packages tab is used to specify packages to include in the wrapped
+executable.</p> 
+
+<img border="1" src="images/tclapp_packages_tab.png">
+  
+<p>The main window shows a list of packages and their version
+requirements (if any). Packages are added to and removed from the list
+using the following controls:</p>
+
+<ul class="icon-list">
+  <li style="background: URL(images/edit_repo_list.png)
+    no-repeat"><strong>Edit repository list</strong>: TclApp
+    searches for packages in the following order:
+    <ol>
+      <li>the <strong>prefix file</strong> (if specified)</li>
+      <li>files specified explicitly in the <strong>Files</strong> tab</li>
+      <li>TEApot repositories configured for the project</li>
+      <li>TEApot repositories configured globally in the <a
+      href="#preference_dialog">Preferences Dialog</a></li>
+      <li>a virtual repository containing only Tcl and Tk (if no
+      prefix file is specified)</li>
+      <li>globally configured TAP search paths</li>
+    </ol>
+    To add, remove, or change the search order of project
+    repositories click the <strong>Edit Repositories</strong> buton.
+    This brings up a dialog for specifying or browsing for TEApot and
+    .tap repositories. ActiveState's TEApot repository can be easily
+    added from the drop list.</li>
+  <li style="background: URL(images/scan_req_pkgs.png)
+    no-repeat"><strong>Scan for required packages</strong>: Scans
+    for packages required by the specified application files.</li>
+  <li style="background: URL(images/scan_depend_recommend.png)
+    no-repeat"><strong>Add required dependent packages</strong>: Adds
+    package dependencies of the required packages using configured
+    TEApot repositories.</li>
+  <li style="background: URL(images/scan_depend_recommend.png)
+    no-repeat"><strong>Add required and recommended dependent
+    packages</strong>: As above, but also adds packages listed as
+    recommended (in the TEApot metadata).</li>
+  <li style="background: URL(images/package_add.png)
+    no-repeat"><strong>Add packages from list of all
+    packages</strong>: Brings up a dialog box with a complete list of
+    packages available from the sources mentioned above. Packages can
+    be selected individually and added to the main list.</li>
+  <li style="background: URL(images/package_delete.png)
+    no-repeat"><strong>Remove selected package</strong>: Removes
+    the currently selected package from the list below.</li>
+  </ul>
+  
+<p><strong>Note</strong>: Scanning for required packages and adding
+dependent packages does not verify that the packages are actually
+available locally or in the repositories. This verification happens
+during wrapping, and missing packages will appear as errors in the
+command output on the <a href="#run_tab">Run</a> tab</p>
+  
+<h3><a name="advanced_tab">Advanced Tab</a></h3>
+
+<p>The Advanced tab is used to specify command line arguments for the 
+script, initialization actions, etc.</p>
+
+<img border="1" src="images/tclapp_advanced_tab.png">
+
+<blockquote>
+
+<p><strong>Verbose log:</strong> By default, TclApp suppresses output while 
+processing options and wrapping files. The <strong>Verbose</strong> flag 
+activates additional logging of current activity while TclApp is running.</p>
+
+<p><strong>Temporary build directory:</strong> This field is used to specify a 
+directory that TclApp uses to temporarily hold files created during the 
+wrapping process. By default, TclApp uses the directory specified in the 
+<i>TEMP</i>, <i>TMP</i>, or <i>TMPDIR</i> environment variables (which are 
+checked in that order).</p>
+
+<p><strong>Initialization:</strong> Used to run specified code before
+the starkit support is loaded and initialized, and before the
+application package or main (startup) file is loaded/invoked.</p>
+
+<p><strong>Arguments:</strong> Used to specify additional arguments to
+pass to the wrapped application. These are treated as if they were
+submitted to an unwrapped application on the command line. The
+arguments are stored in the Tcl <i>argv</i> variable. Arguments
+specified here are inserted before any command-line arguments entered
+by the end user when they execute the wrapped application.</p>
+
+<p><strong>Nonstandard package directories:</strong> Use this field to
+specify additional non-standard package directories. All listed paths
+are seen as relative to the root of the generated archive. During
+startup of the wrapped application, they are added to the
+<code>auto_path</code> variable of the tcl interpreter, causing the
+interpreter to look in these directories for packages. These paths
+must be specified if a wrapped package is placed into a nonstandard
+location (i.e. outside of '/lib').</p>
+
+</blockquote>
+
+<h3><a name="run_tab">Run Tab</a></h3>
+
+<p>Use the <strong>Run</strong> tab to generate the output file and
+display the corresponding command line string. If the 
+activity field is blank and the Wrap button is enabled, the project 
+configuration contains no errors and is ready to run. If the project 
+configuration contains errors, an interpretive message with a red background 
+will be displayed in the activity field, and the Wrap button will be disabled. 
+You must fix the errors on the other tabs before you can wrap the project.</p>
+
+<img border="1" src="images/tclapp_run_tab.png">
+
+<br><br>
+
+<h3><a name="preference_dialog">Preferences Dialog</a></h3>
+
+<p>Use the <strong>Preference</strong> Dialog to manage the list of
+paths used by TclApp when searching for package definition files.</p>
+
+<img border="1" src="images/tclapp_prefs_dialog.png">
+
+<br><br>
+
+<a class="topText" href="#Top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+<h2><a name="cmdline">Using TclApp on the Command-Line</a></h2>
+
+<p>This section explains how to wrap applications from the command
+line. First we provide examples for the most common tasks and
+switches, this is then followed by a more detailed review of all the
+command line switches of TclApp. If a only a reference sheet is
+required see the <a href="TclApp_cmdline.html">TclApp Command Line
+Reference</a>.
+
+<h3><a name="wrap_basic">Basic Wrapping</a></h3>
+
+<dl>
+<!-- -------------------------------------------------------------------- -->
+
+<dt><p>Wrap a file 'app.tcl', generate a <strong>starkit</strong>, use
+the default name 'tclapp-out' for the result.</p></dt>
+
+<dd><blockquote><code>
+C:&gt; tclapp app.tcl
+</code></blockquote></dd>
+
+<!-- -------------------------------------------------------------------- -->
+
+<dt><p>As before, but generate a <strong>starpack</strong>. This
+requires the specification of a basekit to be used as the runtime of
+the result.</p></dt>
+
+<dd><blockquote><code>
+C:&gt; tclapp -prefix basekit.exe app.tcl
+</code></blockquote></dd>
+
+<!-- -------------------------------------------------------------------- -->
+
+<dt><p>As before, but also specify the name of the result as
+'myapp.exe'.</p></dt>
+
+<dd><blockquote><code>
+C:&gt; tclapp -prefix basekit.exe -out myapp.exe app.tcl
+</code></blockquote></dd>
+
+<!-- -------------------------------------------------------------------- -->
+
+<dt><p>As the first example, and additionally put the 'snit' package
+into the wrap result. As no version number is specified for 'snit'
+TclApp will wrap the highest version it finds.</p></dt>
+
+<dd><blockquote><code>
+C:&gt; tclapp -pkgref snit app.tcl
+</code></blockquote></dd>
+
+<!-- -------------------------------------------------------------------- -->
+
+<dt><p>As before, but a specific version of 'snit' is requested. More
+complex specifications are possible, like ranges of allowed versions,
+restriction to specific entity types, platforms, etc. For this see the
+section about <a
+href="tpm/tpm/files/CTP_metadata.html#entity_references">Entity
+references</a> in the <a href="tpm/tpm/files/CTP_metadata.html">TEApot
+Meta Data Specification</a>, and the acompanying examples.</p></dt>
+
+<dd><blockquote><code>
+C:&gt; tclapp -pkgref 'snit 1.3' app.tcl
+</code></blockquote></dd>
+
+<!-- -------------------------------------------------------------------- -->
+
+<dt><p>By default TclApp will wrap exactly the packages which have
+been specified, but none of their dependencies. Now ask TclApp to
+include not only the specified packages, but all of their required
+dependencies, recursively.</p></dt>
+
+<dd><blockquote><code>
+C:&gt; tclapp -pkgref 'snit 1.3' -follow app.tcl
+</code></blockquote></dd>
+
+<!-- -------------------------------------------------------------------- -->
+
+<dt><p>When packages are not found specify more repositories to
+search. Here we ask TclApp to look in ActiveState's public TEApot
+repository first.</p></dt>
+
+<dd><blockquote><code>
+C:&gt; tclapp -pkgref 'Tkhtml 3-' -archive http://teapot.activestate.com app.tcl
+</code></blockquote>
+<p><strong>Note:</strong> Instead of specifying the archives to search
+every time TclApp is invoked it is possible to put them into the
+global configuration. This is currently only acessible through the <a
+href="#preference_dialog">Preferences Dialog</a> in the GUI, but has
+to be done only once.</p></dd>
+
+<!-- -------------------------------------------------------------------- -->
+
+<dt><p>As before, now creates a starpack. The invisible magic here is
+that TclApp looks into the specified basekit to see what architecture
+it is for and retrieves matching packages from the repository (if they
+are binary, like Tkhtml). This makes <a
+href="#cross_multi">cross-platform</a> wrapping easy, i.e. the
+wrapping of an application for platform FOO on a machine with a
+different architecture.</p></dt>
+
+<dd><blockquote><code>
+C:&gt; tclapp -prefix basekit -pkgref 'Tkhtml 3-' -archive http://teapot.activestate.com app.tcl
+</code></blockquote>
+
+<p><strong>New in 5.0</strong>: <a
+href="#cross_multi">Cross-platform</a> wrapping has become even
+easier. Now the basekit to use can be retrieved from the configured
+TEApot repositories as well.</p>
+
+<blockquote><code>
+C:&gt; tclapp -prefix teapot:/base-tcl/8.4.19.2.287188/linux-glibc2.3-ix86 -pkgref 'Tkhtml 3-' -archive http://teapot.activestate.com app.tcl
+</code></blockquote>
+
+</dd>
+</dl>
+
+<p>With the examples above we have now covered the most common command
+line switches and their meaning, i.e.</p>
+
+<p><dl>
+<dt><a
+href="TclApp_cmdline.html#tclapp-prefix">-prefix</a></dt><dd>Basekit
+to use as runtime for a starpack.</dd>
+<dt><a href="TclApp_cmdline.html#tclapp-out">-out</a></dt><dd>Name of
+the wrap result.</dd>
+<dt><a
+href="TclApp_cmdline.html#tclapp-pkref">-pkgref</a></dt><dd>Packages to
+wrap.</dd>
+<dt><a
+href="TclApp_cmdline.html#tclapp-follow">-follow</a></dt><dd>Follow
+package dependencies.</dd>
+<dt><a
+href="TclApp_cmdline.html#tclapp-archive">-archive</a></dt><dd>Search
+packages in more repositories.</dd>
+</dl></p>
+
+
+<h3><a name="wrap_files">Wrapping Files</a></h3>
+
+<p>To wrap one or more Tcl scripts and any associated data files (for
+example, bitmaps), simply list all the files as arguments to the
+<strong>tclapp</strong> command. For example, suppose you have an
+application consisting of a single script file, <i>app.tcl</i>. To
+wrap it, enter:</p>
+
+<blockquote><code>
+C:&gt; tclapp app.tcl
+</code></blockquote>
+
+<p>This creates a wrapped application called <i>tclapp-out</i>. When
+you run the wrapped application, it will look in the Tcl Dev Kit
+installation for the appropriate interpreter to run the
+application.</p>
+
+<p>If your application has several script files, just include them on
+the <strong>tclapp</strong> command line. For example, if
+<i>app.tcl</i> sources the files <i>utils.tcl</i> and <i>help.tcl</i>
+from the <i>aux</i> subdirectory, you can wrap them with the following
+command:</p>
+
+<blockquote><code>
+C:&gt; tclapp app.tcl aux\utils.tcl aux\help.tcl
+</code></blockquote>
+
+<p><strong>Important</strong>: By default, your wrapped application
+sources the first file you list in the <strong>tclapp</strong>
+command. So, in this example, when you execute your wrapped
+application, it sources app.tcl. You can change this behavior with the
+<strong><a
+href="TclApp_cmdline.html#tclapp-startup">-startup</a></strong> option
+(on the command line, or by using the <strong>Set Main</strong> button
+in the graphical TclApp.</p>
+
+<p>You can use wildcard characters in your file names to specify
+multiple files.  On Windows systems, <strong>tclapp</strong> uses
+Tcl's <strong>glob</strong> command to handle wildcard expansion. (See
+the Tcl <strong>glob</strong> reference page for details of its
+operation.) Therefore, in the above example, if <i>utils.tcl</i> and
+<i>help.tcl</i> were the only <i>.tcl</i> files in the <i>aux</i>
+subdirectory, you could accomplish the same effect as above with the
+following command:</p>
+
+<blockquote><code>
+C:&gt; tclapp app.tcl aux\*.tcl
+</code></blockquote>
+
+<p>The files that you wrap are stored in the wrapped application's
+internal file archive. See <a class="doc" href="#InternalFileArc">How
+the Internal File Archive Works in a Wrapped Application</a> for more
+information.</p>
+
+<h3><a name="wrap_packages">Wrapping Packages</a></h3>
+
+<p>Rather than specifying individual files, it is often easier to
+construct a package which lists a group of files. Packages can be
+fetched from the ActiveState TEApot repository or constructed using
+the <a class="doc" href="Package.html">Package Editor</a>.
+
+<p>When these packages are included in a wrap specification, the files
+listed in the package will be included in the resulting output
+file.</p>
+
+<p>Use the <strong><a
+href="TclApp_cmdline.html#tclapp-pkgref">-pkgref</a>
+<em>NAME</em></strong> switch to specify packages to be included in
+the wrapped application.</p>
+
+<p>TclApp searches for packages in the following order:
+  <ol>
+    <li>the <strong>prefix file</strong> (if specified)</li>
+    <li>files specified explicitly with <code><a
+    href="TclApp_cmdline.html#tclapp-pkgfile">-pkgfile</a></code></li>
+    <li>TEApot repositories configured for the project with <code><a
+    href="TclApp_cmdline.html#tclapp-archive">-archive</a></code></li>
+    <li>TEApot repositories configured globally in the TclApp <a
+    href="#preference_dialog">Preferences Dialog</a>.</li>
+    <li>a virtual repository containing only Tcl and Tk (if no
+    prefix file is specified)</li>
+    <li>globally configured TAP search paths (from the TclApp
+    Preferences and the <code>TCLAPP_PKGPATH</code> environment
+    variable)</li>
+    </ol>
+</p>
+
+<p>Legacy TAP package definition files created using the Package
+Editor are located in the <code>/lib/tap</code> directory beneath the
+root Tcl installation. To search for package definition files in other
+directories, specify the desired directories using the
+<code>TCLAPP_PKGPATH</code> environment variable.</p>
+
+<p>The <strong><a
+href="TclApp_cmdline.html#tclapp-pkgref">-pkgref</a></strong> option
+is not required. However, at least one <strong><a
+href="TclApp_cmdline.html#tclapp-pkgref">-pkgref</a>
+<em>NAME</em></strong> must be specified if no individual files are
+explicitly wrapped.</p>
+
+<p>Files listed in the package are placed into the directory
+<code>lib/<em>NAME</em></code> of the output Metakit filesystem.  The
+package <em>NAME</em> has exclusive use of the directory
+<code>lib/<em>NAME</em></code>. Placing other files into this
+directory via file specification options is not allowed.</p>
+
+<p>The <em>NAME</em> argument of <strong><a
+href="TclApp_cmdline.html#tclapp-pkgref">-pkgref</a></strong> can be a
+plain package name, or of the form <em>PKGNAME VERSION</em>. The
+latter allows the user to request a specific version of the package
+<em>PKGNAME</em>. More complex forms are possible too, and discussed
+(with examples) in the section <a
+href="tpm/tpm/files/CTP_metadata.html#entity_references">Entity
+references</a> of the <a href="tpm/tpm/files/CTP_metadata.html">TEApot
+Meta Data Specification</a>. If the specified version does not exist,
+a message will be display and the wrap will be aborted.  Use the
+<strong><a
+href="TclApp_cmdline.html#tclapp-upgrade">-upgrade</a></strong> option
+to force the wrap; the highest available version of the specified
+package will be used.</p>
+
+<p>Three more switches can be used to influence the wrapping of packages:</p>
+
+<p>The <strong><a
+href="TclApp_cmdline.html#tclapp-follow">-follow</a></strong> switch
+causes TclApp to inspect the required dependencies of the chosen
+packages and wrap them as well, inclusive their dependencies, etc.</p>
+
+<p>The <strong><a
+href="TclApp_cmdline.html#tclapp-follow-recommend">-follow-recommend</a></strong>
+switch is like <strong><a
+href="TclApp_cmdline.html#tclapp-follow">-follow</a></strong> except
+that not only required, but recommended dependencies are added as
+well.</p>
+
+<p>These two options should be used with care. If only a part of a
+package A requires a package B then B will a declared dependency and
+drawn in. Even if the functionality of A requiring it is not used by
+the application to be wrapped. In the case of version-less
+dependencies it may also find and use packages which are later in
+conflict with each, or the underlying version of the Tcl core. An
+example of that would be the selection of snit v2 through a
+dependency, requiring Tcl 8.5, for Tcl 8.4 based basekit.</p>
+
+<p>Use the <strong><a
+href="TclApp_cmdline.html#tclapp-force">-force</a></strong> switch to
+force TclApp to perform the wrapping even if it was not able find all
+dependent packages in the archives it had available.</p>
+
+
+<h4><a name="specstartup">Specifying the Startup Application</a></h4>
+
+<p>Use the <strong><a href="TclApp_cmdline.html#tclapp-app">-app</a>
+<em>NAME</em></strong> switch to instruct TclApp that the specified
+package is the "application" package, that is, the package that will
+start the wrapped application. TclApp will insert code into the wrap
+framework to <code>[package require]</code> this package.</p>
+
+<p>If <strong><a href="TclApp_cmdline.html#tclapp-app">-app</a>
+<em>NAME</em></strong> is used explicitly, the specified files cannot
+define the application package anymore. Because of this, the initial
+destination base path for files (specified using the <strong><a
+href="TclApp_cmdline.html#tclapp-anchor">-anchor</a></strong> switch)
+reverts from '<code>lib/application</code>' to '<code>/</code>' (the
+root of the output metakit filesystem).</p>
+
+<p>If <strong><a href="TclApp_cmdline.html#tclapp-app">-app</a>
+<em>NAME</em></strong> is used, usage of the option <strong><a
+href="TclApp_cmdline.html#tclapp-startup">-startup</a></strong> is
+illegal, as the package already knows which file(s) to load to run the
+application.</p>
+    
+<h3>Wrapping Individual Files</h3>
+
+<p>To wrap specific files, enter the file name(s) after the
+<strong>tclapp</strong> command. The specified file is read and stored
+in the output metakit filesystem.  If the file is a glob pattern
+(specified using wildcards), it is expanded into a list of files. Each
+file in the list is processed as if specified explicitly on the
+command line. The path of the file in the output MFS is determined by
+the name of the input file and the current settings for the source
+base directory (<strong><a
+href="TclApp_cmdline.html#tclapp-relativeto">-relativeto</a></strong>),
+destination base directory (<strong><a
+href="TclApp_cmdline.html#tclapp-anchor">-anchor<a/></strong>), and
+file rename modifier (<strong><a
+href="TclApp_cmdline.html#tclapp-alias">-alias</a></strong>).</p>
+  
+<h4><a name="srcdstdir">Specifying Source and Destination Base Directories</a></h4>
+
+<p>Use the <strong><a
+href="TclApp_cmdline.html#tclapp-relativeto">-relativeto</a>
+<em>PATH</em></strong> switch to specify the source base directory for
+the files that follow. This affects the translation of source paths to
+destination paths. The initial value is '' (i.e. the empty
+string).</p>
+
+<p>The <strong><a href="TclApp_cmdline.html#tclapp-anchor">-anchor</a>
+<em>PATH</em></strong> switch specifies the destination base directory
+for the files that follow. This affects the translation of source
+paths to destination paths. The initial value is
+'<code>lib/application</code>', which places explicitly specified
+files into a default application package, or '<code>/</code>', if
+<code><a href="TclApp_cmdline.html#tclapp-app">-app</a></code> was
+specified.</p>
+  
+<p>The <strong><a href="TclApp_cmdline.html#tclapp-alias">-alias</a>
+<em>PATH</em></strong> switch modifies the translation to the
+destination path of the filename that follows. If that is a glob
+pattern, it modifies the translation of the first file in the expanded
+pattern. Note that any intervening argument which is not a file name
+invalidates this option.</p>
+ 
+<h4><a name="startup">Specifying the Startup File</a></h4>
+
+<p>By default, the wrapped application sources the first file listed
+after the <strong>tclapp</strong> command. Use the <strong><a
+href="TclApp_cmdline.html#tclapp-startup">-startup</a>
+<em>PATH</em></strong> switch to specify the file in the output
+metakit filesystem that invokes the application (package). TclApp will
+insert code into the wrap framework to [source] this file. It will
+also set '<code>argv0</code>' to this file (in case the application
+changes behavior if its file name is not the name of the
+application). An example of such an application is
+'<code>tkcon</code>'.</p>
+
+<p>The <strong><a
+href="TclApp_cmdline.html#tclapp-startup">-startup</a></strong> flag
+cannot be used if <strong><a
+href="TclApp_cmdline.html#tclapp-app">-app</a> <em>NAME</em></strong>
+was specified.<p>
+  
+<p><strong><a
+href="TclApp_cmdline.html#tclapp-startup">-startup</a></strong> can be
+helpful if you use wildcard characters to specify files to wrap. For
+example, consider the case of wrapping three Tcl scripts,
+<i>display.tcl</i>, <i>help.tcl</i>, and <i>main.tcl</i>, all in the
+same directory, and wanting to source <i>main.tcl</i> when you start
+your application. You could accomplish this with:</p>
+
+<blockquote><code>
+C:&gt; tclapp -startup main.tcl *.tcl
+</code></blockquote>
+
+<p>Specify the startup file using a relative path. Files specified
+with an absolute path will not be found in the wrapped application at
+execution time.</p>
+
+
+<h3>Specifying Build Options</h3>
+
+<h4><a name="verbosity">Verbose versus Quiet Logging</a></h4>
+
+<p>By default, TclApp suppresses output while processing options and
+wrapping files. The <strong><a
+href="TclApp_cmdline.html#tclapp-verbose">-verbose</a></strong> switch
+activates additional logging of current activity while TclApp is
+running.</p>
+
+<h4><a name="log">Storing Log Output</a></h4>
+
+<p>Use the <strong><a
+href="TclApp_cmdline.html#tclapp-log">-log</a></strong> option to
+write output to a log file.  The <strong><a
+href="TclApp_cmdline.html#tclapp-log">-log</a>
+<em>FILENAME</em></strong> option must be specified before any other
+arguments in the command string. For example, <code>-log
+mylogfile</code> will write the output to the file "mylogfile".</p>
+
+
+<h4><a name="config">Specifying an External Configuration File</a></h4>
+
+<p>The <strong><a href="TclApp_cmdline.html#tclapp-config">-config</a>
+<em>CONFIG_FILE</em></strong> switch is used to specify a file that
+contains additional configuration options. The contents of the file
+are processed as if they were specified on the command line as option
+modifiers, with the following exceptions:</p>
+
+<ul>
+  <li>Changes to the destination base path (<strong><a
+  href="TclApp_cmdline.html#tclapp-anchor">-anchor</a></strong>)
+  inside of the configuration file are canceled after the file is
+  processed, and the state before the processing of the file is
+  restored.</li>
+  <li>If the file is a TDK Prowrap configuration, <strong><a
+  href="TclApp_cmdline.html#tclapp-anchor">-anchor</a> ''</strong>
+  will be set before processing its contents to ensure compatibility
+  with Prowrap.</li>
+</ul>
+  
+<p>A configuration file may contain additional <strong><a
+href="TclApp_cmdline.html#tclapp-config">-config</a></strong>
+specifications. However, the recursive inclusion of a file is not
+permitted.</p>
+   
+<p>This option also accepts a TclApp Project File ('.tpj') as
+configuration file.</p>
+
+<h3>Specifying Output Options</h3>
+
+<!-- ---------------------------------------------------------------------- -->
+
+<h4><a name="interp">Specifying the Interpreter: Creating Starpacks
+and Starkits</a></h4>
+
+<p>Use the <strong><a
+href="TclApp_cmdline.html#tclapp-prefix">-prefix</a>
+<em>PATH</em></strong> switch to include an interpreter in the output
+file (thus creating a starpack). (Prowrap's
+<strong>-executable</strong> option is still supported, but has been
+deprecated.)</p>
+
+<p>The specified <strong><a
+href="TclApp_cmdline.html#tclapp-prefix">-prefix</a></strong> must
+exist, must be readable, and must contain a Metakit Filesystem
+(MFS). The presence of additional data before the MFS is allowed, and
+makes starkits and starpacks possible.</p>
+
+<p>To create a starpack, use a tclkit as prefix file. The Tcl Dev Kit
+includes basekits located in the <code>bin</code> directory beneath
+the Tcl installation: base-tcl* and base-tk* (which is base-tcl plus
+tk) are included for each platform; base-tclsvc* is included only on
+Windows, and is used to create portable <a class="doc"
+href="ServMgr.html">Services</a>. You may also specify a custom
+basekit; most newer starkits are compatible. See <a class="doc"
+href="FAQ.html#cust_basekit">How do I create a custom base kit?</a> in
+the Tcl Dev Kit FAQ for more information. Additionally, the base kit
+could be a kit generated by TclApp.</p>
+
+<p>Basekits for different platforms are available from the ActiveState
+TEApot repository via <a
+href="tpm/tpm/files/CTP_teacup.html"><code>teacup get</code></a>. This
+makes it possible to <a href="#cross_multi">"cross wrap"</a>
+applications for target architectures other than the one TclApp is
+running on.</p>
+
+<p><strong>New in 5.0</strong>: Use the form <strong><a
+href="TclApp_cmdline.html#tclapp-prefix">-prefix</a>
+<em>TEAPOT-REF</em></strong> to directly select a basekit from the
+TEApot repositories configured for the project. TclApp will get the
+selected basekit automatically, obviating the need for explicit
+downloads.</p>
+
+<p>The syntax of <em>TEAPOT-REF</em> is
+<code>teapot:<em>NAME</em>/<em>VERSION</em>/<em>PLATFORM</em></code>.
+The references do not contain an entity-type because they are
+implicitly taken to be for <em>application</em>'s.</p>
+
+<p>It is not possible to directly use the application (tclsh, wish,
+tclkit) currently used to run TclApp itself as <strong><a
+href="TclApp_cmdline.html#tclapp-prefix">-prefix</a></strong>. A copy
+of that file has to be used. This is because the file of the
+application is mounted to get access to the Tcl runtime library stored
+in the metakit VFS at the end of the file. Because of this, the
+application itself sees the file as directory, and directories cannot
+be used for <strong><a
+href="TclApp_cmdline.html#tclapp-prefix">-prefix</a></strong>.  This
+also means that we are unable to copy the contents of that file from
+within tcl / tclapp.</p>
+
+<p>If no <strong><a
+href="TclApp_cmdline.html#tclapp-prefix">-prefix</a></strong> (or
+<strong>-executable</strong>) option is specified, the output will
+include by default the starkit header, and will require an external
+interpreter to run. Use the <strong><a
+href="TclApp_cmdline.html#tclapp-interpreter">-interpreter</a>
+<em>PATH</em></strong> switch to specify an external interpreter.</p>
+
+<p>If <strong><a href="TclApp_cmdline.html#tclapp-prefix">-prefix</a>
+<em>PATH</em></strong> is specified, that file will be used to run the
+application. However, within the <strong>Prefix file</strong>, it is
+possible to specify an interpreter.  If the prefix file contains the
+string <code>@__interpreter__@</code> in the first 200 characters of
+the file, then the value specified by the <strong><a
+href="TclApp_cmdline.html#tclapp-interpreter">-interpreter</a></strong>
+setting will replace the <code>@__interpreter__@</code> string during
+wrapping.</p>
+
+<p>Note that on the Windows platform, the file extension is used to
+determine the interpreter; information in the header is
+ignored. However, the interpreter specification would be relevant when
+building applications that will be deployed on platforms other than
+windows.</p>
+
+<!-- ---------------------------------------------------------------------- -->
+
+<h4><a name="output">Specifying the Output File Name</a></h4>
+
+<p>The default name of the output file generated by TclApp is
+<strong>tclapp-out</strong>. To specify an alternative name, use the
+<strong><a href="TclApp_cmdline.html#tclapp-out">-out</a>
+<em>PATH</em></strong> switch. The file does not need to exist, but if
+you specify a directory, the directory must exist and must be
+writable. (If the <strong><a
+href="TclApp_cmdline.html#tclapp-merge">-merge</a></strong> switch is
+specified, the file must exist and must be writable.)</p>
+
+<p>If no file extension is specified, TclApp will use the same file
+extension as the <strong><a
+href="TclApp_cmdline.html#tclapp-prefix">-prefix</a></strong>
+file. (If the prefix file has no extension, the output file will have
+no extension.) If no <strong><a
+href="TclApp_cmdline.html#tclapp-prefix">-prefix</a></strong> file is
+specified, on Windows systems TclApp will automatically add the
+extension '.tcl'. On all other platforms, no extension will be
+added.</p>
+
+<p>When using a <code><a
+href="TclApp_cmdline.html#tclapp-prefix">-prefix</a></code> file, the
+prefix file's extension will be used as the default extension for the
+generated application (if no explicit output file name is
+specified). If the prefix has no extension, the name of the generated
+application will have no extension.</p>
+
+<h4><a name="osxapp">Creating a '.app' Bundle</a> (Mac OS X only)</h4>
+
+The <strong><a
+href="TclApp_cmdline.html#tclapp-osxapp">-osxapp</a></strong> creates
+an OS X '.app' directory structure for the wrapped application. This
+is recommended for user interface applications on OS X, but not
+neccessary for command line applications. The wrapped executable
+itself is put in '<em>application</em>.app/Contents/MacOS/'.</p>
+
+<h4><a name="merge">Merging the Output</a></h4>
+
+<p>The <strong><a
+href="TclApp_cmdline.html#tclapp-merge">-merge</a></strong> option
+will merge the specified files and packages into the file specified by
+the <strong><a href="TclApp_cmdline.html#tclapp-out">-out</a></strong>
+switch. It cannot be used in conjunction with the <strong><a
+href="TclApp_cmdline.html#tclapp-prefix">-prefix</a></strong> (or
+<strong>-executable</strong>) switch.</p>
+
+<h4><a name="custom_icon">Assigning a Custom Icon to the Output File</a></h4>
+
+<p>To assign a custom icon to the output application, use the
+<strong><a href="TclApp_cmdline.html#tclapp-icon">-icon</a>
+<em>PATH</em></strong> option. Icon files have an ".ico" extension
+(Windows and Unix) or an ".icns" extension (OS X). This function can
+only be used in conjunction with the <strong><a
+href="TclApp_cmdline.html#tclapp-prefix">-prefix</a></strong> option,
+and the specified prefix file must support the icon file type you are
+using. Selecting a custom icon will override any icon associated with
+the <strong><a href="TclApp_cmdline.html#tclapp-prefix">-prefix</a></strong> file.</p>
+
+<p>For ".ico" files TclApp will check geometry and color depth (bits
+per pixel, bpp) of the specified icon file against the icon specified
+in the prefix file. The icon dimensions must match the dimensions of
+the icon associated with the prefix file. It will replace only the
+parts which match, and leave the remainder untouched.</p>
+
+<p>For example, if the <strong><a
+href="TclApp_cmdline.html#tclapp-prefix">-prefix</a></strong> file
+contains an icon with two variants of 32x32/4bpp and 32x32/8bpp, and
+the custom <strong><a
+href="TclApp_cmdline.html#tclapp-icon">-icon</a></strong> file
+contains the variants 16x16/4 and 32x32/4, the following would
+result:</p>
+
+<ul>
+  <li>The 16x16/4 variant is ignored as there is no match in the
+  specified <strong><a
+  href="TclApp_cmdline.html#tclapp-prefix">-prefix</a></strong>
+  file.</li>
+  <li>The 32x32/4 variant in the prefix is replaced with the one in
+  the <strong><a
+  href="TclApp_cmdline.html#tclapp-icon">-icon</a></strong> file.</li>
+  <li>The 32x32/8 variant in the <strong><a
+  href="TclApp_cmdline.html#tclapp-prefix">-prefix</a></strong> file
+  is left untouched as there is no match in the <strong><a
+  href="TclApp_cmdline.html#tclapp-icon">-icon</a></strong> file.</li>
+</ul>
+
+<p>Failures resulting from an incorrect <strong><a
+href="TclApp_cmdline.html#tclapp-icon">-icon</a></strong>
+specification, (such as mis-matched icon dimensions) will generate
+warnings but will not cause the build to fail.</p>
+
+ 
+<h4><a name="custom_metadata">Setting Custom Metadata into the Output
+File</a> (Cross-platform)</h4>
+
+<p>To set custom TEApot metadata in the output application, use the
+<strong><a href="TclApp_cmdline.html#tclapp-metadata">-metadata</a>
+<em>DICT</em></strong> option. The argument <em>DICT</em> is
+interpreted as a Tcl dictionary (i.e. a Tcl list where keys and
+associated values are listed in alternation). For example:</p>
+
+<pre>
+    -metadata {name myapp version 0.1 platform macosx-universal}
+</pre>
+
+<p>If this option is used, 'name' and 'version' keys are required. If
+'platform' is not specified, the platform TclApp is running on is
+assumed.</p>
+ 
+<h4><a name="custom_stringinfo">Setting Custom String Information into
+the Output File</a> (Windows specific)</h4>
+
+<p>To set custom string information into the output application, use
+the <strong><a
+href="TclApp_cmdline.html#tclapp-stringinfo">-stringinfo</a>
+<em>DICT</em></strong> option. This function can only be used in
+conjunction with the <strong><a
+href="TclApp_cmdline.html#tclapp-prefix">-prefix</a></strong> option,
+and the specified prefix file must support string information. Using
+custom string information will override any existing string
+information associated with the <strong><a
+href="TclApp_cmdline.html#tclapp-prefix">-prefix</a></strong>
+file. The argument <em>DICT</em> is interpreted as a Tcl dictionary,
+i.e. a Tcl list where keys and associated values are listed in
+alternation. For example:</p>
+
+<p><pre>
+    -stringinfo 'Language 0409 CodePage 04b0 FileDescription {Coins Animation} ...'
+</pre></p>
+
+<p>TclApp will check the specified keys against the keys specified in
+the prefix file, and will generate warnings if keys are dropped from
+or added to the file.</p>
+
+<p>Failures resulting from an incorrect <strong><a
+href="TclApp_cmdline.html#tclapp-stringinfo">-stringinfo</a></strong>
+specification, (such as a too large replacement string) will generate
+an error and cause the build to fail.</p>
+
+
+<h4><a name="custom_infoplist">Setting Custom Info.plist Information into
+the Output File</a> (Mac OS X specific)</h4>
+
+<p>To set custom info.plist information into the output application,
+use the <strong><a
+href="TclApp_cmdline.html#tclapp-stringinfo">-infoplist</a>
+<em>DICT</em></strong> option. This function can only be used in
+conjunction with the <strong><a
+href="TclApp_cmdline.html#tclapp-prefix">-osxapp</a></strong>
+option. The argument <em>DICT</em> is interpreted as a Tcl dictionary,
+i.e. a Tcl list where keys and associated values are listed in
+alternation. For example:</p>
+
+<p><pre>
+    -infoplist 'CFBundleName myapp CFBundleShortVersionString {} CFBundleVersion ...'
+</pre></p>
+
+
+<h4><a name="nospecials">Suppressing Special Files</a></h4>
+    
+<p>TclApp normally stores a './main.tcl' file that contains code that
+instructs instructing the tclkit running the wrapped application which
+package to load to invoke the application.</p>
+
+<p>Use the <strong><a
+href="TclApp_cmdline.html#tclapp-nospecials">-nospecials</a></strong>
+option to suppress the generation of this file. This can be used to
+wrap a code base that already includes the file. This option
+effectively negates the effects of the <strong><a
+href="TclApp_cmdline.html#tclapp-startup">-startup</a></strong> and
+<strong><a href="TclApp_cmdline.html#tclapp-app">-app</a></strong>
+flags. For the latter, it still behaves as <strong><a
+href="TclApp_cmdline.html#tclapp-pkg">-pkg</a></strong>, but without
+the marking of an application package.</p>
+
+
+<h4><a name="nocompress">Suppressing Compression</a></h4>
+
+<p>TclApp normally uses zlib's deflate to compress the stored
+files. This can lead to long wrap times when the wrap includes large,
+difficult to non-compressible files.</p>
+
+<p>Use the <strong><a
+href="TclApp_cmdline.html#tclapp-nocompress">-nocompress</a></strong>
+option to disable the compression step. For the situation above this
+will bring wrap times back to sensible values, but can also lead to a
+much larger wrapped application as nothing is compressed any longer.
+</p>
+
+    
+<h4><a name="compile">Compiling .tcl Files</a></h4>
+
+<p>If the <strong><a
+href="TclApp_cmdline.html#tclapp-compile">-compile</a></strong> switch
+is specified, files with the extension .tcl (except for files named
+'pkgIndex.tcl') are compiled to tcl bytecodes before they are stored
+in the output metakit filesystem. Tcl files specified in <a
+class="doc" href="#wrap_packages">packages</a> are not compiled.  To
+wrap a package in compiled format, use the <a class="doc"
+href="Compiler.html">Tcl Dev Kit Compiler</a> to compile the files
+specified in the package, then create a package that includes the
+compiled files.</p>
+
+<p>For the execution of such a starkit, the package 'tbcload' has to
+be present. To ensure this, tclapp wraps that package
+automatically. In other words, compiling implies <code><a
+href="TclApp_cmdline.html#tclapp-pkg">-pkg</a> tbcload</code>. To
+prevent the 'tbcload' package from being wrapped, specify <strong><a
+href="TclApp_cmdline.html#tclapp-notbcload">-notbcload</a></strong>. If
+the 'tbcload' package is being specifically added using the <strong><a
+href="TclApp_cmdline.html#tclapp-pkg">-pkg</a></strong> switch, it
+will be included regardless of the <strong><a
+href="TclApp_cmdline.html#tclapp-notbcload">-notbcload</a></strong>
+setting.</p>
+
+<p>There may be situations where the unconditional compilation of all
+.tcl files is not wanted. If only some of the specified files must not
+be compiled use the switch<strong><a
+href="TclApp_cmdline.html#tclapp-nocompilefile">-nocompilefile</a></strong>
+to exclude them from the compilation. This is done by putting the
+switch in front of just the excluded files. And in the complementary
+situation, i.e. to force the compilation of only a few files, use the
+switch <strong><a
+href="TclApp_cmdline.html#tclapp-compilefile">-compilefile</a></strong>,
+again by putting it in front of the files to be compiled.</p>
+
+<p>If a <strong><a
+href="TclApp_cmdline.html#tclapp-">-prefix</a></strong> file is
+specified the compiler will generate bytecodes for the Tcl version
+found in the prefix.</p>
+
+<p>If however either no prefix was specified, or it was not possible
+to determine which version of Tcl is used by the prefix TclApp will
+generate bytecodes for Tcl 8.4, as they can be loaded into Tcl 8.5 as
+well, i.e. are more compatible.</p>
+
+<p>To override TclApp's choice in these cases use <strong><a
+href="TclApp_cmdline.html#tclapp-compilefor">-compilefor</a></strong>
+to specify explicitly the version of Tcl for which to generate
+bytecodes for.</p>
+
+
+<h3>Advanced Options</h3>
+
+<h4><a name="runtimeargs">Specifying Run-Time Arguments</a></h4>
+
+<p>Use the <strong><a
+href="TclApp_cmdline.html#tclapp-arguments">-arguments</a>
+<em>ARGUMENT_LIST</em></strong> option to specify additional arguments
+to the wrapped application. These are treated as if they were
+submitted to an unwrapped application on the command line. The
+arguments are stored in the Tcl <i>argv</i> variable. Arguments
+specified using this switch are inserted before any command-line
+arguments entered by the end user when they execute the wrapped
+application.</p>
+
+<p>If this switch is specified multiple times, only the last
+specification takes effect.</p>
+
+<p>Provide the arguments as a single argument on the TclApp command
+line; use proper quoting conventions of your command shell to
+accomplish this. For example, the following example passes the
+arguments <strong>-height 50 -width 20</strong> to the <i>main.tcl</i>
+script:</p>
+
+</p><blockquote><code>
+c:&gt; tclapp main.tcl img\*.gif -arguments "-height 50 -width 20"
+</code></blockquote>
+    
+<h4><a name="postcode">Specifying Code to Execute at Application Startup</a></h4>
+
+   
+<p>The <strong><a href="TclApp_cmdline.html#tclapp-code">-code</a>
+<em>TCL_SCRIPT_TEXT</em></strong> option is used to run specified code
+before the starkit support is loaded and initialized, and before the
+application package is loaded/invoked. If this option is specified
+multiple times, the code fragments are concatenated.</p>
+
+<p>The <strong><a
+href="TclApp_cmdline.html#tclapp-postcode">-postcode</a>
+<em>TCL_SCRIPT_TEXT</em></strong> option is used to run specified code
+after the application package has been loaded/invoked. If this option
+is specified multiple times, the code fragments are concatenated.</p>
+
+
+
+<h4><a name="encodings">Specifying Encodings</a></h4>
+
+<p>The standard basekits include encodings for all European
+languages. Use the <strong><a
+href="TclApp_cmdline.html#tclapp-encoding">-encoding</a>
+<em>ENCODING_NAME</em></strong> option to specify additional encodings
+to include in the output, such as encodings for Asian languages.  The
+option can be specified multiple times. Although the encodings are
+always added to the wrapped application, they will have an effect at
+runtime only if a basekit was specified. In other words, selection of
+additional encodings is worthwhile only when generating a
+starpack.</p>
+   
+<h4><a name="nonstdpkgdir">Specifying a Non-Standard Package Directory</a></h4>
+
+<p>Use the <strong><a
+href="TclApp_cmdline.html#tclapp-pkgdir">-pkgdir</a>
+<em>PATH</em></strong> switch to specify additional non-standard
+package directories. All listed paths are seen as relative to the root
+of the generated archive. During startup of the wrapped application,
+they are added to the <code>auto_path</code> variable of the tcl
+interpreter, causing the interpreter to look in these directories for
+packages. This switch must be used if a wrapped package is placed into
+a nonstandard location (i.e. outside of '/lib').</p>
+    
+<h4><a name="tempdir">Specifying a Temporary Directory</a></h4>
+
+<p>The <strong><a href="TclApp_cmdline.html#tclapp-temp">-temp</a>
+<em>PATH</em></strong> argument is used to specify a directory that
+TclApp uses to temporarily hold files created during the wrapping
+process. By default, TclApp uses the directory specified in the
+<i>TEMP</i>, <i>TMP</i>, or <i>TMPDIR</i> environment variables (which are 
+checked in that order).</p>
+    
+
+<a class="topText" href="#Top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+
+<h2><a name="InternalFileArc">How the Internal File Archive Works in a Wrapped Application</a></h2>
+
+<p>The internal file archive of a wrapped application contains all the Tcl scripts 
+and data files that you specify when you generate an application using TclApp. 
+TclApp incorporates special support into the wrapped application that allows
+Tcl scripts in the wrapped application to access files in the internal file 
+archive just as if they were stored individually on disk. In other words, 
+your Tcl scripts in a wrapped application can execute standard Tcl commands
+such as <strong>source</strong> and <strong>open</strong> to access files in 
+the internal file archive.</p>
+
+<p><strong>Note</strong>: The files in the internal file archive are read-only.</p>
+
+<p>The source path of each file to wrap is translated into the
+destination path according to the rules described below. "Source" means the 
+path of the file in the original filesystem, and "destination" is the path of
+the file in the output Metakit FileSystem (MFS).</p>
+
+
+<p>The context for the translation is determined by the occurrence of the
+<code>-relativeto</code> (source base path), <code>-anchor</code> (destination 
+base path), and <code>-alias</code> (file modifier) switches. These values 
+are used in the translation of a PATH in the same order as given above.</p>
+
+<p><strong>-relativeto</strong></p> 
+
+<p>If there is no -relativeto setting before PATH (equivalent to
+-relativeto '') a relative PATH is left unchanged. An absolute
+path is made relative by stripping of the /, or the drive
+specification (x:\).</p>
+
+<p>With -relativeto RPATH, it is illegal to specify a PATH which
+does not have RPATH as prefix. The PATH is modified by
+removing the RPATH prefix from it.</p>
+
+<p><strong>-anchor <em>ANCHOR</em></strong></p>
+
+<p>The result from the translation above is taken, and the current
+ANCHOR is inserted as a prefix. The destination is placed under
+ANCHOR in the output MFS.</p>
+  
+
+<p><strong>-alias	<em>PATH</em></strong></p>
+
+<p>If this value is set the file name in the result of the
+translation above (i.e. the last component of that path) is
+replaced with PATH. As a path is allowed, this not only allows
+renaming of the file, but also moving it further down the
+hierarchy.</p>
+
+
+<h3>Examples</h3>
+
+<blockquote>
+
+<pre>
+
+(1)	tclapp
+		-relativeto /foo/bar		\
+		-anchor	    greeze		\
+		-alias	    command		\
+		/foo/bar/this/is/here/file
+
+	(a)	=&gt;	this/is/here/file
+	(b)	=&gt;	greeze/this/is/here/file
+	(c)	=&gt;	greeze/this/is/here/command
+
+(2)	tclapp
+		-relativeto /foo/bar	\
+		-anchor	    lib/app	\
+		-alias	    bin/file	\
+		/foo/bar/file
+
+	(a)	=&gt;	file
+	(b)	=&gt;	lib/app/file
+	(c)	=&gt;	lib/app/bin/file
+</pre>
+
+</blockquote>
+
+<p>Another way of looking at the steps (a) to (c) above is this:</p>
+
+<p>(a)	Strip the irrelevant portion of the location in the source
+tree from PATH.</p>
+
+<p>(b)	Move the path to its proper spot in the destination tree.</p>
+
+<p>(c)	Perform fine-tuning of actual filename and location in the 
+destination tree.</p>
+
+<h3>Path Handling</h3>
+
+<p>The Prowrap wrapper had a number of special rules regarding file paths,
+especially regarding the distinction between files included in the wrapped
+application and files on the target system.</p>
+
+<p>For example, if a relative path was specified, the application first 
+looked for the file in the archive. If the file was not found, the 
+application would then look on the native filesystem on the system where the 
+application was running. If an absolute path was specified, the application 
+would always bypass the archive and look for the file in the native 
+filesystem.</p>
+
+<p>Because TclApp makes use of the Virtual Filesystem (VFS), these considerations 
+no longer apply. The VFS makes the archive look like an ordinary directory. 
+Files in the virtual directory are accessed simply by specifying the path; if 
+the path does not exist in the virtual filesystem, the application  will look 
+on the native filesystem. There is no special distinction between absolute and 
+relative paths.</p>
+
+<p>For example, if an application is located as follows:</p>
+
+<blockquote>
+<code>/path/to/app</code>
+</blockquote>
+
+<p>...this path will become the virtual directory used to access the contents 
+of the archive. So, if a file was wrapped as:</p>
+
+<blockquote>
+<code>lib/application/foo.tcl</code>
+</blockquote>
+
+<p>...the virtual directory path would be:</p>
+
+<blockquote>
+<code>/path/to/app/lib/application/foo.tcl</code>
+</blockquote>
+
+<p>Alternatively, you could specify:</p>
+
+<blockquote>
+<pre>cd /path/to/app/lib
+open application/foo.tcl</pre>
+</blockquote>
+
+<p>The base path can be queried from within the application using the 
+statements:</p>
+
+<blockquote>
+<pre>package require starkit
+set base $starkit::topdir</pre>
+</blockquote>
+
+<p>The <strong>-relativeto</strong>, <strong>-alias</strong> and 
+<strong>-anchor</strong> switches can be used to modify the default behavior.</p>
+
+
+
+<a class="topText" href="#Top"><img src="images/top.gif" height="11" width="11" border="0">Top</a>
+
+
+<h2><a name="convert_wrapper">Converting Prowrap Projects to TclApp Projects</a></h2>
+
+<p>TclApp replaces the Prowrap Wrapper component included with previous 
+Tcl Dev Kit distributions. TclApp is a significant enhancement over the Prowrap 
+Wrapper, as it makes use of the Virtual File System (VFS) support included in 
+Tcl version 8.4. VFS vastly simplifies the wrapping process, and allows 
+developers to specify packages as well as individual files.</p>
+
+<h3>Changes to Build Options</h3>
+
+<h4>-uses ("Wrap specification")</h4>
+
+<p>The command-line <code>-uses</code> option (and the corresponding 
+<strong>Wrap specification</strong> field in the Graphical Wrapper) is no 
+longer supported. It has been superseded by:</p>
+
+<ul>
+  <li>-pkg (Package Picker): used to specify the packages to include.</li>
+  <li>-config: used to specify the inclusion of entire projects, including 
+  Prowrap projects, TclApp projects, or collections of command line options 
+  recognized by TclApp. (This option has no corresponding function in the 
+  Graphical TclApp.)</li>
+</ul>
+
+
+<h4>-tcllibrary ("Tcl script library directory")</h4>
+
+<p>This option is no longer relevant, as the Virtual Filesystem (VFS) does not 
+require the specification of the library directory that will be used by the 
+wrapped Tcl core.</p> 
+
+<h4>-executable ("Base executable")</h4>
+
+<p>This option was required by the Prowrap Wrapper. In TclApp, it is optional, and 
+is deprecated in favor of the <strong><a href="TclApp_cmdline.html#tclapp-prefix">-prefix</a></strong> option.</p>
+
+<p>The Wrapper required the specification of a tclwrapper-enabled application. 
+Now any file containing a metakit-based virtual filesystem on the target system 
+is allowed. However, only two uses seem relevant:</p>
+
+
+<ul>
+  <li>A file containing a standard tcl script as header invoking the 
+  application stored in the virtual filesystem. This can be easily
+  invoked by <strong>not</strong> specifying the option. Tclapp then uses 
+  a standard file (it has stored in itself) as the base.</li>
+  <li>A platform-specific executable file set up so that it is able to invoke 
+  the application stored in the virtual filesystem at its end. The original 
+  application for this is Jean-Claude Wippler's tclkit. ActiveState's tclkits,
+  called <code>basekits</code> are provided through the ActiveTcl distributions,
+  and via our <a href="http://teapot.activestate.com">TEApot repository</a>.
+  For example, using teacup from ActiveTcl, try
+  <pre>
+  % teacup list base-
+  </pre>
+  to see the basekits for your platform.
+</ul>
+        
+<p>The first instance generates a 'starkit'; the second instance generates 
+a 'starpack'.</p>
+
+<p>The <code>-prefix</code> switch should be used instead of the  
+<code>-executable</code> switch. Support for the <code>-executable</code> switch 
+will be dropped in future releases.</p>
+
+<h3>Individual File Locations</h3>
+
+<p>The Prowrap Wrapper computed a relative path for all files, and
+placed them in the archive relative to the root of the archive.</p>
+
+<p>TclApp also computes a relative path, but places this
+path by default into the <code>/lib/application</code> subdirectory
+of the archive.</p>
+
+<p>When you are specifying a collection of individual files (rather than 
+specifying a package defined in a <code>.tap</code> specification 
+file), keep in mind that, by default, the subdirectories of 
+<code>lib/application</code> are <strong>not</strong> searched for 
+package indices.</p>
+
+<p>To make such 'loose' packages visible, use the <strong>-pkgdir</strong> 
+switch (on the command line), or specify <strong>Nonstandard package 
+directories</strong> in the Graphical TclApp.</p>
+
+
+<h3>Custom Package Locations</h3>
+
+<p>TclApp can locate and wrap custom packages in varying locations when
+you set the environment variable TCLAPP_PKGPATH to the directory or set a placeholder in your
+.tap file(s). See <a class="doc" href="#locating_custom_tap">Locating Custom
+Packages and Definition Files with TclApp</a> for more information. To move
+packages and .tap files, see
+<a class="doc" href="package.html#using_placeholders">Using Placeholders for Portability</a>
+in the Package Editor Guide for more information.</p>
+
+<h3>Statically Linked versus Dynamically Loaded Libraries</h3>
+
+<p>Users were discouraged from using dynamically loaded libraries with the 
+Prowrap Wrapper. Instead, they were advised to use static libraries, by creating 
+specialized tclwrapper-enabled executables.</p>
+
+<p> Because TclApp makes use of the Virtual FileSystem (VFS) included
+in Tcl 8.4, using shared libraries in a wrapped application is as easy
+as using shared libraries in an unwrapped application. Therefore,
+shared libraries are now preferred over custom tclkits. </p>
+
+<p> When dynamically loaded libraries (loadable by Tcl) are included
+in a TclApp, the Virtual FileSystem will automatically load the DLL if
+it has to be moved to the disk first (as most operating systems cannot
+load DLLs from memory). </p>
+
+<p> However, when working with dependent libraries, i.e. DLLs which
+are not loadable by Tcl, but that are required by other DLLs that are
+loaded, you must specially handle moving the dependent DLLs out to the
+file system in a known system library path location before loading the
+main DLL.</p>
+
+<p>Rather than specifying individual DLLs in the TclApp specification, the
+<a class="doc" href="Package.html">Package Manager</a> can be used to construct
+sets of files to include, including DLLs. Using a package to specify the
+inclusion of a DLL ensures that the <code>auto_path</code> variable correctly
+specifies the DLL's location.</p>
+
+<h3>Changes to the Source Application</h3>
+
+<h4>Obsolete Variable: tcl_platform(isWrapped)</h4>
+
+<p>When using the Prowrap Wrapper, the presence of the 
+<code>tcl_platform(isWrapped)</code> variable indicated that the application 
+was wrapped. Therefore, the same script could be run in both wrapped and 
+unwrapped mode, as the application would know whether to use the 
+special file access rules for wrapped files.</p>
+
+<p>Because TclApp supports the Virtual Filesystem, the 
+<code>tcl_platform(isWrapped)</code> variable is no longer 
+required. Conditional code that relies on this variable should generally 
+be rewritten to make use of standard filesystem operations.</p>
+
+<p>If you have a special case where you need to check the status of an 
+application (wrapped or unwrapped), test the result of the command 
+<code>[starkit::startup]</code>. The results are interpreted as follows:</p>
+
+<ul>
+  <li>starkit: launched from a starkit</li>
+  <li>starpack: launched from a starpack</li>
+  <li>unwrapped: called from an unwrapped tcl script</li>
+  <li>sourced: [source]'ed by another starkit</li>
+</ul>
+
+<h4><a name="path_handling">Path Handling</a></h4>
+
+<p>The Prowrap Wrapper had a number of special rules regarding file paths, especially 
+regarding the distinction between files included in the wrapped application and 
+files on the target system.</p>
+
+<p>For example, if a relative path was specified, the application first 
+looked for the file in the archive. If the file was not found, the 
+application would look on the native filesystem on the system where the 
+application was running. If an absolute path was specified, the application 
+would always bypass the archive and look for the file in the native 
+filesystem.</p>
+
+<p>Because TclApp makes use of the Virtual Filesystem (VFS), these considerations 
+no longer apply. The VFS makes the archive look like an ordinary directory. 
+Files in the virtual directory are accessed simply by specifying the path.
+There is no special distinction between absolute and relative paths.</p>
+
+<p>For example, if an application is located as follows:</p>
+
+<blockquote>
+<code>/path/to/app</code>
+</blockquote>
+
+<p>...this path will become the virtual directory used to access the contents 
+of the archive. So, if a file was wrapped as:</p>
+
+<blockquote>
+<code>lib/application/foo.tcl</code>
+</blockquote>
+
+<p>...the virtual directory path would be:</p>
+
+<blockquote>
+<code>/path/to/app/lib/application/foo.tcl</code>
+</blockquote>
+
+<p>Alternatively, you could specify:</p>
+
+<blockquote>
+<pre>cd /path/to/app/lib
+open application/foo.tcl</pre>
+</blockquote>
+
+<p>The base path can be queried from within the application using the 
+statements:</p>
+
+<blockquote>
+<pre>package require starkit
+set base $starkit::topdir</pre>
+</blockquote>
+
+<p>Another example of path handling is illustrated by the following scenario.
+The <code>/tmp/tcl</code> directory contains the following scripts:</p>
+
+<pre>
+    $ cat main.tcl
+      #!/bin/sh
+      # \
+      exec /usr/tcl84/bin/tclsh "$0" "$@"
+    
+      source sourced.tcl
+</pre>
+
+<pre>
+    $ cat sourced.tcl
+      puts "in sourced"
+</pre>
+
+<p>These scripts are wrapped using TclApp:</p>
+
+<pre>
+    $ tclapp \
+      -prefix /TclDevKit/bin/base-tk-solaris-sparc \
+      -out testapp main.tcl sourced.tcl
+</pre>
+
+<p>When the application is run from another directory:</p>
+
+<pre>
+    $ cd ..
+    $ tcl/testapp
+</pre>
+
+<p>...the <code>source sourced.tcl</code> command within the application fails,
+because <code>sourced.tcl</code> does not exist within the current working
+directory.</p>
+
+<p>A wrapped application inherits the current working directory from the
+location in the shell where the script was run. The runtime support does
+not change the current working directory to a location within the wrapped
+application. Therefore, you must explicitly specify file locations, for example
+by using the following method:</p>
+
+<pre>
+    source [file join [file dirname [info script]] sourced.tcl
+    info script
+    file dirname
+</pre>
+
+<p>"<code>info script</code>" returns the absolute path of the executing
+script. "<code>file dirname</code>" returns the directory of the
+executing script.</p>
+
+<p>Alternatively, use the <code>$starkit::topdir</code> method described above
+to determine the base path within the application.</p>
+
+<h4>Globbing</h4>
+
+<p>The Prowrap file system did not support use of the [glob] command to 
+specify virtual directories. Therefore, applications looking for lists of 
+files relied on the presence of the <code>tcl_platform(isWrapped)</code> 
+variable; if the application was wrapped, the list of files had to be 
+hard-coded.</p>
+
+<p>TclApp supports the [glob] command, which now works for virtual
+directories in the same manner as native directories. There is no
+need to hard-code such lists anymore, and the special-case code can be 
+eliminated.</p>
+
+<a class="topText" href="#Top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+<h2><a name="cross_multi">Cross- and Multi-platform Wrapping</a></h2>
+
+<h3>Cross-platform Wrapping</h3>
+
+<p>Cross-platform wrapping is the creation of a starpack for a platform
+TARGET, using TclApp running on a different platform BUILD.</p>
+
+<p>TclApp supports this mode of operation in the following manner:</p>
+
+<p>Simply choosing a basekit for the TARGET platform as the <a
+class="doc" href="#interp">-prefix</a> file of the wrap will cause
+TclApp to look for and use the proper binaries for the TARGET platform
+for all named packages with platform-specific implementations.</p>
+
+<p>I.e. TclApp will determine the platform the wrap is for from the
+chosen <a class="doc" href="#interp">-prefix</a> file and then put the
+package implementations for that platform into the wrap. It will look
+at the TEApot meta data of the prefix file first, then attempt to gain
+information from the file type, then look for a platform embedded in
+the file name, and last fall back to the generic "tcl" platform.</p>
+
+<p>The basekit to use as prefix can be specified in one of two ways:
+</p>
+<p>
+<dl>
+<dt><code>teapot:<em>NAME</em>/<em>VERSION</em>/<em>PLATFORM</em></code></dt>
+<dd>
+<p>The prefix will be searched for in all TEApot repositories
+configured for the project through either the global or project-local
+TEApot search paths. See <a href="#preference_dialog">Preferences
+Dialog</a> and the <a href="#packages_tab">Packages Tab</a>.
+</p>
+<p>This is <strong>new in 5.0</strong>.</p>
+</dd>
+<dt>PATH</dt>
+<dd>
+The prefix is directly read from the specified path in the the filesystem.
+</dd>
+</dl>
+</p>
+
+<p>The packages to wrap named in the project will be searched for in
+the configured TEApot and TAP search paths, as usual.</p>
+
+
+<h3>Multi-platform Wrapping</h3>
+
+<p>Multi-platform wrapping is the creation of starkits which can be
+executed on more than one platform.</p>
+
+<p>TclApp supports this mode of operation in the following manner:</p>
+
+<p>Select no prefix file, as usual for wrapping a starkit, then select
+more than one platform through either the <a
+href="TclApp_cmdline.html#tclapp-architecture">-architecture</a>
+option on the command line, or in the <strong>Target
+Architecture</strong> dialog found in the <a href="#basic_tab">Basic
+Tab</a>.
+</p>
+
+<p>This causes TclApp to
+<ol>
+<li> select the proper binaries of all named
+packages for all the chosen architectures when performing the wrap, and
+</li>
+<li>put Tcl code into the generated main.tcl file which will
+<ol>
+<li> determine the platform the starkit is currently running on, and
+</li>
+<li> modify Tcl's <code>::auto_path</code> so that only the binaries for this
+platform are seen by the package management of the application.
+</li>
+</ol>
+This part is <strong>new in 5.0</strong>.  Note that the placement of
+this code in the generated <i>main.tcl</i> file means that suppressing its
+generation (see <a href="#nospecials">Suppressing Special Files</a>)
+will disable this convenience as well.
+</li>
+</ol>
+</p>
+
+
+<a class="topText" href="#Top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+
+</BODY>
+</HTML>
+

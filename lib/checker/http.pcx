@@ -1,0 +1,174 @@
+# -*- tcl -*- http.pcx --
+#
+#	This file contains type and command checkers for the
+#	"http" commands.
+#
+# Copyright (c) 2004-2006 ActiveState Software Inc.
+
+# 
+# RCS: @(#) $Id: tkTable.tcl,v 1.3 2000/10/31 23:30:55 welch Exp $
+
+# ### ######### ###########################
+## Requisites
+
+package require pcx          ; # PCX API
+
+# ### ######### ###########################
+## Tcl core version dependencies of the package this checker is for.
+
+pcx::register http http
+pcx::tcldep   2.0 needs tcl 8.0
+pcx::tcldep   2.1 needs tcl 8.0
+pcx::tcldep   2.2 needs tcl 8.2
+pcx::tcldep   2.3 needs tcl 8.2
+pcx::tcldep   2.4 needs tcl 8.3
+pcx::tcldep   2.5 needs tcl 8.4
+pcx::tcldep   2.7 needs tcl 8.4
+
+# ### ######### ###########################
+
+# ### ######### ###########################
+## Package specific message types and their human-readable
+## translations.
+
+# ### ######### ###########################
+# scanCmdsX.X --
+# Define the set of commands that need to be recuresed into when 
+# generating a list of user defiend procs, namespace and Class 
+# contexts and procedure name resolutions info.
+
+# ### ######### ###########################
+# checkersX.X --
+# Define the set of command-specific checkers used by this package.
+
+# http 2.5 -> Tcl 8.4
+
+# ### ######### ###########################
+## Initialization
+
+## This package relies on the standard initialization sequence of
+## 'pcx::init'. This is automatically called if no 'init' command
+## is found in the namespace of the checker package.
+
+# ### ######### ###########################
+
+# ### ######### ###########################
+# Checkers for specific commands --
+#
+#	Each checker is passed the tokens for the arguments to 
+#	the command.  The name of each checker should be of the
+#	form tkTable::check<Name>Cmd, where <name> is the command
+# 	being checked.
+#
+# Arguments:
+#	tokens		The list of word tokens after the initial
+#			command and subcommand names
+#	index		The index into the token tree where the 
+#			checkers should start checking.
+#
+# Results:
+#	Return the next index, in the tokens tree, to check.
+
+pcx::check 2.0 std http::reset  {checkSimpleArgs 1 2 checkWord}
+pcx::check 2.0 std http::wait   {checkSimpleArgs 1 1 checkWord}
+pcx::check 2.0 std http::status {checkSimpleArgs 1 1 checkWord}
+pcx::check 2.0 std http::size   {checkSimpleArgs 1 1 checkWord}
+pcx::check 2.0 std http::code   {checkSimpleArgs 1 1 checkWord}
+pcx::check 2.0 std http::data   {checkSimpleArgs 1 1 checkWord}
+pcx::check 2.0 std http::config {checkConfigure 1 {
+	{-accept      checkWord}
+	{-proxyhost   checkWord}
+	{-proxyport   checkWholeNum}
+	{-proxyfilter {checkProcCall 1}}
+	{-useragent   checkWord}
+}}
+pcx::check 2.0 std http::geturl {checkSimpleArgs 1 -1 {checkWord {checkSwitches 1 {
+	{-blocksize      checkNatNum}
+	{-channel        checkChannelID}
+	{-command        {checkProcCall 1}}
+	{-handler        {checkProcCall 2}}
+	{-headers        {checkListModNk 2 0}}
+	{-progress       {checkProcCall 3}}
+	{-query          checkWord}
+	{-timeout        checkWholeNum}
+	{-validate       checkBoolean}
+} {}}}}
+
+pcx::check 2.0 std http::formatQuery {checkSimpleArgsModNk 2 -1 2 0 checkWord}
+
+# === ========= ===========================
+
+pcx::check 2.2 std http::cleanup    {checkSimpleArgs 1 1 checkWord}
+pcx::check 2.2 std http::register   {checkSimpleArgs 3 3 checkWord}
+pcx::check 2.2 std http::unregister {checkSimpleArgs 1 1 checkWord}
+pcx::check 2.2 std http::geturl     {checkSimpleArgs 1 -1 {checkWord {checkSwitches 1 {
+	{-blocksize      checkNatNum}
+	{-channel        checkChannelID}
+	{-command        {checkProcCall 1}}
+	{-handler        {checkProcCall 2}}
+	{-headers        {checkListModNk 2 0}}
+	{-progress       {checkProcCall 3}}
+	{-query          checkWord}
+	{-timeout        checkWholeNum}
+	{-type           checkWord}
+	{-validate       checkBoolean}
+} {}}}}
+
+# === ========= ===========================
+
+pcx::check 2.4 std http::ncode      {checkSimpleArgs 1 1 checkWord}
+pcx::check 2.4 std http::error      {checkSimpleArgs 1 1 checkWord}
+pcx::check 2.4 std http::geturl     {checkSimpleArgs 1 -1 {checkWord {checkSwitches 1 {
+	{-binary         checkBoolean}
+	{-blocksize      checkNatNum}
+	{-channel        checkChannelID}
+	{-command        {checkProcCall 1}}
+	{-handler        {checkProcCall 2}}
+	{-headers        {checkListModNk 2 0}}
+	{-progress       {checkProcCall 3}}
+	{-query          checkWord}
+	{-queryblocksize checkNatNum}
+	{-querychannel   checkChannelID}
+	{-queryprogress  {checkProcCall 3}}
+	{-timeout        checkWholeNum}
+	{-type           checkWord}
+	{-validate       checkBoolean}
+} {}}}}
+
+# === ========= ===========================
+
+pcx::check 2.5 std http::config {checkConfigure 1 {
+	{-accept      checkWord}
+	{-proxyhost   checkWord}
+	{-proxyport   checkWholeNum}
+	{-proxyfilter {checkProcCall 1}}
+	{-urlencoding checkWord}
+	{-useragent   checkWord}
+}}
+
+# === ========= ===========================
+
+pcx::check 2.7 std http::geturl     {checkSimpleArgs 1 -1 {checkWord {checkSwitches 1 {
+    {-binary         checkBoolean}
+    {-blocksize      checkNatNum}
+    {-channel        checkChannelID}
+    {-command        {checkProcCall 1}}
+    {-handler        {checkProcCall 2}}
+    {-headers        {checkListModNk 2 0}}
+    {-keepalive      checkBoolean}
+    {-method         {checkKeyword 1 {DELETE GET HEAD POST PUT}}}
+    {-myaddr         checkWord}
+    {-progress       {checkProcCall 3}}
+    {-protocol       checkWord}
+    {-query          checkWord}
+    {-queryblocksize checkNatNum}
+    {-querychannel   checkChannelID}
+    {-queryprogress  {checkProcCall 3}}
+    {-strict         checkBoolean}
+    {-timeout        checkWholeNum}
+    {-type           checkWord}
+    {-validate       checkBoolean}
+} {}}}}
+
+# ### ######### ###########################
+pcx::complete

@@ -1,0 +1,197 @@
+
+Incremental update of a cross-reference database
+================================================
+
+Changes happen only at the file level. This means that an update of
+the txr database has to remove all information derived from that file
+from the database and then insert all new information about this file.
+
+Simple changes, like lines inserted or removed in some procedure do
+not change the overall definitions, just their location. Ripping out
+the data and then reinserting it is most likely _not_ efficient.
+
+This means that the changes should actually be tracked on a higher
+level (i.e. procedure added, deleted, moved) as this allows us to
+reduce the number of updates required to the parts which actually did
+change.
+
+This will quite possibly a pain when it comes to derived information,
+like variables defined in procedure scopes, etc.
+
+Another problem is how to handle the breakage of references when
+something is removed, but the code referencing it are not
+updated. This be ale to find this type of dangling reference is
+actually one of the big reasons to have the xref database. So removing
+the data about the dangling reference is completely out of the
+question. It has to be kept, but has to be marked internally as
+broken, so that the user is able to easily find them. This also
+requires thought in the user interface, some type of highlighting, and
+guides to the proper spots.
+
+================================================
+
+And now more detail, per relevant view.
+
+File
+------------------------------------------------
+Deleted file:	Remove row.
+
+		If and only if this is the last path we know for the
+		file.
+
+Added file:	Add row.
+
+		If and only if the md5 hash is not already present in
+		the database. If that is the case we simply add the
+		path to that row. In this situtation we can also skip
+		the entire remainder of the merging as all the data we
+		need is already present.
+
+Changed file:	Update md5 hash
+
+		Check if all the other paths for this file have been
+		changed too, and in the same way. If not flag the
+		entry as inconsistent. We have to remember which file
+		(path) has the correct md5 hash, and which copies are
+		out of date.
+
+		=>	Need 'consistency' flag
+
+		Note: A file might have been changed to bring it into
+		conformance with its primary. Not yet clear how to
+		model this.
+
+		- Maybe - split the entry into several ? With the
+		non-conforming ones refering to their primary ?  Then
+		bringing into conformance can be detected. And results
+		in re-merging the split entry into the main one ? For
+		display only the primary entry, no location can refer
+		to such split-of entries.
+
+------------------------------------------------
+
+Location
+------------------------------------------------
+This view can actually be handled only through 'delete the old data,
+then insert the new data'. Mostly. All the 'obj'ect references in the
+new data require backpatching of the id's after they have been
+integrated with the other parts of the database
+------------------------------------------------
+
+Namespace
+------------------------------------------------
+Deleted file:
+		Remove all namespace definitions referencing the
+		file. Ditto for all uses in the file itself. If there
+		are now definitions anymore after the operation, then
+		flag all remaining uses of the namespace as broken.
+
+		Delete all namespaces for the file which have neither
+		definitions anymore after the operation, and no uses.
+
+		Note: We have to handle a 'proc' defined for a
+		namespace as a use of that namespace. That way the
+		number of uses will not drop to zero as long as there
+		are commands defined for the namespace. And if we
+		exclude builtins we can also be sure that these
+		commands have proper locations we can record in the
+		use subview of the namespace.
+
+Added file:
+		If the namespace is unknown add its definitions and
+		uses from the new file. If there are broken references
+		to the newly added namespace then these references are
+		not broken anymore, their flags are reset.
+
+		If the namespace is known then add all the new
+		definitions and uses to the entry.
+
+Changed file:
+		This performs all operations from deleted and added
+		file, in this order. I.e. a changed file is handled
+		like it was deleted and re-added.
+
+------------------------------------------------
+
+Command
+------------------------------------------------
+Essentially the same as for namespace above.
+
+The main problem is that there is a special use of a command which is
+not recorded in the use subview, but in other rows of the main view:
+If a command X is deleted there can be other commands Y who have X as
+their origin. To find and handle them requires a separate pass through
+the view.
+
+------------------------------------------------
+
+Variable
+------------------------------------------------
+
+There are two types of variables: Namespaced, and procedure local.
+They have to be handled a bit differently.
+
+It might be best if they are handled as part of the namespace/command
+updates. Alternatively keep transient records of new/changed/deleted
+namespaces and/or commands and use this information to handle the
+variables correctly.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+'Full' deletion of a command:
+	Delete all variables referencing it.
+
+	If there are variables who have deleted vars as their origin
+	these references have to be flagged broken.
+
+New command:
+	Simply add all its variables. If an added variable is
+	referenced through broken links the links are now unbroken,
+	the flag has to be reset.
+
+Changed command:
+	This is like deleting and adding the command.
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+'Full' deletion of a namespace:
+	Delete all variables referencing it.
+
+	If there are variables who have deleted vars as their origin
+	these references have to be flagged broken.
+
+	(Note: We do not cover commands in a namespace here.
+	See 'Namespace' above for that.)
+
+New namespace:
+	Add all variables defined for it. If an added variable is
+	referenced through broken links the links are now unbroken,
+	the flag has to be reset.
+
+Changed namespace ?
+	This can be a namespace partially changed (losing definitions
+	and uses). This is _not_ like delete followed by add.
+
+	We have to check for each ns variable in the merge db and
+	current db if it is affected by the change and how.
+
+------------------------------------------------
+
+Algorithms ... Go through the views one by one. Remember information
+required later, like the id's of deleted commands, etc. so that
+checking for variables to delete etc. can be done quickly (hash!)
+
+
+
+
+================================================
+
+More database thoughts
+~~~~~~~~~~~~~~~~~~~~~~
+
+It might make sense to not only flag references as broken in the entry
+they are in, but to also have a separate view collecting all broken
+references for easy viewing by the GUI. The view has to have enough
+information to allow the user to jump the places containing the broken
+pieces (directly - location, indirectly - to the detail dialog of the
+object which has the broken references).
+

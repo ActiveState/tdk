@@ -1,0 +1,100 @@
+
+Package definitions
+===================
+
+Creation of package definitions
+-------------------------------
+
+*       Editor of choice (Files are plain text)
+
+*       Scanner Application.
+
+        Point it at a directory, scan the files, and it spits out a
+        package definition.
+
+        Note:
+                Use the 'parser' package (See checker) to scan the
+                script correctly. This allows the script to find
+                conditional and catched 'package require'
+                statements. I.e. inside of catch/if/switch
+
+        Integrated into TclApp
+
+                tclapp -scan directory ...
+
+		A rudimwentary version of such a scanner is
+		operational. It may get package name and version
+		number wrong, especially if package name and directory
+		diverge, for example in upper/lower casing. It does
+		not look for dependencies. It takes all files in a
+		package directory. This has to be modified to ensure
+		that only the relevant files get included.
+
+
+        Semi-automatic via TclApp CLI
+
+                Use -relativeto, -anchor, -alias, file spec
+
+		Resulting list of files is written as package
+                definition.
+
+                tclapp -define-pkg FOO ...
+
+
+*       TclApp UI has interface to create a definition.
+
+Required contents
+-----------------
+
+        Package name            | Key information
+        Package version         |
+
+        Packages required by the package, names (and versions)
+        Packages in conflict with this package, names (and versions)
+
+        List of base directories containing package files.
+        Per base directory a list of files belonging to the
+        package. No patterns allowed. Has to list all files
+        explicitly -> internal representation.
+
+        Input languages may use patterns for convenience.
+
+
+
+Searching for package definitions
+---------------------------------
+
+(1)     starkit::topdir/data/tap, auto_path, tcl_pkgPath
+        =>      *.{tdk,tpj,tap}
+
+(2)     TCLAPP_PKGPATH
+        List of paths, separated by ':' (';' on windows).
+
+(3)     Windows, Registry
+        ?? Which key to use ??
+
+TclApp scans 1, 2, 3 in this order for files, and loads them in
+order. If two files A and B both declare a package P the file loaded
+last has precedence. I.e. files loaded later can overwrite earlier
+definitions.
+
+
+File format for reading package definitions
+-------------------------------------------
+
+*       Base format is 'TclDevKit Project File Format version 2.0'.
+
+        See devkit/doc/FileFormat.txt for description.
+
+*       Tool information
+
+        Tool string:    {TclDevKit TclApp PackageDefinition}
+        Tool Version:   1.0
+
+*       Recognized extensions:  .tdk    (Tcl Dev Kit)
+                                .tap    (TclApp PackageDefinition)
+				.tpj	(TclPro Project)
+
+*       Specific commands:
+
+	See 'TclApp_FileFormats.txt'

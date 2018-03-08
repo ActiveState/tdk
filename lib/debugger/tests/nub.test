@@ -1,0 +1,1367 @@
+# This file contains tests for the nub.tcl file.
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1998-2000 by Ajuba Solutions
+#
+
+
+#
+# RCS: @(#) $Id: nub.test,v 1.14 2001/10/17 19:04:05 andreas_kupries Exp $
+
+if {[string compare test [info procs test]] == 1} {
+    lappend auto_path [file join [file dirname [info script]]]
+    package require protest
+    namespace import ::protest::*
+}
+
+catch {parse} parseMsg
+if {[regexp "invalid command" $parseMsg]} {
+    package require parser
+}
+
+if {[string compare testGui [info procs launchDbg]] == 1} {
+    source [file join $::tcltest::testsDirectory dbgLaunch.tcl]
+}
+
+set dummy2 [file join $::tcltest::temporaryDirectory dummy2.tcl]
+set dummy3 [file join $::tcltest::temporaryDirectory dummy3.tcl]
+
+test nub-1.1 {DbgNub_Run, single step} {
+    testDbg {
+	set x 1
+	set y 2
+    } {
+	dbg::step; waitForApp
+	dbg::getStack
+    }
+} {{0 {} global} {0 {1 3 {11 8}} source dummy.tcl}}
+test nub-1.2 {DbgNub_Run, step into subcommand} {
+    testDbg {set x [set y 2]
+    set y 2} {
+	dbg::step; waitForApp
+	dbg::getStack
+    }
+} {{0 {} global} {0 {1 1 {7 7}} source dummy.tcl}}
+test nub-1.3 {DbgNub_Run, step into procedure} {
+    testDbg {proc foo {} { set x 1 }
+    foo
+    set y 2} {
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	dbg::getStack
+    }
+} {{0 {} global} {0 {1 2 {28 4}} source dummy.tcl} {1 {1 1 {14 8}} proc ::foo {}}}
+test nub-1.4 {DbgNub_Run, step at end of procedure} {
+    testDbg {proc foo {} { set x 1 }
+    foo
+    set y 2} {
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	dbg::getStack
+    }
+} {{0 {} global} {0 {1 3 {36 8}} source dummy.tcl}}
+test nub-1.5 {DbgNub_Run, stale step procedures} {
+    testDbg {proc foo {} {
+	set x 1
+	set y 2
+	set z 3
+    }
+    foo
+    set y 4
+    set z 5} {
+	dbg::step; waitForApp
+	dbg::addLineBreakpoint {1 3 {}}
+	dbg::addLineBreakpoint {1 8 {}}
+	dbg::step; waitForApp
+	dbg::step out; waitForApp
+	set result [list [dbg::getStack]]
+	dbg::run; waitForApp
+	lappend result [dbg::getStack]
+    }
+} {{{0 {} global} {0 {1 6 {51 4}} source dummy.tcl} {1 {1 3 {24 8}} proc ::foo {}}} {{0 {} global} {0 {1 8 {71 8}} source dummy.tcl}}}
+test nub-1.6 {DbgNub_Run, step to result, code is OK} {
+    testDbg {
+	set x 1
+    } {
+	dbg::step cmdresult; waitForApp
+	set result [dbg::getResult 0]
+    }
+} {0 {}}
+test nub-1.7 {DbgNub_Run, step to result, code is ERROR} {
+    testDbg {
+	thisCmdShouldNotExist
+    } {
+	dbg::step cmdresult; waitForApp
+	set result [dbg::getResult 0]
+    }
+} {1 {}}
+test nub-1.8 {DbgNub_Run, step to result, code is RETURN} {
+    testDbg {
+	while {1} {
+	    return
+	}
+    } {
+	dbg::step; waitForApp
+	dbg::step cmdresult; waitForApp
+	set result [dbg::getResult -1]
+    }
+} {2 {}}
+test nub-1.9 {DbgNub_Run, step to result, code is BREAK} {
+    testDbg {
+	while {1} {
+	    break
+	}
+    } {
+	dbg::step; waitForApp
+	dbg::step cmdresult; waitForApp
+	set result [dbg::getResult -1]
+    }
+} {3 {}}
+test nub-1.10 {DbgNub_Run, step to result, code is CONTINUE} {
+    testDbg {
+	while {1} {
+	    continue
+	}
+    } {
+	dbg::step; waitForApp
+	dbg::step cmdresult; waitForApp
+	set result [dbg::getResult -1]
+    }
+} {4 {}}
+test nub-1.11 {DbgNub_Run, step to result} {
+    testDbg {
+	proc recurse {n} {
+	    if {$n == 1} {
+		return $n
+	    } else {
+		return [expr {$n + [recurse [expr {$n - 1}]]}]
+	    }
+	}
+	recurse 4
+    } {
+	for {set i 0} {$i < 7} {incr i} {
+	    dbg::step; waitForApp
+	}
+	dbg::step cmdresult; waitForApp
+	dbg::step cmdresult; waitForApp
+	set result [dbg::getResult -1]
+    }
+} {2 6}
+
+test nub-2.1 {DbgNub_CheckOver, curLevel < stepLevel} {
+    testDbg {proc foo {} { set x 1 }
+    foo
+    set y 2} {
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	set result [dbg::getStack]
+	dbg::step over; waitForApp
+	lappend result [dbg::getStack]
+    }
+} {{0 {} global} {0 {1 2 {28 4}} source dummy.tcl} {1 {1 1 {14 8}} proc ::foo {}} {{0 {} global} {0 {1 3 {36 8}} source dummy.tcl}}}
+test nub-2.2 {DbgNub_CheckOver, currentCmdLevel < stepCmdLevel} {
+    testDbg {proc foo {args} {set x 1}
+    expr [expr 4 + [foo 3]] + [concat 4]} {
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	dbg::step over; waitForApp
+	dbg::getStack
+    }
+} {{0 {} global} {0 {1 2 {57 8}} source dummy.tcl}}
+test nub-2.3 {DbgNub_CheckOver, currentCmdLevel < stepCmdLevel} {
+    testDbg {proc foo {args} {set x 1}
+    proc bar {} { set y 1 }
+    foo [bar]} {
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	dbg::step over; waitForApp
+	dbg::getStack
+    }
+} {{0 {} global} {0 {1 3 {58 10}} source dummy.tcl} {1 {1 1 {17 7}} proc ::foo args}}
+test nub-2.4 {DbgNub_CheckOver, curLevel == stepLevel && currentCmdLevel == stepCmdLevel} {
+    testDbg {
+	proc foo {args} { set x 1 }
+	proc bar {} { set y 1 }
+        foo [bar] [bar]
+	set y 2
+    } {
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	dbg::step over; waitForApp
+	set result [list [dbg::getStack]]
+	dbg::step over; waitForApp
+	lappend result [list [dbg::getStack]]
+    }
+} {{{0 {} global} {0 {1 4 {74 3}} source dummy.tcl}} {{{0 {} global} {0 {1 4 {63 16}} source dummy.tcl} {1 {1 2 {20 8}} proc ::foo args}}}}
+test nub-2.5 {DbgNub_CheckOver} {
+    testDbg {
+	proc foo {args} { set x 1 }
+	proc bar {} { set y 1 }
+	if {[bar]} {
+	    foo [foo [bar] [bar]]
+	}
+	set y 2
+    } {
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	dbg::step over; waitForApp
+	set result [list [dbg::getStack]]		;# first foo
+	dbg::step; waitForApp
+	dbg::step over; waitForApp
+	lappend result [list [dbg::getStack]]	;# set x 1
+    }
+} {{{0 {} global} {0 {1 5 {74 22}} source dummy.tcl}} {{{0 {} global} {0 {1 5 {74 22}} source dummy.tcl} {1 {1 2 {20 8}} proc ::foo args}}}}
+test nub-2.6 {DbgNub_CheckOver, source} {
+    makeFile {set x 3} $dummy2
+    testDbg {source dummy2.tcl
+    set y 2} {
+	dbg::step over; waitForApp
+	dbg::getStack		;# set y 2
+    }
+} {{0 {} global} {0 {1 2 {22 8}} source dummy.tcl}}
+
+test nub-3.1 {DbgNub_CheckOut, procedure} {
+    testDbg {
+	proc foo {args} { set x 1; set y 2 }
+	foo
+	set y 2
+    } {
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	dbg::step out; waitForApp
+	dbg::getStack		;# set y 2
+    }
+} {{0 {} global} {0 {1 4 {45 8}} source dummy.tcl}}
+test nub-3.2 {DbgNub_CheckOut, procedure} {
+    testDbg {
+	proc foo {a} {set x 1; set y 2}
+	proc bar {} {set z 3; set z 4}
+	foo [bar]
+	set y 2
+    } {
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	set result [list [dbg::getStack]]		;# set z 3
+	dbg::step out; waitForApp
+	lappend result [list [dbg::getStack]]	;# set x 1
+    }
+} {{{0 {} global} {0 {1 4 {72 3}} source dummy.tcl} {1 {1 3 {48 8}} proc ::bar {}}} {{{0 {} global} {0 {1 4 {67 10}} source dummy.tcl} {1 {1 2 {16 8}} proc ::foo a}}}}
+test nub-3.3 {DbgNub_CheckOut, source} {
+    makeFile {
+	set x 1
+	set z 3
+    } $dummy2
+    testDbg {
+	source dummy2.tcl
+	set y 2
+    } {
+	dbg::step; waitForApp
+	set result [list [dbg::getStack]]		;# set x 1
+	dbg::step out; waitForApp
+	lappend result [list [dbg::getStack]]	;# set y 2
+    }
+} {{{0 {} global} {0 {1 2 {2 18}} source dummy.tcl} {0 {2 2 {2 8}} source dummy2.tcl}} {{{0 {} global} {0 {1 3 {21 8}} source dummy.tcl}}}}
+
+test nub-4.1 {DbgNub_UninstrumentProc} {
+    testDbg {
+	proc foo {} {set x 1}
+        foo
+	foo
+	set y 2
+    } {
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	set result [list [dbg::getStack]]		;# set x 1
+	dbg::uninstrumentProc ::foo {1 2 {2 21}}
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	lappend result [list [dbg::getStack]]       ;# set y 2
+    }
+} {{{0 {} global} {0 {1 3 {32 4}} source dummy.tcl} {1 {1 2 {15 7}} proc ::foo {}}} {{{0 {} global} {0 {1 5 {42 8}} source dummy.tcl}}}}
+
+test nub-5.1 {DbgNub_InstrumentProc} {
+    testDbg {
+	foo
+	foo
+	set y 2
+    } {
+	dbg::Send DbgNub_procCmd foo {} {set x 1}
+	dbg::step; waitForApp
+	set result [list [dbg::getStack]]		;# foo
+	dbg::instrumentProc ::foo [dbg::getProcLocation ::foo]
+	dbg::step; waitForApp
+	lappend result [list [dbg::getStack]]       ;# set x 1
+    }
+} {{{0 {} global} {0 {1 3 {7 4}} source dummy.tcl}} {{{0 {} global} {0 {1 3 {7 4}} source dummy.tcl} {1 {2 1 {15 7}} proc ::foo {}}}}}
+
+testDbg {set x 1} {
+    test nub-6.1 {DbgNub_CollateStacks, no context} {
+	dbg::Send eval {
+	    array set DbgNub {
+		stack {{0 global}}
+		contextStack {}
+		context {}
+		locations {}
+	    }
+	    DbgNub_CollateStacks
+	}
+    } {{0 {} global}}
+    test nub-6.2 {DbgNub_CollateStacks, simple stack} {
+	dbg::Send eval {
+	    array set DbgNub {
+		stack {{0 global}}
+		contextStack {}
+		context {0 global}
+		locations {loc1}
+	    }
+	    DbgNub_CollateStacks
+	}
+    } {{0 loc1 global}}
+    test nub-6.3 {DbgNub_CollateStacks, simple stack} {
+	dbg::Send eval {
+	    array set DbgNub {
+		stack {{0 global} {1 proc foo 1 2 3}}
+		contextStack {{{0 global} {loc1}}}
+		context {1 proc foo 1 2 3}
+		locations {loc2}
+	    }
+	    DbgNub_CollateStacks
+	}
+    } {{0 loc1 global} {1 loc2 proc foo 1 2 3}}
+    test nub-6.4 {DbgNub_CollateStacks, virtual contextStack frames} {
+	dbg::Send eval {
+	    array set DbgNub {
+		stack {{0 global} {1 proc foo 1 2 3}}
+		contextStack {{{0 global} {loc1}} {{1 proc foo 1 2 3} {loc2}}}
+		context {1 {user eval}}
+		locations {loc3}
+	    }
+	    DbgNub_CollateStacks
+	}
+    } {{0 loc1 global} {1 loc2 proc foo 1 2 3} {1 loc3 {user eval}}}
+    test nub-6.5 {DbgNub_CollateStacks, virtual contextStack frames} {
+	dbg::Send eval {
+	    array set DbgNub {
+		stack {{0 global} {1 proc foo 1 2 3} {2 proc bar}}
+		contextStack {
+		    {{0 global} {{1 1 {}}}}
+		    {{1 proc foo 1 2 3} {{1 3 {}}}}
+		}
+		context {1 {user eval}}
+		locations {{2 1 {}}}
+	    }
+	    DbgNub_CollateStacks
+	}
+    } {{0 {1 1 {}} global} {1 {1 3 {}} proc foo 1 2 3} {1 {2 1 {}} {user eval}} {2 {} proc bar}}
+    test nub-6.6 {DbgNub_CollateStacks, uninstrumented code and new stacks} {
+	dbg::Send eval {
+	    array set DbgNub {
+		stack {
+		    {0 global}
+		    {1 proc foo 1 2 3}
+		    {2 proc bar}
+		    {1 uplevel}
+		    {2 proc baz}
+		}
+		contextStack {
+		    {{0 global} {{1 1 {}}}}
+		    {{1 proc foo 1 2 3} {{1 3 {}}}}
+		}
+		context {2 proc baz}
+		locations {{1 4 {}}}
+	    }
+	    DbgNub_CollateStacks
+	}
+    } {{0 {1 1 {}} global} {1 {1 3 {}} proc foo 1 2 3} {2 {} proc bar} {1 {} uplevel} {2 {1 4 {}} proc baz}}
+    test nub-6.7 {DbgNub_CollateStacks, prior code} {
+	dbg::Send eval {
+	    array set DbgNub {
+		stack {
+		    {0 global}
+		    {1 proc foo 3 4 5}
+		    {2 proc blat}
+		    {0 event}
+		    {1 proc foo 1 2 3}
+		    {2 proc bar}
+		    {1 uplevel}
+		    {2 proc baz}
+		}
+		contextStack {
+		    {{1 proc foo 1 2 3} {{1 3 {}}}}
+		}
+		context {2 proc baz}
+		locations {{1 4 {}}}
+	    }
+	    DbgNub_CollateStacks
+	}
+    } {{0 {} global} {1 {} proc foo 3 4 5} {2 {} proc blat} {0 {} event} {1 {1 3 {}} proc foo 1 2 3} {2 {} proc bar} {1 {} uplevel} {2 {1 4 {}} proc baz}}
+    test nub-6.8 {DbgNub_CollateStacks, stopping in uninstrumented code} {
+	dbg::Send eval {
+	    array set DbgNub {
+		stack {
+		    {0 global}
+		    {1 proc foo 1 2 3}
+		    {2 proc blat}
+		}
+		contextStack {
+		    {{0 global} {{1 1 {}}}}
+		}
+		context {1 proc foo 1 2 3}
+		locations {{1 3 {}}}
+	    }
+	    DbgNub_CollateStacks
+	}
+    } {{0 {1 1 {}} global} {1 {1 3 {}} proc foo 1 2 3} {2 {} proc blat}}
+    test nub-6.9 {DbgNub_CollateStacks, empty instrument frames} {
+	dbg::Send eval {
+	    array set DbgNub {
+		stack {
+		    {0 global}
+		    {1 proc foo 1 2 3}
+		    {0 event}
+		    {1 proc blat}
+		}
+		contextStack {
+		    {{0 global} {{1 1 {}}}}
+		    {{1 proc foo 1 2 3} {{1 3 {}}}}
+		    {{0 event} {}}
+		}
+		context {1 proc blat}
+		locations {{1 5 {}}}
+	    }
+	    DbgNub_CollateStacks
+	}
+    } {{0 {1 1 {}} global} {1 {1 3 {}} proc foo 1 2 3} {0 {} event} {1 {1 5 {}} proc blat}}
+}
+
+test nub-7.1 {DbgNub_GetVar} {
+    testDbg {set x abcdef
+    set y ghijklmnop
+    set x} {
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	set result {}
+	lappend result [dbg::Send DbgNub_GetVar 0 -1 x]
+	lappend result [dbg::Send DbgNub_GetVar 0 3 x]
+	lappend result [dbg::Send DbgNub_GetVar 0 -1 {x y}]
+	lappend result [dbg::Send DbgNub_GetVar 0 3 {x y}]
+    }
+} {{{x s abcdef}} {{x s abc}} {{x s abcdef} {y s ghijklmnop}} {{x s abc} {y s ghi}}}
+test nub-7.2 {DbgNub_GetVar} {
+    testDbg {array set x {foo abcdef bar ghijkl}
+    set x} {
+	dbg::step; waitForApp
+	set result {}
+	lappend result [dbg::Send DbgNub_GetVar 0 -1 x]
+	lappend result [dbg::Send DbgNub_GetVar 0 3 x]
+    }
+} {{{x a {foo abcdef bar ghijkl}}} {{x a {foo abc bar ghi}}}}
+test nub-7.3 {DbgNub_GetVar} {
+    testDbg {array set x {foo abcdef bar ghijkl}
+    set x} {
+	dbg::step; waitForApp
+	set result {}
+	lappend result [dbg::Send DbgNub_GetVar 0 0 x]
+    }
+} {{{x a {foo a bar g}}}}
+test nub-7.4 {DbgNub_GetVar, partially constructed env entries, no truncate} {
+    # See Bug: 4120
+    testDbg {
+	entry .e -textvariable env(nonexistent)
+	exit
+    } {
+	dbg::step; waitForApp
+	set result [dbg::Send DbgNub_GetVar 0 -1 env]
+    } {} wish
+    catch {unset a}
+    array set a [lindex [lindex $result 0] 2]
+    set result $a(nonexistent)
+} {}
+test nub-7.5 {DbgNub_GetVar, partially constructed env entries, truncate} {
+    # See Bug: 4120
+    testDbg {
+	entry .e -textvariable env(nonexistent)
+	exit
+    } {
+	dbg::step; waitForApp
+	set result [dbg::Send DbgNub_GetVar 0 0 env]
+    } {} wish
+    catch {unset a}
+    array set a [lindex [lindex $result 0] 2]
+    set result $a(nonexistent)
+} {}
+test nub-7.6 {DbgNub_GetVar, fetch scalar variable that is being traced} {
+    testDbg {
+	proc foo {args} {
+	    return 3
+	}
+	set x 1
+	trace variable x r foo
+	set x
+	exit
+    } {
+	set result {}
+	dbg::addLineBreakpoint {1 3 {}}
+	dbg::run; waitForApp	;# Run until the trace fires
+	lappend result [dbg::getVar 0 0 x]
+	lappend result [list [dbg::getStack]]	;# set y 3
+    }
+} {{{x s 1}} {{{0 {} global} {0 {1 7 {71 6}} source dummy.tcl} {1 {1 3 {25 9}} proc ::foo args}}}}	
+test nub-7.7 {DbgNub_GetVar, fetch array element that is being traced} {
+    # This case tests for Bug 4095.
+    testDbg {
+	proc foo {args} {
+	    return 3
+	}
+	set x(1) 1
+	trace variable x r foo
+	set x
+	exit
+    } {
+	set result {}
+	dbg::addLineBreakpoint {1 3 {}}
+	dbg::run; waitForApp	;# Run until the trace fires
+	lappend result [dbg::getVar 0 0 x(1)]
+	lappend result [list [dbg::getStack]]	;# set y 3
+    }
+} {{{x(1) s 1}} {{{0 {} global} {0 {1 7 {74 6}} source dummy.tcl} {1 {1 3 {25 9}} proc ::foo args}}}}	
+
+test nub-8.1 {DbgNub_Proc, simple name} {
+    testDbg {proc foo {} {set x 1}
+    set x} {
+	dbg::step; waitForApp
+	set result {}
+	lappend result [dbg::Send DbgNub_infoCmd procs foo]
+	lappend result [dbg::Send set ::DbgNub(proc=::foo)]
+    }
+} {foo {1 1 {0 22}}}
+test nub-8.2 {DbgNub_Proc, namespace name} {
+    testDbg {namespace eval blat {proc foo {} {set x 1}}
+    set x} {
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	set result {}
+	lappend result [dbg::Send DbgNub_infoCmd commands ::blat::*]
+	lappend result [dbg::Send set ::DbgNub(proc=::blat::foo)]
+    }
+} {::blat::foo {1 1 {21 21}}}
+test nub-8.3 {DbgNub_Proc, upvar variables not being unset} {
+    testDbg {set x fail
+    proc foo {} {
+	upvar x b
+	set b pass
+    }
+    foo
+    set x} {
+	dbg::addLineBreakpoint {1 7 {}}
+	dbg::run; waitForApp
+	set result [dbg::Send set ::x]
+	lappend result
+    }
+} {pass}
+test nub-8.4 {DbgNub_Proc, upvar variables not being unset} {
+    # This tests a very special failure mode in Tcl where an argument
+    # has been unset and then turned into an upvar but still shows up
+    # on the locals table
+    testDbg {set x fail
+    proc foo {b} {
+	unset b
+	upvar x b
+	set b pass
+    }
+    foo 3
+    set x} {
+	dbg::addLineBreakpoint {1 8 {}}
+	dbg::run; waitForApp
+	set result [dbg::Send set ::x]
+	lappend result
+    }
+} {pass}
+test nub-8.5 {DbgNub_Proc, upvar variables not being unset} {
+    testDbg {set x fail
+    proc foo {} {
+	set b 5
+	unset b
+	upvar x b
+	set b pass
+    }
+    foo
+    set x} {
+	dbg::addLineBreakpoint {1 9 {}}
+	dbg::run; waitForApp
+	set result [dbg::Send set ::x]
+	lappend result
+    }
+} {pass}
+
+test nub-9.1 {DbgNub_Return} {
+    testDbg {set x [list [catch {return -code break foo} msg] $msg]
+    set x} {
+	dbg::addLineBreakpoint {1 2 {}}
+	dbg::run; waitForApp
+	set result [dbg::Send set ::x]
+    }
+} {2 foo}
+test nub-9.2 {DbgNub_Return} {
+    testDbg {proc bar {} {return -code break foo}
+    set x [list [catch {bar} msg] $msg]
+    set x} {
+	dbg::addLineBreakpoint {1 3 {}}
+	dbg::run; waitForApp
+	set result [dbg::Send set ::x]
+    }
+} {3 foo}
+test nub-9.3 {DbgNub_Return} {
+    testDbg {set DbgNub(logFile) [open nublog w]; set DbgNub(debug) 3; proc bar {} {if {1} {return -code break foo}}
+    set x [list [catch {bar} msg] $msg]
+    set x} {
+	dbg::addLineBreakpoint {1 3 {}}
+	dbg::run; waitForApp
+	set result [dbg::Send set ::x]
+    }
+} {3 foo}
+file delete -force [file join $::tcltest::temporaryDirectory nublog]
+
+test nub-10.1 {DbgNub_procWrapper, bad args} {
+    testDbg {proc foo
+    foo
+    return} {
+	set result {}
+	dbg::step; lappend result [waitForApp]
+    }
+} {error}
+test nub-10.2 {DbgNub_procWrapper, simple proc} {
+    testDbg {proc foo {arg} {set ::x $arg}
+    foo 3
+    return} {
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	set result [dbg::Send set ::x]
+    }
+} {3}
+test nub-10.3 {DbgNub_procWrapper, dynamic proc} {
+    testDbg {eval proc {::foo {arg} {set ::x $arg}}
+    foo 3
+    return} {
+	set result {}
+	dbg::Send set ::DbgNub(dynProc) 1
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	lappend result [dbg::getStack]
+	dbg::step; waitForApp
+	lappend result [dbg::Send set ::x]
+    }
+} {{{0 {} global} {0 {1 2 {43 6}} source dummy.tcl} {1 {2 1 {16 12}} proc ::foo arg}} 3}
+test nub-10.4 {DbgNub_procWrapper, dynamic proc} {
+    testDbg {eval proc {::foo {arg} {set ::x $arg}}
+    foo 3
+    return} {
+	set result {}
+	dbg::Send set ::DbgNub(dynProc) 0
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	lappend result [dbg::getStack] [dbg::Send set ::x]
+    }
+} {{{0 {} global} {0 {1 3 {53 7}} source dummy.tcl}} 3}
+test nub-10.5 {DbgNub_procWrapper, failed instrumentation} "
+    testDbg \"proc foo {} \\\"\\\\{\\\"
+    foo
+    return\" {
+	set result {}
+	dbg::step; lappend result \[waitForApp\]
+	dbg::step; lappend result \[waitForApp\]
+    }
+" {linebreak error}
+test nub-10.6 {DbgNub_procWrapper, unsetting procs} {
+    testDbg {proc foo {arg} {set ::x $arg}
+    eval proc {foo {arg} {set ::x $arg}}
+    foo 3
+    return} {
+	set result {}
+	dbg::Send set ::DbgNub(dynProc) 0
+	dbg::step; waitForApp
+	lappend result [dbg::Send set ::DbgNub(proc=::foo)]
+	dbg::step; waitForApp
+	lappend result [dbg::Send DbgNub_infoCmd exists ::DbgNub(proc=::foo)]
+	dbg::step; waitForApp
+	lappend result [dbg::getStack] [dbg::Send set ::x]
+    }
+} {{1 1 {0 30}} 0 {{0 {} global} {0 {1 4 {85 7}} source dummy.tcl}} 3}
+test nub-10.7 {
+    proc: DbgNub_procWrapper
+    test: masking standard Tcl commands should produce an error
+} {
+    testDbg {
+	proc list {} {
+	    return 1
+	}
+	foo::list
+    } {
+	dbg::run; set result [waitForApp]
+	lappend result [dbg::getStack]
+    }
+} {error {{0 {} global} {0 {1 2 {2 32}} source dummy.tcl}}}
+test nub-10.8 {
+    proc: DbgNub_procWrapper
+    test: masking standard Tcl commands in a namespace should not
+	  produce an error 
+} {
+    testDbg {
+	namespace eval foo {
+	    proc list {} {
+		return 1
+	    }
+	}
+	foo::list
+    } {
+	dbg::addLineBreakpoint {1 4 {}}
+	dbg::run; set result [waitForApp]
+	lappend result [dbg::Send set ::errorInfo]
+	lappend result [dbg::getStack]
+    }
+} {linebreak {} {{0 {} global} {0 {1 7 {65 10}} source dummy.tcl} {1 {1 4 {45 9}} proc ::foo::list {}}}}
+
+
+test nub-11.1 {DbgNub_sourceWrapper} {
+    makeFile {return -code break foobar} $dummy2
+    testDbg {set x [list [catch {source dummy2.tcl} msg] $msg]
+    set x} {
+	dbg::addLineBreakpoint {1 2 {}}
+	dbg::run; waitForApp
+	set result [dbg::Send set ::x]
+    }
+} {3 foobar}
+test nub-11.2 {DbgNub_sourceWrapper} {
+    makeFile {error foo} $dummy2
+    testDbg {set x [list [catch {source dummy2.tcl} msg] $msg]
+    set x} {
+	dbg::addLineBreakpoint {1 2 {}}
+	dbg::run; waitForApp
+	set result [dbg::Send set ::x]
+    }
+} {1 foo}
+test nub-11.3 {DbgNub_sourceWrapper, skipping autoloaded files} {
+    makeFile {
+	proc foo {} {
+	    return 5
+	}
+    } $dummy2
+    testDbg {set x [foo]
+    set x} {
+	dbg::Send set ::auto_index(foo) {source dummy2.tcl}
+	dbg::Send set ::DbgNub(autoLoad) 0
+	dbg::Send set ::DbgNub(dynProc) 1
+	dbg::Send set ::DbgNub(excludeFiles) {}
+	dbg::Send set ::DbgNub(includeFiles) {*}
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	list [dbg::getStack] [dbg::Send set ::x]
+    }
+} {{{0 {} global} {0 {1 2 {16 6}} source dummy.tcl}} 5}
+test nub-11.4 {DbgNub_sourceWrapper, skipping autoloaded files, recursive} {
+    makeFile {
+	proc foo {} {
+	    return 5
+	}
+	source dummy3.tcl
+    } $dummy2
+    makeFile {
+	set ::x 6
+    } $dummy3
+    testDbg {set x [foo]
+    set x} {
+	dbg::Send set ::auto_index(foo) {source dummy2.tcl}
+	dbg::Send set ::DbgNub(autoLoad) 0
+	dbg::Send set ::DbgNub(dynProc) 1
+	dbg::Send set ::DbgNub(excludeFiles) {}
+	dbg::Send set ::DbgNub(includeFiles) {*}
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	list [dbg::getStack] [dbg::Send set ::x]
+    }
+} {{{0 {} global} {0 {1 2 {16 6}} source dummy.tcl}} 5}
+test nub-11.5 {DbgNub_sourceWrapper, instrumenting autoloaded files, recursive} {
+    makeFile {
+	proc foo {} {
+	    return 5
+	}
+	source dummy3.tcl
+    } $dummy2
+    makeFile {
+	set ::x 6
+    } $dummy3
+    testDbg {set x [foo]
+    set x} {
+	dbg::Send set ::auto_index(foo) {source dummy2.tcl}
+	dbg::Send set ::DbgNub(autoLoad) 1
+	dbg::Send set ::DbgNub(dynProc) 1
+	dbg::Send set ::DbgNub(excludeFiles) {}
+	dbg::Send set ::DbgNub(includeFiles) {*}
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	set result [list [dbg::getStack]]
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	lappend result [dbg::getStack]
+    }
+} {{{0 {} global} {0 {1 1 {7 3}} source dummy.tcl} {1 {} proc ::unknown args} {2 {} proc ::auto_load {cmd namespace}} {0 {} uplevel} {0 {2 2 {2 31}} source dummy2.tcl}} {{0 {} global} {0 {1 1 {7 3}} source dummy.tcl} {1 {} proc ::unknown args} {2 {} proc ::auto_load {cmd namespace}} {0 {} uplevel} {0 {2 5 {34 18}} source dummy2.tcl} {0 {3 2 {2 10}} source dummy3.tcl}}}
+test nub-11.6 {DbgNub_sourceWrapper, skipping auto imported files} {
+    makeFile {
+	namespace eval foo {
+	    proc bar {} {
+		return 5
+	    }
+	    namespace export bar
+	}
+    } $dummy2
+    testDbg {
+	namespace import ::foo::bar
+	set x [bar]
+	set x
+    } {
+	dbg::Send set ::auto_index(::foo::bar) {source dummy2.tcl}
+	dbg::Send set ::DbgNub(autoLoad) 0
+	dbg::Send set ::DbgNub(dynProc) 1
+	dbg::Send set ::DbgNub(excludeFiles) {}
+	dbg::Send set ::DbgNub(includeFiles) {*}
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	list [dbg::getStack] [dbg::Send set ::x]
+    }
+} {{{0 {} global} {0 {1 4 {44 6}} source dummy.tcl}} 5}
+test nub-11.7 {DbgNub_sourceWrapper, skipping auto imported files, recursive} {
+    makeFile {
+	namespace eval foo {
+	    proc bar {} {
+		return 5
+	    }
+	    namespace export bar
+	}
+	source dummy3.tcl
+    } $dummy2
+    makeFile {
+	set ::x 6
+    } $dummy3
+    testDbg {
+	namespace import ::foo::bar
+	set x [bar]
+	set x
+    } {
+	dbg::Send set ::auto_index(::foo::bar) {source dummy2.tcl}
+	dbg::Send set ::DbgNub(autoLoad) 0
+	dbg::Send set ::DbgNub(dynProc) 1
+	dbg::Send set ::DbgNub(excludeFiles) {}
+	dbg::Send set ::DbgNub(includeFiles) {*}
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	list [dbg::getStack] [dbg::Send set ::x]
+    }
+} {{{0 {} global} {0 {1 4 {44 6}} source dummy.tcl}} 5}
+test nub-11.8 {DbgNub_sourceWrapper, instrumenting auto imported files, recursive} {
+    makeFile {
+	namespace eval foo {
+	    proc bar {} {
+		return 5
+	    }
+	    namespace export bar
+	}
+	source dummy3.tcl
+    } $dummy2
+    makeFile {
+	set ::x 6
+    } $dummy3
+    testDbg {
+	namespace import ::foo::bar
+	set x [bar]
+	set x
+    } {
+	dbg::Send set ::auto_index(::foo::bar) {source dummy2.tcl}
+	dbg::Send set ::DbgNub(autoLoad) 1
+	dbg::Send set ::DbgNub(dynProc) 1
+	dbg::Send set ::DbgNub(excludeFiles) {}
+	dbg::Send set ::DbgNub(includeFiles) {*}
+	dbg::step; waitForApp
+	set result [list [dbg::getStack]]
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	lappend result [dbg::getStack]
+    }
+} {{{0 {} global} {0 {1 2 {2 28}} source dummy.tcl} {1 {} proc ::auto_import pattern} {0 {} uplevel} {0 {2 2 {2 87}} source dummy2.tcl}} {{0 {} global} {0 {1 2 {2 28}} source dummy.tcl} {1 {} proc ::auto_import pattern} {0 {} uplevel} {0 {2 8 {90 18}} source dummy2.tcl} {0 {3 2 {2 10}} source dummy3.tcl}}}
+test nub-11.9 {DbgNub_sourceWrapper, skipping package require files} {
+    makeFile {
+	proc foo {} {
+	    return 5
+	}
+	source dummy3.tcl
+    } $dummy2
+    makeFile {
+	set ::x 6
+    } $dummy3
+    testDbg {
+	package require foo 1.0
+	set x [foo]
+	set x
+    } {
+	dbg::Send set ::DbgNub(dynProc) 0
+	dbg::Send proc blat {args} {source dummy2.tcl; package provide foo 1.0}
+	dbg::Send package ifneeded foo 1.0 blat
+	dbg::Send set ::DbgNub(autoLoad) 0
+	dbg::Send set ::DbgNub(dynProc) 1
+	dbg::Send set ::DbgNub(excludeFiles) {}
+	dbg::Send set ::DbgNub(includeFiles) {*}
+	dbg::step; waitForApp
+	set result [list [dbg::getStack]]
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	lappend result [dbg::getStack]
+    }
+} {{{0 {} global} {0 {1 3 {27 12}} source dummy.tcl}} {{0 {} global} {0 {1 4 {40 6}} source dummy.tcl}}}
+test nub-11.10 {DbgNub_sourceWrapper, instrumenting package require files} {
+    makeFile {
+	proc foo {} {
+	    return 5
+	}
+	source dummy3.tcl
+    } $dummy2
+    makeFile {
+	set ::x 6
+    } $dummy3
+    testDbg {
+	package require foo 1.0
+	set x [foo]
+	set x
+    } {
+	dbg::Send set ::DbgNub(dynProc) 0
+	dbg::Send proc blat {args} {source dummy2.tcl; package provide foo 1.0}
+	dbg::Send package ifneeded foo 1.0 blat
+	dbg::Send set ::DbgNub(autoLoad) 1
+	dbg::Send set ::DbgNub(dynProc) 1
+	dbg::Send set ::DbgNub(excludeFiles) {}
+	dbg::Send set ::DbgNub(includeFiles) {*}
+	dbg::step; waitForApp
+	set result [list [dbg::getStack]]
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	lappend result [dbg::getStack]
+    }
+} {{{0 {} global} {0 {1 2 {2 24}} source dummy.tcl} {0 {} package require} {1 {} proc ::blat args} {1 {2 2 {2 31}} source dummy2.tcl}} {{0 {} global} {0 {1 2 {2 24}} source dummy.tcl} {0 {} package require} {1 {} proc ::blat args} {1 {2 5 {34 18}} source dummy2.tcl} {1 {3 2 {2 10}} source dummy3.tcl}}}
+
+makeFile {
+    source dummyFez.tcl
+} [file join $::tcltest::temporaryDirectory dummyFoo.tcl]
+makeFile {
+    source dummyBar.tcl
+} [file join $::tcltest::temporaryDirectory dummyFez.tcl]
+makeFile {
+    source dummyBazaar.tcl
+} [file join $::tcltest::temporaryDirectory dummyBar.tcl]
+makeFile {
+    set bazaar 1
+} [file join $::tcltest::temporaryDirectory dummyBazaar.tcl]
+
+test nub-11.11 {DbgNub_sourceWrapper, included and excluded files} {
+    testDbg {
+	source dummyFoo.tcl
+    } {
+	dbg::Send set ::DbgNub(includeFiles) {*dummyBa*r.tcl}
+	dbg::Send set ::DbgNub(excludeFiles) {}
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	set result [dbg::getStack]
+    }
+} {{0 {} global} {0 {1 2 {2 20}} source dummy.tcl} {0 {2 2 {5 23}} source dummyBar.tcl} {0 {3 2 {5 13}} source dummyBazaar.tcl}}
+test nub-11.12 {DbgNub_sourceWrapper, included and excluded files} {
+    testDbg {
+	source dummyFoo.tcl
+    } {
+	dbg::Send set ::DbgNub(includeFiles) {*dummyBa*r.tcl}
+	dbg::Send set ::DbgNub(excludeFiles) {*dummyF*.tcl *Bar.tcl}
+	dbg::step; waitForApp
+	set result [dbg::getStack]
+    }
+} {{0 {} global} {0 {1 2 {2 20}} source dummy.tcl} {0 {2 2 {5 13}} source dummyBazaar.tcl}}
+test nub-11.13 {DbgNub_sourceWrapper, included and excluded files} {
+    testDbg {
+	source dummyFoo.tcl
+    } {
+	dbg::Send set ::DbgNub(includeFiles) {*F*.tcl *z*.tcl}
+	dbg::Send set ::DbgNub(excludeFiles) {*dummyF*.tcl}
+	dbg::step; waitForApp
+	set result [dbg::getStack]
+    }
+} {{0 {} global} {0 {1 2 {2 20}} source dummy.tcl} {0 {2 2 {5 13}} source dummyBazaar.tcl}}
+test nub-11.14 {DbgNub_sourceWrapper, included and excluded files} {
+    testDbg {
+	source dummyFoo.tcl
+    } {
+	dbg::Send set ::DbgNub(includeFiles) {*}
+	dbg::Send set ::DbgNub(excludeFiles) {*dummyF*.tcl *dummyZZZ.tcl}
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	set result [dbg::getStack]
+    }
+} {{0 {} global} {0 {1 2 {2 20}} source dummy.tcl} {0 {2 2 {5 23}} source dummyBar.tcl} {0 {3 2 {5 13}} source dummyBazaar.tcl}}
+
+
+test nub-12.1 {} {} {}
+testDbg {set foo yoo} {
+    set i 1
+    set exclude [dbg::Send eval {set DbgNub(excludeRename)}]
+    set command [dbg::Send eval {info commands}]
+
+    foreach x $exclude {
+	test nub-12.$i {DbgNub_renameWrapper, catch all excluded renamed commands} {
+	    catch {dbg::Send eval "rename $x foo$i"} msg
+	    set msg
+	} "cannot rename \"$x\" in the debugger"
+	incr i
+    }
+    foreach x [lsort $command] {
+	if {[lsearch $exclude $x] < 0} {
+	    test nub-12.$i "DbgNub_renameWrapper, check $x" {
+		dbg::Send eval "rename $x foo$i"
+		dbg::Send eval "rename foo$i $x"
+	    } {}   
+	}
+	incr i
+    }
+    foreach x $exclude {
+	test nub-12.$i "DbgNub_renameWrapper, renaming namespace commands that look like built-ins, check $x" {
+	    catch {dbg::Send namespace eval foo "
+		DbgNub_procCmd $x {} {}
+		::rename $x foo$i
+		::rename foo$i $x
+	    "} msg
+	    set msg
+	} {}
+	incr i
+    }
+
+}
+unset i
+unset exclude
+unset command
+
+test nub-13.1 {DbgNub_NamespaceEval, step over control structures} {
+    testDbg {
+	namespace eval foo {
+	    set y 1
+	}
+	set y 2
+    } {
+	dbg::step over; waitForApp
+	set result [list [dbg::getStack]]		;# set y 1
+	dbg::step; waitForApp
+	lappend result [list [dbg::getStack]]	;# set y 2
+    }
+} {{{0 {} global} {0 {1 2 {2 37}} source dummy.tcl} {1 {1 3 {28 8}} namespace eval ::foo}} {{{0 {} global} {0 {1 5 {40 8}} source dummy.tcl}}}}
+test nub-13.2 {DbgNub_NamespaceEval, step out} {
+    testDbg {
+	proc foo {} {
+	    namespace eval bar {
+		set y 1
+	    }
+	    set y 2
+	}
+	foo
+	set y 3
+    } {
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	set result [list [dbg::getStack]]		;# set y 1
+	dbg::step out; waitForApp
+	lappend result [list [dbg::getStack]]	;# set y 3
+    }
+} {{{0 {} global} {0 {1 8 {76 4}} source dummy.tcl} {1 {1 3 {21 38}} proc ::foo {}} {2 {1 4 {44 8}} namespace eval ::bar}} {{{0 {} global} {0 {1 9 {81 8}} source dummy.tcl}}}}
+
+test nub-14.1 {bug} {
+    testDbg {
+	proc foo\nbar {} {
+	    set x 1
+	}
+	foo\nbar
+    } {
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	dbg::getStack
+    }
+} {{0 {} global} {0 {1 5 {38 9}} source dummy.tcl} {1 {1 3 {26 8}} proc {::foo
+bar} {}}}
+
+test nub-15.1 {debugger_eval, errors} {
+    testDbg {set foo yoo} {
+	list [catch {dbg::Send debugger_eval} msg] $msg
+    }
+} {1 {wrong # args: should be "debugger_eval ?options? script"}}
+test nub-15.2 {debugger_eval, errors} {
+    testDbg {set foo yoo} {
+	list [catch {dbg::Send debugger_eval -foo} msg] $msg
+    }
+} {1 {bad switch "-foo": must be -block, or --}}
+test nub-15.3 {debugger_eval, errors} {
+    testDbg {set foo yoo} {
+	list [catch {dbg::Send debugger_eval -name} msg] $msg
+    }
+} {1 {missing argument for -name switch}}
+test nub-15.4 {debugger_eval, errors} {
+    testDbg {set foo yoo} {
+	list [catch {dbg::Send debugger_eval -name foo} msg] $msg
+    }
+} {1 {wrong # args: should be "debugger_eval ?options? script"}}
+test nub-15.5 {debugger_eval, block names} {
+    testDbg {set y 0; debugger_eval -name foo {set y 1}; set y 2} {
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	set result [list [dbg::getStack]]		;# set y 1
+	lappend result [blk::getFile 2]
+	dbg::step; waitForApp
+	lappend result [dbg::Send set ::y]
+    }
+} {{{0 {} global} {0 {1 1 {9 34}} source dummy.tcl} {0 {2 1 {0 7}} debugger_eval}} foo 1}
+test nub-15.6 {debugger_eval, -- switch} {
+    testDbg {set y 0; debugger_eval -- -name} {
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	set result [list [dbg::getStack]]
+	lappend result [blk::getFile 2]
+    }
+} {{{0 {} global} {0 {1 1 {9 23}} source dummy.tcl} {0 {2 1 {0 5}} debugger_eval}} {}}
+
+file copy -force [file join $::protest::sourceDirectory initdebug.tcl] $::tcltest::temporaryDirectory
+
+set testFile [file nativename \
+	[file join [pwd] $::tcltest::temporaryDirectory test.tcl]]
+
+test nub-16.1 {info script} {
+    # This tests bug 3093 where info script returned the wrong value on
+    # Windows.
+
+    initDbg
+    initRemoteProject REMOTE 5322
+
+    makeFile "
+	set f \[open $dummy3 w\]
+	source [file join $::tcltest::temporaryDirectory initdebug.tcl]
+	if {\[debugger_init 127.0.0.1 5322\]} {
+	    lappend result succeed
+	} else {
+	    lappend result failed
+	}
+	lappend result \[string equal \[info script\] \$argv0\]
+	lappend result \[info script\]
+	puts -nonewline \$f \$result
+	close \$f
+	exit
+    " $testFile
+
+    exec [info nameofexecutable] $testFile &
+
+    set result [waitForApp]	;# Attach
+    dbg::step run	
+    lappend result [waitForApp]	;# Exit
+    set f [open $dummy3 r]
+    lappend result [read $f]
+    close $f
+    dbg::quit
+    set result
+} [list attach exit [list succeed 1 $testFile]]
+
+test nub-17.1 {DbgNub_Instrument: disconnect while instrumenting} {
+    # Note that this test is sensitive to the timing of the two processes.
+    # If the background process takes too long, then the test won't be
+    # valid.
+
+    file delete -force $dummy2
+    makeFile {
+	lappend ::x success
+    } $dummy3
+    testDbg "
+	lappend ::x starting \[expr {\$::DbgNub(socket) != -1}\]
+	bar
+	lappend ::x \$::DbgNub(socket)
+	set f \[open $dummy2 w\]
+	puts \$f \$::x
+	close \$f
+    " {
+	dbg::Send DbgNub_procCmd bar {} "
+	    after 1000
+	    source $dummy3
+	"
+	dbg::step run
+	set dbg::appHost ""
+	after 500
+	dbg::quit
+	while {![file exists $dummy2]} {}
+	tcltest::viewFile $dummy2
+    }
+} {starting 1 success -1}
+
+test nub-18.1 {DbgNub_PushStack: renaming procedures on the stack, Bug 3613} {
+    testDbg {
+	proc foo {} {
+	    rename foo {}
+	    return success
+	}
+	foo
+	set y 3
+    } {
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	dbg::step; waitForApp
+	set result [list [dbg::getStack]]		;# return success
+	dbg::step; waitForApp
+	lappend result [list [dbg::getStack]]	;# set y 3
+    }
+} {{{0 {} global} {0 {1 6 {59 4}} source dummy.tcl} {1 {1 4 {40 15}} proc ::foo {}}} {{{0 {} global} {0 {1 7 {64 8}} source dummy.tcl}}}}
+
+test nub-19.1 {
+    proc: DbgNub_okToRename
+    test: prepending current namespace name to a simple command name
+} {
+    testDbg {
+	DbgNub_procCmd doTest {name} {
+	    DbgNub_okToRename $name $::testLevel
+	}
+	catch {namespace delete foo}
+	namespace eval foo {
+	    set ::testLevel [info level]
+	    set x 1
+	}
+    } {
+	dbg::addLineBreakpoint {1 8 {}}
+	dbg::run; waitForApp
+	set result [dbg::Send doTest list]
+    }
+} 1
+test nub-19.2 {
+    proc: DbgNub_okToRename
+    test: prepending current namespace name to a relative namespace name
+} {
+    testDbg {
+	DbgNub_procCmd doTest {name} {
+	    DbgNub_okToRename $name $::testLevel
+	}
+	catch {namespace delete foo}
+	namespace eval foo {
+	}
+	set ::testLevel [info level]
+	set x 1
+    } {
+	dbg::addLineBreakpoint {1 9 {}}
+	dbg::run; waitForApp
+	set result [dbg::Send doTest foo::list]
+    }
+} 1
+test nub-19.3 {
+    proc: DbgNub_okToRename
+    test: absolute path name
+} {
+    testDbg {
+	DbgNub_procCmd doTest {name} {
+	    DbgNub_okToRename $name $::testLevel
+	}
+	catch {namespace delete foo}
+	namespace eval foo {
+	}
+	set ::testLevel [info level]
+	set x 1
+    } {
+	dbg::addLineBreakpoint {1 9 {}}
+	dbg::run; waitForApp
+	set result [dbg::Send doTest ::foo::list]
+    }
+} 1
+test nub-19.4 {
+    proc: DbgNub_okToRename
+    test: absolute path name, matches global command
+} {
+    testDbg {
+	DbgNub_procCmd doTest {name} {
+	    DbgNub_okToRename $name $::testLevel
+	}
+	catch {namespace delete foo}
+	namespace eval foo {
+	    set ::testLevel [info level]
+	    set x 1
+	}
+    } {
+	dbg::addLineBreakpoint {1 8 {}}
+	dbg::run; waitForApp
+	set result [dbg::Send doTest ::list]
+    }
+} 0
+test nub-19.5 {
+    proc: DbgNub_okToRename
+    test: global command match
+} {
+    testDbg {
+	DbgNub_procCmd doTest {name} {
+	    DbgNub_okToRename $name $::testLevel
+	}
+	set ::testLevel [info level]
+	set x 1
+    } {
+	dbg::addLineBreakpoint {1 6 {}}
+	dbg::run; waitForApp
+	set result [dbg::Send doTest list]
+    }
+} 0
+
+test nub-20.1 {
+    proc: debugger_setCatchFlag
+    test: Verify that temporarily resetting the catch flag allows the debugger
+    to stop on caught errors.
+} {
+    testDbg {
+	catch {
+	    set x 1 bad		;# Normally suppressed
+	}
+	catch {
+	    set oldflag [debugger_setCatchFlag 1]
+	    set x 2 bad		;# Caught by debugger
+	    debugger_setCatchFlag 0
+	    set x 3 bad		;# Normally suppressed
+	}
+	catch {
+	    set x 4 bad		;# Normally suppressed
+	}
+	set x 5
+    } {
+	dbg::addLineBreakpoint {1 14 {}}
+	dbg::run; waitForApp
+	set result [list [dbg::getStack]]	;# set x 2 bad
+	dbg::Send set ::DbgNub(ignoreError) 1
+	dbg::run; waitForApp
+	lappend result [dbg::getStack]		;# set x 5
+    }
+} {{{0 {} global} {0 {1 7 {111 14}} source dummy.tcl}} {{0 {} global} {0 {1 14 {273 8}} source dummy.tcl}}}
+
+catch {file delete $dummy2}
+catch {file delete $dummy3}
+catch {file delete $testFile}
+catch {file delete -force [file join $::tcltest::temporaryDirectory initdebug.tcl]}
+
+cleanupTests
+
+if {[info exists tk_version] && !$tcl_interactive} {
+    exit
+}
+
+
+

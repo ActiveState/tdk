@@ -1,0 +1,528 @@
+# -*- tcl -*- TclOO.pcx --
+#
+#	This file implements the TclPro Checker extension for TclOO.
+#
+# Copyright (c) 2008-2014 ActiveState Software Inc.
+# All rights reserved.
+# 
+# RCS: @(#) $Id: TclOO.pcx,v 1.5 2000/05/30 22:28:53 wart Exp $
+
+# ### ######### ###########################
+## Requisites
+
+package require pcx          ; # PCX API
+#package require analyzer
+
+# ### ######### ###########################
+## Tcl core version dependencies of the package this checker is for.
+
+pcx::register TclOO
+pcx::tcldep   2.0 needs tcl 8.5
+
+# ### ######### ###########################
+# Define the namespace for the package specific commands
+
+namespace eval ::TclOO {}
+
+# ### ######### ###########################
+## Helper commands to
+## (a) define dynamic rules in a static format, and
+## (b) (de)activate them during checking.
+
+proc TclOO::check {ver mode label command rule} {
+    # FUTURE: Think of a nicer data structure for this. Also consider
+    # to move this over into the checker core, as general facility
+    # for .pcx rules.
+
+    variable dyn
+    set k [list $label $ver $mode]
+    lappend dyn($k) $command $rule
+    return
+}
+
+proc TclOO::inherit {dst _from_ src} {
+    #puts INHERIT\t$dst\t<-\t$src
+    variable dyn
+    # Copy the rules for label src to label dst.
+    foreach ks [array names dyn [list $src * *]] {
+	#puts \t==$ks
+	set kd [lreplace $ks 0 0 $dst]
+	foreach {c r} $dyn($ks) {
+	    lappend dyn($kd) $c $r
+	}
+    }
+    return
+}
+
+proc TclOO::push {label} {
+    #puts PUSH\t$label
+    variable dyn
+    set mode [expr {[analyzer::isScanning] ? "scan" : "std"}]
+    set ver  [pcx::getCheckVersion TclOO]
+    array set tmp {}
+    foreach k [lsort [array names dyn [list $label * $mode]]] {
+	if {[package vcompare [lindex $k 1] $ver] > 0} break
+	array set tmp $dyn($k)
+    }
+    set commands {}
+    foreach name [lsort [array names tmp]] {
+	#puts \t++$name
+	lappend commands $name
+	pushChecker $name $tmp($name)
+	#puts \t\t[topChecker $name]
+    }
+    return $commands
+}
+
+proc TclOO::pop {cmds} {
+    #puts POP\t$cmds
+    foreach name $cmds {
+	#puts \t--$name
+	popChecker $name
+	#puts \t\t[topChecker $name]
+    }
+    return
+}
+
+# ### ######### ###########################
+
+# ### ######### ###########################
+## Package specific message types and their human-readable
+## translations.
+
+# ### ######### ###########################
+# scanCmdsX.X --
+# Define the set of commands that need to be recursed into when 
+# generating a list of user defined procs, namespace and Class 
+# contexts and procedure name resolutions info.
+
+# ### ######### ###########################
+# Define the set of command-specific checkers used by this package.
+
+# Note: We are using oo-specific checker for everything, as a form
+# of semantic markup for all arguments of importance to oo. The
+# implementations then decide how much special work they have to
+# actually perform.
+
+# ### ######### ###########################
+# Class definitions, incl. extending of classes at runtime.
+#
+
+pcx::check 2.0 std oo::define \
+    TclOO::checkOODefine
+
+pcx::check 2.0 std oo::objdefine \
+    TclOO::checkOOObjdefine
+
+pcx::check 2.0 std oo::copy \
+    {checkSimpleArgs 1 2 checkWord}
+
+pcx::check 2.0 std oo::object \
+    {checkSimpleArgs 1 -1 {
+	{checkOption {
+	    {destroy  {checkSimpleArgs 0  0 {}}}
+	    {eval     {checkSimpleArgs 0 -1 {checkWord}}}
+	    {unknown  {checkSimpleArgs 1 -1 {TclOO::checkOOMethodNameUse checkWord}}}
+	    {variable {checkSimpleArgs 1 -1 {checkWord}}}
+	    {varname  {checkSimpleArgs 1  1 {checkWord}}}
+	} {}}
+    }}
+
+pcx::check 2.0 std oo::class \
+    {checkSimpleArgs 1 -1 {
+	{checkOption {
+	    {destroy  {checkSimpleArgs 0  0 {}}}
+	    {eval     {checkSimpleArgs 0 -1 {checkWord}}}
+	    {unknown  {checkSimpleArgs 1 -1 {TclOO::checkOOMethodNameUse checkWord}}}
+	    {variable {checkSimpleArgs 1 -1 {checkWord}}}
+	    {varname  {checkSimpleArgs 1  1 {checkWord}}}
+	    {create   {checkSimpleArgs 2 2 {
+		TclOO::checkOOClassNameDef
+		TclOO::checkOOClassBody
+	    }}}
+	    {new      {checkSimpleArgs 1 -1 {checkWord}}}
+	} {}}
+    }}
+
+# ### ######### ###########################
+## Dynamic rules, class context
+## (see "oo::define". Same, just for class script. Keep in sync).
+
+TclOO::check 2.0 std type constructor \
+    {checkSimpleArgs 2 2 {
+	TclOO::checkOOConstructorArguments
+	TclOO::checkOOConstructorBody}}
+
+TclOO::check 2.0 std type deletemethod \
+    {checkSimpleArgs 1 -1 {TclOO::checkOOMethodNameUse}}
+
+TclOO::check 2.0 std type destructor \
+    {checkSimpleArgs 1 1 {TclOO::checkOODestructorBody}}
+
+TclOO::check 2.0 std type export \
+    {checkSimpleArgs 1 -1 {TclOO::checkOOMethodNameUse}}
+
+TclOO::check 2.0 std type filter \
+    {checkSimpleArgs 0 -1 {
+	{TclOO::checkOOSlotOperation TclOO::checkOOMethodNameUse}
+    }}
+
+TclOO::check 2.0 std type forward \
+    {checkSimpleArgs 2 -1 {
+	TclOO::checkOOMethodNameDef
+	checkWord
+    }}
+
+TclOO::check 2.0 std type method \
+    {checkSimpleArgs 3 3 {
+	TclOO::checkOOMethodNameDef
+	TclOO::checkOOMethodArguments
+	TclOO::checkOOMethodBody}}
+
+TclOO::check 2.0 std type mixin \
+    {checkSimpleArgs 0 -1 {
+	{TclOO::checkOOSlotOperation TclOO::checkOOClassNameUse}
+    }}
+
+TclOO::check 2.0 std type renamemethod \
+    {checkSimpleArgs 2 2 {
+	TclOO::checkOOMethodNameUse
+	TclOO::checkOOMethodNameDef
+    }}
+
+TclOO::check 2.0 std type self.class \
+    {checkSimpleArgs 1  1 {
+	TclOO::checkOOClassNameUse}}
+
+TclOO::check 2.0 std type self \
+    TclOO::checkOOObjdefine
+
+TclOO::check 2.0 std type superclass \
+    {checkSimpleArgs 1 -1 {
+	{TclOO::checkOOSlotOperation TclOO::checkOOClassNameUse}
+    }}
+
+TclOO::check 2.0 std type unexport \
+    {checkSimpleArgs 1 -1 {TclOO::checkOOMethodNameUse}}
+
+TclOO::check 2.0 std type variable \
+    {checkSimpleArgs 0 -1 {
+	{TclOO::checkOOSlotOperation checkWord}
+    }}
+
+# ### ######### ###########################
+## Dynamic rules, instance context
+## (see "oo::objdefine". Same, just for instance script. Keep in sync).
+
+TclOO::check 2.0 std instance class \
+    {checkSimpleArgs 1 1 {TclOO::checkOOClassNameUse}}
+
+TclOO::check 2.0 std instance deletemethod \
+    {checkSimpleArgs 1 -1 {TclOO::checkOOMethodNameUse}}
+
+TclOO::check 2.0 std instance export \
+    {checkSimpleArgs 1 -1 {TclOO::checkOOMethodNameUse}}
+
+TclOO::check 2.0 std instance filter \
+    {checkSimpleArgs 0 -1 {
+	{TclOO::checkOOSlotOperation TclOO::checkOOMethodNameUse}
+    }}
+
+TclOO::check 2.0 std instance forward \
+    {checkSimpleArgs 2 -1 {
+	TclOO::checkOOMethodNameDef
+	checkWord
+    }}
+
+TclOO::check 2.0 std instance method \
+    {checkSimpleArgs 3 3 {
+	TclOO::checkOOMethodNameDef
+	TclOO::checkOOMethodArguments
+	TclOO::checkOOMethodBody}}
+
+TclOO::check 2.0 std instance mixin \
+    {checkSimpleArgs 0 -1 {
+	{TclOO::checkOOSlotOperation TclOO::checkOOClassNameUse}
+    }}
+
+TclOO::check 2.0 std instance renamemethod \
+    {checkSimpleArgs 2 2 {
+	TclOO::checkOOMethodNameUse
+	TclOO::checkOOMethodNameDef
+    }}
+
+TclOO::check 2.0 std instance unexport \
+    {checkSimpleArgs 1 -1 {TclOO::checkOOMethodNameUse}}
+
+TclOO::check 2.0 std instance variable \
+    {checkSimpleArgs 0 -1 {
+	{TclOO::checkOOSlotOperation checkWord}
+    }}
+
+# ### ######### ###########################
+## Method commands (runtime context)
+
+TclOO::check 2.0 std rt.instance self \
+    {checkSimpleArgs 0 1 {
+	{checkOption {
+	    {caller    {checkSimpleArgs 0 0 {}}}
+	    {class     {checkSimpleArgs 0 0 {}}}
+	    {filter    {checkSimpleArgs 0 0 {}}}
+	    {method    {checkSimpleArgs 0 0 {}}}
+	    {namespace {checkSimpleArgs 0 0 {}}}
+	    {next      {checkSimpleArgs 0 0 {}}}
+	    {object    {checkSimpleArgs 0 0 {}}}
+	    {target    {checkSimpleArgs 0 0 {}}}
+	} {}}
+    }}
+
+TclOO::check 2.0 std rt.instance my \
+    {checkSimpleArgs 1 -1 {
+	{checkOption {
+	    {destroy  {checkSimpleArgs 0  0 {}}}
+	    {eval     {checkSimpleArgs 0 -1 {checkWord}}}
+	    {unknown  {checkSimpleArgs 1 -1 {TclOO::checkOOMethodNameUse checkWord}}}
+	    {variable {checkSimpleArgs 1 -1 {checkWord}}}
+	    {varname  {checkSimpleArgs 1  1 {checkWord}}}
+	} {checkSimpleArgs 1 -1 {TclOO::checkOOMethodNameUse checkWord}}}
+    }}
+
+TclOO::check 2.0 std rt.instance next \
+    {checkSimpleArgs 0 -1 {checkWord}}
+
+# ### ######### ###########################
+## Initialization
+
+## This package relies on the standard initialization sequence of
+## 'pcx::init'. This is automatically called if no 'init' command
+## is found in the namespace of the checker package.
+
+#activate for debugging
+#proc TclOO::init {ver} { puts oo<<$ver>> ; pcx::init oo $ver ; return }
+
+# ### ######### ###########################
+## Checkers for specific commands, and helpers
+# ### ######### ###########################
+
+proc TclOO::checkOODefine {tokens index} {
+    checkSimpleArgs 2 -1 {
+	TclOO::checkOOClassNameDef
+	{checkOption {
+	    {constructor  {checkSimpleArgs 2  2 {
+		TclOO::checkOOConstructorArguments
+		TclOO::checkOOConstructorBody}}}
+	    {deletemethod {checkSimpleArgs 1 -1 {TclOO::checkOOMethodNameUse}}}
+	    {destructor   {checkSimpleArgs 1  1 {TclOO::checkOODestructorBody}}}
+	    {export       {checkSimpleArgs 1 -1 {TclOO::checkOOMethodNameUse}}}
+	    {filter       {checkSimpleArgs 0 -1 {
+		{TclOO::checkOOSlotOperation TclOO::checkOOMethodNameUse}}}}
+	    {forward      {checkSimpleArgs 2 -1 {
+		TclOO::checkOOMethodNameDef
+		checkWord}}}
+	    {method       {checkSimpleArgs 3  3 {
+		TclOO::checkOOMethodNameDef
+		TclOO::checkOOMethodArguments
+		TclOO::checkOOMethodBody}}}
+	    {mixin        {checkSimpleArgs 0 -1 {
+		{TclOO::checkOOSlotOperation TclOO::checkOOClassNameUse}}}}
+	    {renamemethod {checkSimpleArgs 2 2 {
+		TclOO::checkOOMethodNameUse
+		TclOO::checkOOMethodNameDef
+	    }}}
+	    {self.class   {checkSimpleArgs 1  1 {TclOO::checkOOClassNameUse}}}
+	    {self         TclOO::checkOOObjdefine}
+	    {superclass   {checkSimpleArgs 0 -1 {
+		{TclOO::checkOOSlotOperation TclOO::checkOOClassNameUse}}}}
+	    {unexport     {checkSimpleArgs 1 -1 {TclOO::checkOOMethodNameUse}}}
+	    {variable     {checkSimpleArgs 0 -1 {
+		{TclOO::checkOOSlotOperation checkWord}}}}
+	} {checkSimpleArgs 1 1 {TclOO::checkOOClassBody}}}
+    } $tokens $index
+}
+
+proc TclOO::checkOOObjdefine {tokens index} {
+    checkSimpleArgs 2 -1 {
+	checkWord
+	{checkOption {
+	    {class {checkSimpleArgs 1 1 {TclOO::checkOOClassNameUse}}}
+	    {deletemethod {checkSimpleArgs 1 -1 {TclOO::checkOOMethodNameUse}}}
+	    {export {checkSimpleArgs 1 -1 {TclOO::checkOOMethodNameUse}}}
+	    {filter {checkSimpleArgs 0 -1 {
+		{TclOO::checkOOSlotOperation TclOO::checkOOMethodNameUse}}}}
+	    {forward {checkSimpleArgs 2 -1 {
+		TclOO::checkOOMethodNameDef
+		checkWord}}}
+	    {method {checkSimpleArgs 3  3 {
+		TclOO::checkOOMethodNameDef
+		TclOO::checkOOMethodArguments
+		TclOO::checkOOMethodBody}}}
+	    {mixin {checkSimpleArgs 0 -1 {
+		{TclOO::checkOOSlotOperation TclOO::checkOOClassNameUse}}}}
+	    {renamemethod {checkSimpleArgs 2 2 {
+		TclOO::checkOOMethodNameUse
+		TclOO::checkOOMethodNameDef
+	    }}}
+	    {unexport {checkSimpleArgs 1 -1 {TclOO::checkOOMethodNameUse}}}
+	    {variable {checkSimpleArgs 0 -1 {
+		{TclOO::checkOOSlotOperation checkWord}}}}
+	} {checkSimpleArgs 1 1 {TclOO::checkOOInstanceBody }}}
+    } $tokens $index
+}
+
+proc TclOO::checkOOSlotOperation {chain tokens index} {
+    checkSwitches 1 {
+	{-append}
+	{-clear }
+	{-set   }
+    } $chain $tokens $index
+}
+
+proc TclOO::checkOOClassNameUse {tokens index} {
+    # TODO: 2pass, check word against collected class names
+    return [checkWord $tokens $index]
+}
+
+proc TclOO::checkOOClassNameDef {tokens index} {
+    set word [lindex $tokens $index]
+    if {[getLiteral $word className]} {
+	# See also snit.pcx
+	##
+	# Create a generic user command to capture uses of the class
+	# command.
+	##
+	#  TODO: See if we can extend this to a definition knowing the
+	# standard class methods, and from that, ability to define
+	# object instance commands.
+
+	set name [namespace tail $className]
+	set proc [context::join [context::top] $name]
+
+	set pInfo [cdb newProcInfo]
+	set pInfo [cdb setName $pInfo $proc]
+	set pInfo [cdb setBase $pInfo [context::head $proc]]
+	set pInfo [cdb setType $pInfo oo::class]
+	set pInfo [cdb setMin  $pInfo 0]
+	set pInfo [cdb setMax  $pInfo -1]
+	set pInfo [cdb setDef  $pInfo 1]
+
+	uproc::add $pInfo 0
+    }
+
+    # TODO: checker core has to export 'checkNamespace'.
+    set index [checkSetStyle nsname checkWord $tokens $index]
+    # TODO: open scopes, contexts, and what not. (if name is literal)
+    # TODO: in scan mode collect class-name (+ location), define class
+    # TODO: command checker (uses checkOOClassNameUse).
+    return $index
+}
+
+proc TclOO::checkOOClassBody {tokens index} {
+    # TODO: May have to push scope/context information for var
+    # tracing.
+
+    set cmds [TclOO::push type]
+    set index [checkBody $tokens $index]
+    TclOO::pop $cmds
+    return $index
+}
+
+proc TclOO::checkOOInstanceBody {tokens index} {
+    # TODO: May have to push scope/context information for var
+    # tracing.
+
+    set cmds [TclOO::push instance]
+    set index [checkBody $tokens $index]
+    TclOO::pop $cmds
+    return $index
+}
+
+# ### ######### ###########################
+## Handle methods (definition)
+
+# Calling contexts, and TODO, see above, same as type methods, for methods
+
+proc TclOO::checkOOMethodNameUse        {tokens index} { return [checkSetStyle procname {checkWord} $tokens $index] }
+proc TclOO::checkOOMethodNameDef        {tokens index} { return [checkSetStyle procname {checkWord} $tokens $index] }
+proc TclOO::checkOOMethodArguments      {tokens index} {
+    return [checkAll {
+	checkArgList
+	{checkListValues 0 -1 {
+	    TclOO::checkOOMethodArgumentName
+	}}
+    } $tokens $index]
+}
+proc TclOO::checkOOMethodBody           {tokens index} { return [TclOO::checkOORuntimeBody instance $tokens $index] }
+
+# ### ######### ###########################
+## Constructor, desctructor
+
+# Called only from a lexical context.
+
+# TODO: Collect argument names for var tracing in constructor body
+# TODO: Report illegal argument names (oo has reserved names)
+
+proc TclOO::checkOOConstructorArguments {tokens index} {
+    return [checkAll {
+	checkArgList
+	{checkListValues 0 -1 {
+	    TclOO::checkOOMethodArgumentName
+	}}
+    } $tokens $index]
+}
+proc TclOO::checkOOConstructorBody      {tokens index} { return [TclOO::checkOORuntimeBody instance $tokens $index] }
+proc TclOO::checkOODestructorBody       {tokens index} { return [TclOO::checkOORuntimeBody instance $tokens $index] }
+
+# ### ######### ###########################
+## Checking of runtime bodies ((type)methods, procs, oncget,
+## onconfigure, (type)constructor, destructor)
+
+proc TclOO::checkOORuntimeBody {which tokens index} {
+    # WHICH is in {class, instance}, the type of the body, basic
+    # runtime context it will be in. Selects which variables are
+    # visible.
+
+    # TODO: Push the proper variable scopes to var tracing.
+
+    set cmds [TclOO::push rt.$which]
+    set index [checkOrdering checkBody $tokens $index]
+    TclOO::pop $cmds
+
+    # TODO: scopes, context, etc.
+    return $index
+}
+
+# ### ######### ###########################
+##
+
+proc TclOO::checkOOMethodArgumentName {tokens index} {
+    return [checkWord $tokens $index]
+}
+
+# ### ######### ###########################
+# ### ######### ###########################
+
+namespace eval TclOO {
+    # Additional data structures (dynamic checker rules, scan
+    # information for 2-pass checking, ...)
+
+    variable dyn
+    variable classtype {}
+
+    # ### ######### ###########################
+    ## Dynamically activated checker rules
+    ## Class-context commands, class definitions.
+
+    # dyn labels: type, widget, widgetadaptor
+
+    # ### ######### ###########################
+    ## Dynamically activated checker rules
+    ## Method context commands, runtime.
+
+    # dyn labels: typemethod, method, proc, macro
+    # ..........: constructor, destructor
+
+    # ### ######### ###########################
+}
+
+# ### ######### ###########################
+pcx::complete

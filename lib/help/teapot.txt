@@ -1,0 +1,6 @@
+Package help 0.4
+Meta entrysource help.tcl
+Meta included    help.tcl
+Meta platform    tcl
+Meta require     Tk
+

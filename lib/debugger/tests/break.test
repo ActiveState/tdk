@@ -1,0 +1,332 @@
+# This file contains tests for the break.tcl file.
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1998-2000 by Ajuba Solutions
+#
+
+
+#
+# RCS: @(#) $Id: break.test,v 1.3 2001/10/17 19:04:05 andreas_kupries Exp $
+
+if {[string compare test [info procs test]] == 1} {
+    lappend auto_path [file join [file dirname [info script]] ..]
+    package require protest
+    namespace import ::protest::*
+}
+
+catch {parse} parseMsg
+if {[regexp "invalid command" $parseMsg]} {
+    package require parser
+}
+
+source [file join $::protest::sourceDirectory system.tcl]
+source [file join $::protest::sourceDirectory break.tcl]
+source [file join $::protest::sourceDirectory block.tcl]
+source [file join $::protest::sourceDirectory location.tcl]
+source [file join $::protest::sourceDirectory util.tcl]
+
+catch {break::Release all}
+
+test break-1.1 {break::MakeBreakpoint} {
+    set b [break::MakeBreakpoint line {1 1 {}}]
+    set result [string index $b 0]
+    break::Release $b
+    set result
+} L
+test break-1.2 {break::MakeBreakpoint} {
+    set b [break::MakeBreakpoint var ""]
+    set result [string index $b 0]
+    break::Release $b
+    set result
+} V
+test break-1.3 {break::MakeBreakpoint} {
+    set b [break::MakeBreakpoint line {1 1 {}}]
+    set result [list [lsort [array names ::break::break$b]] \
+	    [set ::break::break${b}(data)] \
+	    [set ::break::break${b}(location)] \
+	    [set ::break::break${b}(state)] \
+	    [set ::break::break${b}(test)]]
+    break::Release $b
+    set result
+} {{data location state test} {} {1 1 {}} enabled {}}
+test break-1.4 {break::MakeBreakpoint, id reuse} {
+    set next [expr $break::counter + 1]
+    set break::breakL$next 1
+    set b [break::MakeBreakpoint line {1 1 {}}]
+    set result [expr [string compare $b L$next] == 0]
+    break::Release $b
+    unset break::breakL$next
+    set result
+} 0
+
+test break-2.1 {break::Release, single} {
+    set b1 [break::MakeBreakpoint line ""]
+    set result [info exists break::break$b1]
+    break::Release $b1
+    lappend result [info exists break::break$b1]
+} {1 0}
+test break-2.2 {break::Release, multiple} {
+    set b1 [break::MakeBreakpoint line ""]
+    set b2 [break::MakeBreakpoint line ""]
+    set result [list [info exists break::break$b1] \
+	    [info exists break::break$b2]]
+    break::Release "$b1 $b2"
+    lappend result [info exists break::break$b1] [info exists break::break$b2]
+} {1 1 0 0}
+test break-2.3 {break::Release, bad input} {
+    list [info exists break::break1] [break::Release 1]
+} {0 {}}
+test break-2.4 {break::Release, all} {
+    set b1 [break::MakeBreakpoint line ""]
+    set b2 [break::MakeBreakpoint line ""]
+    set result [list [info exists break::break$b1] \
+	    [info exists break::break$b2]]
+    break::Release all
+    lappend result [info exists break::break$b1] [info exists break::break$b2]
+} {1 1 0 0}
+
+
+test break-3.1 {break::getState} {
+    set b [break::MakeBreakpoint line ""]
+    set result [break::getState $b]
+    break::Release $b
+    set result
+} enabled
+test break-3.2 {break::getState} {
+    set b [break::MakeBreakpoint line ""]
+    break::SetState $b disabled
+    set result [break::getState $b]
+    break::Release $b
+    set result
+} disabled
+
+test break-4.1 {break::getLocation} {
+    set b [break::MakeBreakpoint line "1 2 {42 55}"]
+    set result [break::getLocation $b]
+    break::Release $b
+    set result
+} {1 2 {42 55}}
+
+test break-5.1 {break::getTest} {
+    set b [break::MakeBreakpoint line "1 2 {42 55}" "set x 1"]
+    set result [break::getTest $b]
+    break::Release $b
+    set result
+} {set x 1}
+
+test break-6.1 {break::getType} {
+    set b [break::MakeBreakpoint var ""]
+    set result [break::getType $b]
+    break::Release $b
+    set result
+} var
+test break-6.2 {break::getType} {
+    set b [break::MakeBreakpoint line ""]
+    set result [break::getType $b]
+    break::Release $b
+    set result
+} line
+test break-6.3 {break::getType} {
+    list [catch {break::getType foo} msg] $msg
+} {1 {Invalid breakpoint type}}
+
+
+test break-7.1 {break::SetState} {
+    set b [break::MakeBreakpoint line ""]
+    break::SetState $b disabled
+    set result [break::getState $b]
+    break::Release $b
+    set result
+} disabled
+
+test break-8.1 {break::getData} {
+    set b [break::MakeBreakpoint line ""]
+    set result [break::getData $b]
+    break::Release $b
+    set result
+} {}
+test break-8.2 {break::getData & setData} {
+    set b [break::MakeBreakpoint line ""]
+    break::setData $b foobar
+    set result [break::getData $b]
+    break::Release $b
+    set result
+} foobar
+
+test break-9.1 {break::getLineBreakpoints, all} {
+    set break::counter 1
+    set b1 [break::MakeBreakpoint line "1 2 {}"]
+    set b2 [break::MakeBreakpoint line "1 3 {}"]
+    set result [lsort [break::GetLineBreakpoints]]
+    break::Release all
+    set result
+} {L2 L3}
+test break-9.2 {break::GetLineBreakpoints, one line} {
+    set break::counter 1
+    set b1 [break::MakeBreakpoint line "1 2 {}"]
+    set b2 [break::MakeBreakpoint line "2 2 {}"]
+    set b3 [break::MakeBreakpoint line "1 3 {}"]
+    set result [break::GetLineBreakpoints "1 2 {}"]
+    break::Release all
+    set result
+} L2
+test break-9.3 {break::GetLineBreakpoints, one line, multiple breakpoints} {
+    set break::counter 1
+    set b1 [break::MakeBreakpoint line "1 2 {}"]
+    set b2 [break::MakeBreakpoint line "2 2 {}"]
+    set b3 [break::MakeBreakpoint line "2 2 {}" "test"]
+    set result [lsort [break::GetLineBreakpoints "2 2 {}"]]
+    break::Release all
+    set result
+} {L3 L4}
+test break-9.4 {break::GetLineBreakpoints, none} {
+    set break::counter 1
+    set b1 [break::MakeBreakpoint line "1 2 {}"]
+    set result [break::GetLineBreakpoints "2 2 {}"]
+    break::Release all
+    set result
+} {}
+test break-9.5 {break::GetLineBreakpoints, none} {
+    set break::counter 1
+    break::GetLineBreakpoints "2 2 {}"
+} {}
+test break-9.6 {break::GetLineBreakpoints, not variable} {
+    set break::counter 1
+    set b1 [break::MakeBreakpoint line "1 2 {}"]
+    set b2 [break::MakeBreakpoint var "32"]
+    set result [string compare \
+	    [lsort [break::GetLineBreakpoints "1 2 {}"]] "$b1"]
+    break::Release all
+    set result
+} 0
+test break-9.7 {break::GetLineBreakpoints, not variable} {
+    set break::counter 1
+    set b1 [break::MakeBreakpoint line "1 2 {}"]
+    set b2 [break::MakeBreakpoint var "32"]
+    set result [lsort [break::GetLineBreakpoints]]
+    break::Release all
+    set result
+} L2
+
+test break-10.1 {break::GetVarBreakpoints, all} {
+    set break::counter 1
+    set b1 [break::MakeBreakpoint var "42"]
+    set b2 [break::MakeBreakpoint var "43"]
+    set result [lsort [break::GetVarBreakpoints]]
+    break::Release all
+    set result
+} {V2 V3}
+test break-10.2 {break::GetVarBreakpoints, one var} {
+    set break::counter 1
+    set b1 [break::MakeBreakpoint var "42"]
+    set b2 [break::MakeBreakpoint var "43"]
+    set b3 [break::MakeBreakpoint var "44"]
+    set result [break::GetVarBreakpoints "42"]
+    break::Release all
+    set result
+} V2
+test break-10.3 {break::GetVarBreakpoints, one var, multiple breakpoints} {
+    set break::counter 1
+    set b1 [break::MakeBreakpoint var "42"]
+    set b2 [break::MakeBreakpoint var "43"]
+    set b3 [break::MakeBreakpoint var "43" "test"]
+    set result [lsort [break::GetVarBreakpoints "43"]]
+    break::Release all
+    set result
+} {V3 V4}
+test break-10.4 {break::GetVarBreakpoints, none} {
+    set break::counter 1
+    set b1 [break::MakeBreakpoint var "43"]
+    set result [break::GetVarBreakpoints "42"]
+    break::Release all
+    set result
+} {}
+test break-10.5 {break::GetVarBreakpoints, none} {
+    set break::counter 1
+    break::GetVarBreakpoints "42"
+} {}
+test break-10.6 {break::GetVarBreakpoints, not line} {
+    set break::counter 1
+    set b1 [break::MakeBreakpoint var "42"]
+    set b2 [break::MakeBreakpoint line ""]
+    set result [break::GetVarBreakpoints "42"]
+    break::Release all
+    set result
+} V2
+test break-10.7 {break::GetVarBreakpoints, not line} {
+    set break::counter 1
+    set b1 [break::MakeBreakpoint var "42"]
+    set b2 [break::MakeBreakpoint line ""]
+    set result [break::GetVarBreakpoints]
+    break::Release all
+    set result
+} V2
+
+test break-11.1 {break::preserveBreakpoints, none} {
+    break::Release all
+    break::preserveBreakpoints result
+    set result
+} {}
+test break-11.2 {break::preserveBreakpoints, simple line} {
+    break::Release all
+    set blk [blk::makeBlock foobar.tcl]
+    set blk2 [blk::makeBlock ""]
+    set b1 [break::MakeBreakpoint line [loc::makeLocation $blk 1]]
+    set b2 [break::MakeBreakpoint line [loc::makeLocation $blk 2]]
+    set b3 [break::MakeBreakpoint line [loc::makeLocation $blk2 2]]
+    break::preserveBreakpoints result
+    blk::release [list $blk $blk2]
+    break::Release all
+    set result
+} {{foobar.tcl 1 enabled {}} {foobar.tcl 2 enabled {}}}
+test break-11.3 {break::preserveBreakpoints, simple line} {
+    break::Release all
+    set blk [blk::makeBlock foobar.tcl]
+    set b1 [break::MakeBreakpoint line [loc::makeLocation $blk 1]]
+    set b2 [break::MakeBreakpoint line [loc::makeLocation $blk 2]]
+    set b3 [break::MakeBreakpoint var 3]
+    break::preserveBreakpoints result
+    blk::release [list $blk $blk2]
+    break::Release all
+    set result
+} {{foobar.tcl 1 enabled {}} {foobar.tcl 2 enabled {}}}
+
+test break-12.1 {break::restoreBreakpoints, none} {
+    break::Release all
+    break::restoreBreakpoints {}
+    break::GetLineBreakpoints
+} {}
+test break-12.2 {break::restoreBreakpoints} {
+    break::Release all
+    set break::counter 1
+    break::restoreBreakpoints {{foobar.tcl 1 enabled {}} {foobar.tcl 2 disabled {}}}
+    set result [list [lsort [break::GetLineBreakpoints]] \
+	    [lsort [array names ::break::breakL2]] \
+	    $::break::breakL2(data) \
+	    [blk::getFile [loc::getBlock $::break::breakL2(location)]] \
+	    [loc::getLine $::break::breakL2(location)] \
+	    $::break::breakL2(state) \
+	    $::break::breakL2(test) \
+	    [lsort [array names ::break::breakL3]] \
+	    $::break::breakL3(data) \
+	    [blk::getFile [loc::getBlock $::break::breakL3(location)]] \
+	    [loc::getLine $::break::breakL3(location)] \
+	    $::break::breakL3(state) \
+	    $::break::breakL3(test)]
+    break::Release all
+    set result
+} {{L2 L3} {data location state test} {} foobar.tcl 1 enabled {} {data location state test} {} foobar.tcl 2 disabled {}}
+
+catch {
+    break::Release all
+    blk::release all
+}
+
+cleanupTests
+
+if {[info exists tk_version] && !$tcl_interactive} {
+    exit
+}

@@ -1,0 +1,32 @@
+
+Xref
+	  -- Display of callgraph (tree)
+	  -- Test suite required for procheck xref data
+	  -- Incremental recomputation of database contents, merging
+
+Debugging
+	  -- Port multiplexing				Only in /Komodo/
+OK	  -- Coverage 2 profiler
+OK	     -- Collect timing information
+
+Checker
+	  -- Rethink usage of checker packages
+OK	     => Decouple loading and usage
+OK	     -- Loading immediately and after scan
+NO [x]	     -- Usage only in files which declare, and only after that
+NO [x]		declaration (Scopes)
+
+OK	  -- New mode: Package listing
+OK	     -- Implies -onepass, lists all packages used.
+OK	     -- Package data of this mode also in Xref
+OK	     -- PD (s.a.) also above in handling of checker packages.
+
+	  -- New scan mode (implied -onepass) to generate checker
+             rules for proc's.
+
+OK (3)	  -- Public rules API
+OK	     More work on that. Has already started. Something simple
+OK	     over the data structures used now.
+
+
+[x] To much of performance hit

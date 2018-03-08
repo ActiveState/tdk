@@ -1,0 +1,256 @@
+User interface specification for the TclPro wrapper (prowrap)
+=============================================================
+
+TOC
+---
+
+* Current state
+* Mapping of command line arguments to a graphical user interface
+* New features ?
+* User interface elements
+* Footnotes
+
+Current state
+-------------
+	prowrap is a command line tool. The recognized argument
+	structures and options are:
+
+	Argument structure
+		procomp (?options? ?fileNamePatterns?)...
+
+		IOW, options and filename patterns can be interleaved.
+		Some options are global independent of their position
+		whereas others affect only the files and options
+		coming after them.
+
+
+	Options		| Meaning
+	================+======================================================
+(o1)	-help		| Print a help message.
+	----------------+------------------------------------------------------
+(o2)	-nologo		| Suppress copyright banner.
+	----------------+------------------------------------------------------
+(o3)	-verbose	| Produce detailed output during wrapping.
+	----------------+------------------------------------------------------
+(o4)	-uses spec	| Specify a predefined flag set. Actually a filename
+			| without .uses suffix, searched by the wrapper in its
+			| internal filesystem and outside.
+	----------------+------------------------------------------------------
+(o5)	-startup script	| Declare filename of starting script. Affected by
+			| preceding '-relativeto' options (o8). Automatically
+			| added to the list of files to wrap (a1).
+	----------------+------------------------------------------------------
+(o6)	-arguments alst | Specify additional arguments to application.
+	----------------+------------------------------------------------------
+(o7)	-executable path| Name of input executable
+	----------------+------------------------------------------------------
+(o8)	-relativeto dir	| Specify a relative directory for files that follow
+	----------------+------------------------------------------------------
+(o9)	-tcllibrary dir	| Specify location of Tcl library (and encoding) files
+	----------------+------------------------------------------------------
+(oA)	-code script	| Interpreter initialization script
+	----------------+------------------------------------------------------
+(oB)	-out fileName	| Name of output file (default: prowrapout?.exe?)
+	----------------+------------------------------------------------------
+(oC)	-temp directory	| Specify an alternate temporary directory to hold the
+			| intermediate results of the wrapping process.
+	----------------+------------------------------------------------------
+(oD)	-@              | Collect more command line args from stdin
+	----------------+------------------------------------------------------
+(a1)	fileNamePattern | Glob patterns to select files.
+	================+======================================================
+			|
+
+
+Mapping of command line arguments to a graphical user interface
+---------------------------------------------------------------
+
+	Options		| Meaning
+	================+======================================================
+(o1)	-help		| Menu: Launch of browser with HTML help file, or
+			|       launch of Win* HTMLHelp.	[**]
+	----------------+------------------------------------------------------
+(o2)	-nologo		| No mapping.
+			| Copyright notice via Menu Help/About, Splash-Screen?
+	----------------+------------------------------------------------------
+(o3)	-verbose	| Radiobox/Option menu = Multiple log levels.
+	----------------+------------------------------------------------------
+(o4)	-uses spec	| Radiobox/Option menu + Browse-Button + File chooser.
+	----------------+------------------------------------------------------
+(o5)	-startup script	| @@
+	----------------+------------------------------------------------------
+(o6)	-arguments alst | Combo: Listbox + Add/Remove buttons + Entry field
+	----------------+------------------------------------------------------
+(o7)	-executable path| Combo: Entry field + Browse-Button + File chooser
+	----------------+------------------------------------------------------
+(o8)	-relativeto dir	| @@
+	----------------+------------------------------------------------------
+(o9)	-tcllibrary dir	| Combo: Entry field + Browse-Button + Dir chooser
+	----------------+------------------------------------------------------
+(oA)	-code script	| Text widget.
+	----------------+------------------------------------------------------
+(oB)	-out fileName	| Combo: Entry field + Browse-Button + File chooser
+	----------------+------------------------------------------------------
+(oC)	-temp directory	| Combo: Entry field + Browse-Button + Dir chooser
+			|
+	----------------+------------------------------------------------------
+(oD)	-@              | No mapping. Not required with functionality to save
+			| and restore configurations.
+	----------------+------------------------------------------------------
+(a1)	fileNamePattern | @@
+	================+======================================================
+			|
+
+The options and arguments marked with @@ (Ref: o5, o8, a1) are not so
+easily specified because they are affected by -relativeto, hence their
+order is important.
+
+Cases to consider
+
+	-relativeto path	path is absolute		/rtPA
+				path is relative (to [pwd])	/rtPR
+				not specified			/rtP-
+
+	fileNamePattern		path is absolute		/fnA
+				path is relative (to [pwd])	/fnR
+
+	----------------+-----------------------+---------------+--------------
+	rtP	fn	| Meaning		| External	| Archive
+	----------------+-----------------------+---------------+--------------
+(r1)	-	A	| Strip /, drive spec	| /usr/fox.tcl  | usr/fox.tcl
+(r2)	-	R	| Path does not change	| ../lib/in.tcl	| ../lib/in.tcl
+	----------------+-----------------------+---------------+--------------
+(r3)	A	A	| Strip rt path	(/usr)	| /usr/fox.tcl  | fox.tcl
+(r4)	A	R	| ??			|		|
+	----------------+-----------------------+---------------+--------------
+(r5)	R	A	| ??			|		|
+(r6)	R	R	| Strip rt path (img)	| img/fox.gif	| fox.gif
+	----------------+-----------------------+---------------+--------------
+
+	?? =	The path type is different for -relativeto and
+		pattern. The behaviour of the wrapper is not
+		documented for these two cases.
+
+		Examples:
+			-relativeto /usr img/*.gif	(Ref: r4)
+			-relativeto img /usr/img/	(Ref: r5)
+
+		Source dive required ...
+
+Use a tree widget to enter @@ data.
+
+	Structure and other specifications.
+
+	*	Root		= nothing
+		    Level1	= file
+				| pattern
+				| relativeto directive (=> directory)
+			Level2	= file
+				| pattern
+
+	*	Files and patterns at level 1 can be absolute or
+		relative.
+
+	*	Files and pattern at level 2 can be added to relative
+		directives at levels 1, but nowhere else. They are
+		always shown as relative paths. This means that the
+		display automatically reflects the names of the files
+		inside of the archive.
+
+	?	We could show a listbox to the right of the tree which
+		shows the path names as they appear in the archive, to
+		make the correspondence even more clear.
+
+	*	Note that this type of specification automatically
+		eliminates the cases (r4) and (r5), i.e. the cases
+		with unknown behaviour.
+
+
+	Manipulation of the tree ...
+
+		Required operations
+
+		*	Remove item
+		*	Add file
+		*	Add pattern
+		*	Add directory => -relativeto
+
+		UI elements for the operations.
+
+		*	Remove button	- Act on selected items
+		*	Entry field	- Files, directories, patterns
+		*	Add button	- Add contents of entry field
+		*	Browse A: File
+		*	Browse A: Directory
+
+		When adding use heuristics to automatically
+		distinguish files, patterns, and directories.
+
+	Misc
+	*	Use icons to the left of tree items to create
+		distinctively different visual appearance for the
+		different types of items.
+
+	*	Note that we have four! different types of
+		items. Files have two subclasses: Normal files, and
+		the startup file. We use two different icons for these
+		classes and ths encode -startup directly into the
+		tree.
+
+		Heuristics: If there is only one file in the tree we
+		use that as the startup file. Else the user has to
+		choose the startup file explicitly.
+
+
+New features ?
+--------------
+
+(f1)	Save/Load a configuration, including file selection (glob patterns!)
+
+User interface elements
+-----------------------
+
+*	A single toplevel window
+
+*	Menubar			| Notes
+	========================+=======================================
+	->	File ->	Exit	|
+	->	Help ->	Help	| Launch help	 (Ref: o1, -help)
+		     ->	About	| Show copyright (Ref: o2, -nologo)
+	========================+=======================================
+
+*	Main portion is tabbed notebook (=> Implies usage of BWidgets).
+
+	Tab			| Notes
+	========================+=======================================
+	System			| Configure basic system
+				| (Ref: o3, -verbose)
+				| (Ref: oC, -temp directory)
+	------------------------+---------------------------------------
+	Wrapping		| Configure for wrapping
+				| (Ref: o4, -uses spec)
+				| (Ref: o7, -executable path)
+				| (Ref: o9, -tcllibrary dir)
+				| (Ref: oB, -out fileName)
+	------------------------+---------------------------------------
+	Application		| (Ref: oA, -code script)
+				| (Ref: o6, -arguments arguments)
+	------------------------+---------------------------------------
+	Files			| See @@ (Ref: o5, o8, a1)
+	------------------------+---------------------------------------
+	Execution		| Available only if configuration is ok.
+				| Button 'Run', Log-Window (Progress)
+	========================+=======================================
+
+
+Footnotes
+---------
+
+[**]	This is currently something only done by the debugger.
+	It might be worth to place this functionality into its own
+	package, shared by all tools.
+
+	Also note that this the a sort of trivial functionality which
+	we could give back (via tcllib). It makes the creation of
+	'professional' applications easier for others in general,
+	without impairing the value of our own tools, IMHO.

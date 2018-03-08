@@ -1,0 +1,236 @@
+# This file contains tests for the block.tcl file.
+#
+# Copyright (c) 1998-2000 by Ajuba Solutions
+#
+
+
+#
+# RCS: @(#) $Id: block.test,v 1.3 2001/10/17 19:04:05 andreas_kupries Exp $
+
+if {[string compare test [info procs test]] == 1} {
+    lappend auto_path [file join [file dirname [info script]] ..]
+    package require protest
+    namespace import ::protest::*
+}
+
+catch {parse} parseMsg
+if {[regexp "invalid command" $parseMsg]} {
+    package require parser
+}
+
+source [file join $::protest::sourceDirectory system.tcl]
+source [file join $::protest::sourceDirectory block.tcl]
+source [file join $::protest::sourceDirectory instrument.tcl]
+source [file join $::protest::sourceDirectory location.tcl]
+source [file join $::protest::sourceDirectory util.tcl]
+
+set pwd [pwd]
+cd $::tcltest::temporaryDirectory
+
+set contents "line 1\nline2\nline3\n"
+makeFile $contents dummy.tcl
+
+blk::release all
+
+test block-1.1 {blk::makeBlock, duplicates} {
+    set b1 [blk::makeBlock dummy.tcl]
+    set b2 [blk::makeBlock dummy.tcl]
+    set result [list [string compare $b1 $b2] \
+	    [lsort [array names blk::blk$b1]] \
+	    [set blk::blk${b1}(file)] [set blk::blk${b1}(instrumented)] \
+	    [set blk::blk${b1}(version)]]
+
+    blk::release $b1
+    set result
+} {0 {file instrumented lines version} dummy.tcl 0 0}
+test block-1.2 {blk::makeBlock, multiple} {
+    set b1 [blk::makeBlock dummy.tcl]
+    set b2 [blk::makeBlock dummy2.tcl]
+    set result [list [expr [string compare $b1 $b2] == 0] \
+	    [lsort [array names blk::blk$b1]] \
+	    [set blk::blk${b1}(file)] [set blk::blk${b1}(instrumented)] \
+	    [set blk::blk${b1}(version)] \
+	    [lsort [array names blk::blk$b2]] \
+	    [set blk::blk${b2}(file)] [set blk::blk${b2}(instrumented)] \
+	    [set blk::blk${b2}(version)]]
+    blk::release $b1 $b2
+    set result
+} {0 {file instrumented lines version} dummy.tcl 0 0 {file instrumented lines version} dummy2.tcl 0 0}
+test block-1.3 {blk::makeBlock, id reuse} {
+    set next [expr $blk::blockCounter + 1]
+    set blk::blk$next 1
+    set b1 [blk::makeBlock dummy.tcl]
+    set result [expr $b1 == $next]
+    blk::release $b1
+    set result
+} 0
+test block-1.4 {blk::makeBlock, dynamic blocks} {
+    set b1 [blk::makeBlock ""]
+    set b2 [blk::makeBlock ""]
+    set result [expr [string compare $b1 $b2] == 0]
+    blk::release $b1 $b2
+    set result
+} 0
+
+test block-2.1 {blk::release, single} {
+    set b1 [blk::makeBlock ""]
+    set result [info exists blk::blk$b1]
+    blk::release $b1
+    lappend result [info exists blk::blk$b1]
+} {1 0}
+test block-2.2 {blk::release, multiple} {
+    set b1 [blk::makeBlock ""]
+    set b2 [blk::makeBlock ""]
+    set result [list [info exists blk::blk$b1] [info exists blk::blk$b2]]
+    blk::release $b1 $b2
+    lappend result [info exists blk::blk$b1] [info exists blk::blk$b2]
+} {1 1 0 0}
+test block-2.3 {blk::release, bad input} {
+    list [info exists blk::blk1] [blk::release 1]
+} {0 {}}
+
+test block-4.1 {blk::exists} {
+    blk::release 1
+    blk::exists 1
+} 0
+test block-4.2 {blk::exists} {
+    set b1 [blk::makeBlock foo]
+    set result [blk::exists $b1]
+    blk::release $b1
+    set result
+} 1
+
+test block-3.1 {blk::getSource, instrumented} {
+    set b1 [blk::makeBlock foo]
+    blk::Instrument $b1 foobarbaz
+    set result [blk::getSource $b1]
+    blk::release $b1
+    set result
+} foobarbaz
+test block-3.2 {blk::getSource, uninstrumented} {
+    set b1 [blk::makeBlock dummy.tcl]
+    set result [string compare [blk::getSource $b1] $contents]
+    blk::release $b1
+    set result
+} 0
+test block-3.3 {blk::getSource, partially constructed dynamic code} {
+    set b1 [blk::makeBlock ""]
+    set result [list [blk::getSource $b1]]
+    blk::Instrument $b1 foobarbaz
+    lappend result [blk::getSource $b1]
+    blk::release $b1
+    set result
+} {{} foobarbaz}
+test block-3.4 {blk::getSource, multiple reads from file} {
+    set b1 [blk::makeBlock dummy.tcl]
+    set result [string compare [blk::getSource $b1] $contents]
+    lappend result [blk::getVersion $b1]
+    lappend result [string compare [blk::getSource $b1] $contents]
+    lappend result [blk::getVersion $b1]
+    blk::release $b1
+    set result
+} {0 1 0 2}
+
+test block-4.1 {blk::getFile} {
+    set b1 [blk::makeBlock foobar]
+    set result [blk::getFile $b1]
+    blk::release $b1
+    set result
+} foobar
+test block-4.2 {blk::getFile} {
+    set b1 [blk::makeBlock ""]
+    set result [blk::getFile $b1]
+    blk::release $b1
+    set result
+} {}
+
+set b1 [blk::makeBlock foobar]
+test block-5.1 {blk::Instrument} {
+    blk::Instrument $b1 blah
+} "DbgNub_Do 0 {$b1 1 {0 4}} blah"
+blk::release $b1
+
+test block-6.1 {blk::isInstrumented} {
+    set b1 [blk::makeBlock ""]
+    blk::Instrument $b1 blah
+    set result [blk::isInstrumented $b1]
+    blk::release $b1
+    set result
+} 1
+test block-6.2 {blk::isInstrumented} {
+    set b1 [blk::makeBlock ""]
+    set result [blk::isInstrumented $b1]
+    blk::release $b1
+    set result
+} 0
+
+test block-7.1 {blk::getVersion} {
+    set b1 [blk::makeBlock dummy.tcl]
+    set result [blk::getVersion $b1]
+    blk::getSource $b1
+    lappend result [blk::getVersion $b1]
+    blk::getSource $b1
+    lappend result [blk::getVersion $b1]
+    blk::Instrument $b1 blah
+    lappend result [blk::getVersion $b1]
+    blk::getSource $b1
+    lappend result [blk::getVersion $b1]
+    blk::Instrument $b1 blah
+    lappend result [blk::getVersion $b1]
+    blk::release $b1
+    set result
+} {0 1 2 3 3 4}
+
+test block-8.1 {blk::getFiles} {
+    blk::getFiles
+} {}
+test block-8.2 {blk::getFiles} {
+    set b1 [blk::makeBlock dummy.tcl]
+    set result [blk::getFiles]
+    blk::release $b1
+    string compare $b1 $result
+} 0
+test block-8.3 {blk::getFiles} {
+    set b1 [blk::makeBlock dummy.tcl]
+    set b2 [blk::makeBlock ""]
+    set result [blk::getFiles]
+    blk::release $b1 $b2
+    string compare $b1 $result
+} 0
+test block-8.3 {blk::getFiles} {
+    set b1 [blk::makeBlock dummy.tcl]
+    set b2 [blk::makeBlock foo]
+    set result [lsort -integer [blk::getFiles]]
+    blk::release $b1 $b2
+    string compare [list $b1 $b2] $result
+} 0
+test block-8.4 {blk::getFiles} {
+    set b1 [blk::makeBlock ""]
+    set b2 [blk::makeBlock ""]
+    set result [lsort -integer [blk::getFiles]]
+    blk::release $b1 $b2
+    string compare "" $result
+} 0
+
+test block-9.1 {blk::SetSource} {
+    blk::getSource Temp
+} {}
+test block-9.2 {blk::SetTemp} {
+    blk::SetSource Temp foobar
+    blk::getSource Temp
+} foobar
+test block-9.3 {blk::SetTemp} {
+    set v [blk::getVersion Temp]
+    blk::SetSource Temp foobar
+    expr [blk::getVersion Temp] - $v
+} 1
+
+# blk::setSource has already been tested thoroughly by the previous tests
+
+file delete dummy.tcl
+blk::release all
+cd $pwd
+cleanupTests
+if {[info exists tk_version] && !$tcl_interactive} {
+    exit
+}

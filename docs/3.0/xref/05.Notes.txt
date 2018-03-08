@@ -1,0 +1,290 @@
+TDK 3.0 Checker Xref	Notes
+=============================
+
+1.	Two-phase operation uses scan, collate and check phases.
+	'scan' and 'check' both read and parse the input. 'collate' is
+	a helper phase performing data completion on the scan results
+	(import/export/rename resolution).
+
+2.	Scan interface ...
+
+	array scanCmds(), keys:
+
+	i.	foo-TPC-SCAN	(value: '1')
+
+		Implies that 'foo' has to be processed during scan
+		phase. The system has to use its standard checker
+		definition !!
+
+	ii.	foo		(value: scan command)
+
+		'foo' has to be processed in scan phase, using the
+		special checker command associated here instead of the
+		regular checker command.
+
+3.	Relevant commands in analyzer.tcl
+
+	addContext, addUserProc, addArgList, addRename
+	addImportCmd, addExportCmd
+
+4.	The commands drive two datastructures, actually three
+
+	i.a.	context stack	(context.tcl)
+
+		Tracks the namespace/class context the parsing is
+		currently in. Used to perform namespace resolution for
+		commands which are not used fully qualified.
+
+	i.b.	context array	(context.tcl)
+
+		Remembers which namespace/class contexts where found
+		during scanning.
+
+		Only the names.
+
+	ii.	user proc database	(userproc.tcl)
+
+		Remembers each defined 'proc' and important context
+		data about it.
+
+5.	When in the check phase uproc data and commands have priority
+	over checker commands found in checkers().
+
+6.	collate does import/export resolution by copying the relevant
+	structures in uproc from/to the various namespaces. Similar
+	for for renamed commands.
+
+	PROBLEM
+
+	Commands listed in checkers() are _not_ handled. IOW the
+	import/export/rename mechanism plainly ignores them. This
+	means if we have FOO.pcx for a package foo which declares a
+	foo::foo command and we have tcl code doing
+
+		package require foo
+		namespace import foo::foo
+		foo
+
+	then 'foo' will be reported as unknown, even if FOO.pcx is
+	loaded. Had 'foo' been a procedure, like in
+
+		namespace eval ::foo {
+		    proc foo {} {}
+		    namespace export foo
+		}
+		namespace import foo::foo
+		foo
+
+	no error would have been reported.
+
+	This is a direct result of the split in checkers() and user
+	defined procedures.
+
+	This also makes x-ref processing awkward because we will have
+	to special case everything, i.e. all relevant places will have
+	to check uproc versus checkers() before doing anything.
+
+	This can already be seen in the check phase itself (Ad 5.).
+
+	A second example is the renaming of builtin commands
+
+		rename if glau
+		glau {$a > 0} {
+		    no
+		} else {
+		    yes
+		}
+
+	glau will be reported as error.
+
+
+
+ACTION	Convert the uproc database into a general database for
+	commands. Registering checkers does not fill checkers()
+	but this database.
+
+	uproc's are added in the scan phase as usual.
+
+	This unified database now can be used to keep track of
+	command usage information too. x-ref processing boils
+	down to simply adding such data to it when requested.
+
+	We have to change the internal representation from a list
+	(numeric indices, maintenance horror, not extensible) to
+	a dictionary for this too.
+
+	... Side note ... Keep the dicts sorted by key to allow
+	simple 'lsearch' for duplicate checking.
+
+	=>     Using a side database now, indexed by a
+	       serialization of the standard components
+	       of a procInfo ...
+
+
+7.	Another part simplified by the unified database:
+
+	Generated rule files for packages. Adding the rules in them 
+	to the system becomes very simple. And there won't be
+	conflicts if a command in a rule file was also added through
+	a direct scan [*]
+
+
+	[*] Can happen if a file contained in the package we load
+	    is also explicitly scanned.
+
+
+8.	PROBLEM
+
+	When a command is defined for some version it cannot be
+	undefined for a later version. Example below.
+
+	The incrTcl [itcl_class] command later became [class] and then
+	[itcl::class]. The rules do not reflect this accurately.
+
+	The pcx file explicity adds itcl::* aliases, but the main
+	commands are kept global.
+
+	This is possibly also a workaround the problem reported in
+	(6.), because modern code will contain
+
+		package require Itcl
+		namespace import itcl::class
+
+	and this would be trouble without the duplicate definition of
+	the itcl commands.
+
+	No solution yet, except that we have to redo the interface
+	for creating checkers.
+
+
+9.	PROBLEM
+
+	The scanning pass recognizes 'class' commands and adds
+	checker commands to check their occurrence later in the
+	check phase.
+
+	Unfortunately occurences of the class command are only
+	checked, not scanned. Meaning the that object commands
+	they create are not added and cannot be checked.
+
+	SOLUTION:
+		More than one scan pass. Allow the extension of not
+		only the checker database from the scan phase but also
+		the scanners. If that is done perform a rescan of the
+		files to pick up the additional scanned commands.
+
+	DISADVANTAGE
+		Scanning takes even more time than before.
+
+	ADVANTAGE:
+		This extends to packages and loaded rule files to. A
+		rule file containing scan commands for a 'package
+		require'd package causes a rescan to get the package
+		commands right.
+
+		Note: Using a 'package require FOO' to get package
+		specific commands also makes handling of [incr Tcl]
+		etc easier. They are used only when required, and
+		still get the scan part correct.
+
+		Note II: This actually the only way to keep the system
+		correct when 'package require' handling is introduced.
+
+10.	PROBLEM
+
+	The Tk commands are not scanned. They should be and register
+	the created widget commands for extended checking.
+
+
+11.	Variable declarations and usage
+
+
+	Relevant commands
+
+		Command		Declaration	Usage		Notes
+		-------		-----------	-----		-----
+	Basic	global		Yes		No		Import from namespace into local scope
+		upvar		Yes		No		s.a., also local to local aliasing
+		set		Yes (lhs)	Yes (l+rhs)	Scope resolution is iffy
+		variable	Yes		Yes		Scope resolution ok
+		-------		-----------	-----		-----
+	Other	append		No		Yes
+		array		...		...
+		catch
+		file lstat
+		gets
+		...
+		incr		Yes		Yes		Creates non-existing variables.
+		-------		-----------	-----		-----
+
+	We should assume that no command beyond the 'Basic' set
+	"declares" variables, only uses them. Otehrwise a lot of
+	variable usage will be ok, because they are declared when
+	needed. Not what we want to happen, it reduces the number
+	of warnings to nearly zero.
+
+	Exceptions: 'procs' declare their arguments as variables in
+	their body (local scope), and the same is true for class
+	(instance) variables visible in class (instance) methods.
+
+	Need a generic way to model this in the checker for use by
+	package rules ... The checker command has to have some
+	reference to a database of pre-defined variables for a scope.
+
+	Similar for namespace variables.
+
+	Some commands work differently in local and namespace scopes
+	(f.e. 'variable').
+
+12.	Extend data structure 4.i.b. to full-fledged database
+	about namespaces and classes => vars, methods, ...
+	Where defined/used.
+
+	Use dictionaries to keep the information per scope.
+
+
+13.	Data format dumped ...
+
+	I.   Entity data
+	II.  Entity relationship data.
+
+	Relations:
+
+	a.	All -> File
+		x defined@ y	(file, line, cmd range)
+		x used@ y	(file, line, cmd range)
+
+	b.	All -> All
+		x contained in y
+
+	file
+	namespace
+	variable
+	proc/method
+	class
+	package
+
+
+14.	The uproc database calls all pInfo checkers defined for
+	a command ... If one returns {} things are ok.
+	Else the result is a command generating an error message.
+	The message of the last command is shown.
+
+	This is an easy way for declaring alternate syntaxes
+	for a single command ... Good for loaded checkers.
+
+15.	Packages not only have to define rules for their commands,
+	but also which of the commands are exported !!
+
+16.	Maybe drop 7.6 / 8.0 support in procheck
+	=> Removal of the cmd definitions, have to move
+	unchanged ones upward.
+
+17.	Have to record usage unknown commands
+	also => FAKE command definitions in the
+	database ...
+
+
+18.	Loading a package ... 'require'
+	can define namespaces.
+

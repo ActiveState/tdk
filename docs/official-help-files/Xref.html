@@ -1,0 +1,963 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+<head>
+<link rel="STYLESHEET" href="aspn.css" type="text/css">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Tcl Dev Kit - Cross Reference Tool</title>
+</head>
+
+<body marginheight="5" topmargin="5" marginwidth="10" leftmargin="10">
+
+@header@
+
+<hr size="1" noshade width="100%">
+
+<a name="top"></a>
+
+<h1>Cross Reference Tool</h1>
+
+<p>The Tcl Dev Kit Cross Reference Tool (XRef) is a graphical
+browser that maps out the structure of a Tcl program and helps make
+complex code more understandable. The XRef tool scans
+Tcl source code, and then builds a cross-referenced database showing you
+the relationships among Tcl code components. These components include
+<a class="doc" href="#packages_tab">packages</a>, <a class="doc" href="#files_tab">files</a>,
+<a class="doc" href="#namespaces_tab">namespaces</a>,
+<a class="doc" href="#commands_tab">commands</a>,
+and <a class="doc" href="#variables_tab">variables</a>. Each Tcl component is
+presented in a tree hierarchy that can be expanded to display where
+the code is defined, declared, used, and located.</p>
+
+<p>The XRef tool is useful for building, debugging, and maintaining Tcl code.
+For example, when changing a variable definition, use the XRef tool to identify
+the files and commands where the variable is declared, and then update them to
+the new variable definition.</p>
+
+<p>The Tcl Dev Kit Cross Reference Tool can be used to extract Tcl component
+information from programs and packages contained in TclApp (or Prowrap)
+projects, Tcl Dev Kit <a class="doc" href="Package.html">Package</a>
+definitions (".tap" files), and from
+<a class="doc" target="black" href="http://www.activestate.com/komodo-ide">Komodo</a>
+project files.</p>
+
+<p>Cross Reference Tool features include:</p>
+
+<ul>
+  <li>Switching between hierarchical views to gain a higher-level or lower-level
+  understanding of any Tcl source component.</li>
+  <li>Drilling down into specific areas of code.</li>
+  <li>Finding dependencies between commands, variables etc.</li>
+  <li>Browsing from a listed namespace, command, or variable definition
+  and jumping to the actual source code where it is declared.
+  <strong>Note:</strong> XRef will launch Tcl source code in
+  the Komodo editor if it is installed.</li>
+  <li>Filtering components based-on packages, files, namespaces, commands and
+  variables.
+  <li>At-a-glance overview of code areas that could be affected by
+  changing a command or variable definition.</li>
+</ul>
+
+<p>The XRef BWidgets demo uses the Cross Reference Tool to extract component
+information from the BWidgets package. See the
+<a class="doc" href="Demos.html#demos_xref">XRef BWidgets Demo</a> for more information.</p>
+
+
+
+<a class="topText" href="#Top"><img src="images/top.gif" height="11"
+width="11" border="0"/>Top</a>
+
+<h2><a name="overview">Overview</a></h2>
+<p>This section lists the platforms and Tcl versions that the Tcl Dev Kit
+Cross Reference Tool supports. It then describes how to start the tool
+and provides a tour of the main window.</p>
+
+
+<h3><a name="supported_versions">Supported Tcl Versions</a></h3>
+<p>The Tcl Dev Kit Cross Reference Tool works with Tcl
+version 8.4 or greater.</p>
+
+
+<h3><a name="starting">Starting the Tcl Dev Kit Cross Reference Tool</a></h3>
+<p>The Cross Reference tool is an application that builds a database of
+program components, including packages, files, namespaces, commands and
+variables.</p>
+
+
+<p>Windows</p>
+<ul>
+  <li>Start Menu: <strong>Start | Programs | ActiveState Tcl Dev Kit |
+  Tcl Dev Kit Cross Reference Tool</strong></li>
+  <li>Command Line: <code>tclxref.exe</code></li>
+</ul>
+
+<p>Unix</p>
+<ul>
+  <li>Shell Prompt: <code>tclxref</code></li>
+</ul>
+
+
+<p><strong>Note:</strong> When using the command line to
+start the XRef tool, you can specify the filename of a database to load.
+See <a class="doc" href="#opening_database">Opening a Database</a> for more information.</p>
+
+
+
+<h3><a name="main_explorer">Cross Reference Tool Explorer</a></h3>
+<p>The Cross Reference Tool explorer window consists of the following
+components:</p>
+
+<ul>
+  <li><a class="doc" href="#menu">Menu</a></li>
+  <li><a class="doc" href="#component_display">Component Display</a></li>
+  <li><a class="doc" href="#component_tabs">Component Tabs</a></li>
+  <li><a class="doc" href="#component_explorers">XRef Component Explorers</a></li>
+  <li><a class="doc" href="#component_filters">Component Filters</a></li>
+  <li><a class="doc" href="#component_source_viewer">Component Source Code Viewer</a></li>
+</ul>
+
+<p><img src="images/xref_main_explorer_screen1.gif" alt="main explorer"></p>
+
+
+<p><strong>Note:</strong> To change the font size displayed in the
+Cross Reference Tool Explorer, press <code>Ctrl-plus</code> to increase the font
+size or <code>Ctrl-minus</code> to decrease the displayed font size. If using
+Windows with a mouse wheel, you can alternatively press the <code>Ctrl</code>
+key and then rotate the mouse wheel to increase or decrease the font size
+displayed in the Cross Reference Tool Explorer.</p>
+
+
+<h4><a name="menu">Menu</a></h4>
+
+<img src="images/xref_menu.gif" border="1" alt="menu buttons">
+<p>The menu contains <strong>File</strong> and <strong>Help</strong> content.
+<ul>
+  <li><strong>File</strong>: Use the <strong>File</strong> menu to open,
+  close, and save cross-referenced databases. See 
+  <a class="doc" href="#opening_database">Opening a Database</a> for more information.</li>
+  <li><strong>Help</strong>: Use the <strong>Help</strong> menu to access
+  online help. Select <strong>Help | Help topics</strong>.</li>
+</ul>
+
+<h4><a name="component_display">Component Display</a></h4>
+<p>The component display lists the scanned component data.
+Where applicable, component data is displayed in expandable hierarchical
+lists. Each list can be drilled down, using expanding and collapsing
+tree nodes, to display the commands and variables associated with a
+particular component.</p>
+
+
+<h4><a name="component_tabs">Component Tabs</a></h4>
+<p>The Cross Reference Tool displays Tcl program component types on individual
+tabs. Each tab presents the same scanned database content in a different view,
+depending on the component tab selected. For example, the
+<strong>Files</strong> tab shows the components used and defined within
+a particular file. These file components could include: namespaces, commands,
+variables, and packages. The <strong>Commands</strong> tab, however,
+provides a narrower view of the scanned database as only the
+lower-level variables associated with a particular command are displayed.
+By switching between these two component tab views, you gain
+a higher or lower-level understanding of any Tcl source component.
+The component tabs include:</p>
+<ul>
+  <li><a class="doc" href="#packages_tab">Packages Tab</a></li>
+  <li><a class="doc" href="#files_tab">Files Tab</a></li>
+  <li><a class="doc" href="#namespaces_tab">Namespaces Tab</a></li>
+  <li><a class="doc" href="#commands_tab">Commands Tab</a></li>
+  <li><a class="doc" href="#variables_tab">Variables Tab</a></li>
+</ul>
+
+
+<h4><a name="component_filters">Component Filters</a></h4>
+<p>Each component tab has a unique filter that limits the number of
+components listed in the display window. <strong>Component Filters</strong>
+are opened from any component tab using the <strong>Filter</strong>
+<img src="images/xref_component_filter1.gif" border="1"> button. Each filter can
+be configured to find exact matches, and to perform glob-style matching
+(using the asterisk (*) to match any sequence of characters and a question
+mark (?) to match any single character). When configured, only elements
+matching that pattern are displayed.</p>
+
+<p><strong>Note:</strong> Only top-level nodes of a hierarchical
+list are filtered. Node children are not filtered.</p>
+
+
+<h4><a name="component_explorers">XRef Component Explorers</a></h4>
+<p><strong>XRef Component Explorers</strong> focus on the low-level details
+of a single component. An <strong>XRef Component Explorer</strong>
+is invoked from any component tab using the <strong>Open</strong>
+<img src="images/xref_open_explorer1.gif" border="1"> button.
+Each component tab launches a unique component
+explorer interface to view the specifics of the selected component.</p>
+
+
+
+<h4><a name="component_source_viewer">Component Source Code Viewer</a></h4>
+<p>The <strong>Component Source Code Viewer</strong> is only applicable
+to those without an ActiveState
+<a class="doc" href="http://www.activestate.com/komodo-ide">Komodo</a> installation.
+The XRef <strong>Component Source Code Viewer</strong> displays scanned source
+code on systems without a Komodo installation. If Komodo is installed, all
+component source code is loaded in Komodo and the
+<strong>Component Source Code Viewer</strong> is never invoked.</p>
+
+<p><img src="images/xref_component_source_code_viewer3.gif"></p>
+
+
+
+<a class="topText" href="#Top"><img src="images/top.gif" height="11"
+width="11" border="0"/>Top</a>
+
+
+<h2><a name="packages_tab">Packages Tab</a></h2>
+<p>The <strong>Packages</strong> tab displays the Tcl packages that are
+used and defined within the scanned Tcl source code. The
+<strong>#Provides</strong> and <strong>#Requires</strong> columns
+display the number of times each package is used within the database.
+The <strong>#Provides</strong> column indicates the
+total number of times the scanned source files contain a <code>require</code>
+statement for a selected package. The <strong>#Requires</strong> column
+lists the number of packages that a selected package uses.
+Click a column title to sort package content in ascending or descending order.
+The current sort column selected is shaded pink.</p>
+
+
+
+<img src="images/xref_packages_tab.gif" border="1">
+
+<ul>
+  <li><p>The <img src="images/xref_packages_icon.gif"> icon
+  denotes a package component.</p></li>
+</ul>
+
+<h3>Filtering Packages</h3>
+<p>To filter packages:</p>
+
+<ol>
+  <li>Click the <strong>Filter</strong>
+  <img src="images/xref_component_filter1.gif" border="1"> button.
+  The <strong>Filter Packages</strong> screen appears.</li>
+  
+  
+  <p><img src="images/xref_packages_filter.gif"></p>
+  
+  
+  <li>Enter the filter conditions, based-on any combination of the
+  following:<br>
+    <ul>
+      <li><strong>Name</strong>: Package name.</li>
+      <li><strong>#Provides</strong>: Number of times the package has been
+      required.</li>
+      <li><strong>#Requires</strong>: Number of packages this package
+      requires.</li>
+    </ul>
+  <li>Select a filter action:<br>
+    <ul>
+      <li>Click <strong>Ok</strong> to enable and close the filter.</li>
+      <li>Click <strong>Apply</strong> to enable the filter.
+      The filter screen stays open.</li>
+      <li>Click <strong>Cancel</strong> to abort and close the filter.</li>
+    </ul>
+</ol>
+
+
+<h3><a name="opening_package_details">Opening Package Details</a></h3>
+<p>Use the <strong>Open</strong> <img src="images/xref_open_explorer1.gif"
+border="1"> button to view  details
+on a particular package, such as the name of the file where a
+<strong>required</strong> statement calls the package.
+Opening a package's details invokes an <strong>XRef Package Explorer</strong>
+window, which displays lower-level code details specific to the package
+selected. To open a package's details in an
+<strong>XRef Package Explorer</strong> window:</p>
+
+<ol>
+  <li>Select the desired package name.</li>
+  <li>Click the <strong>Open</strong> button. An
+  <strong>XRef Package Explorer</strong> window appears.
+  This explorer is titled 'XRef Package: [package_name]'.
+  Note: Alternatively, double-click the package name to
+  invoke an <strong>XRef Package Explorer</strong>.</li>
+</ol>
+
+
+<p><img src="images/xref_packages_component_explorer.gif"></p>
+
+
+
+<p>The <strong>XRef Package Explorer</strong> displays the files that are
+used and defined within the selected package component.
+Toggle between the <strong>Uses</strong> and <strong>Definition</strong>
+tabs to view what files are used and where those files are defined.
+The <strong>File</strong> column lists all files
+the package uses or defines. The <strong>Line</strong> column provides the
+source-code line number. This combination of
+<strong>XRef Package Explorer</strong> tabs and columns are useful for
+obtaining very low-level details on the file where the package is required.</p>
+
+<p>It is possible to invoke numerous <strong>XRef Package Explorers</strong>
+while inspecting the scanned database. To continue exploring package file details,
+click the <strong>Open</strong> button once again. The total number of
+<strong>XRef Package Explorers</strong> that can be invoked depends on the
+structure and contents of your Tcl source code.</p>
+
+
+<h3><a name="jumping_package_source">Jumping to the Package Source Code</a></h3>
+<p>At some point when invoking multiple <strong>XRef Package Explorers</strong>,
+the lowest level of code is reached. At this point, you can jump to the actual
+source file where the package is declared. To jump to the source file:</p>
+
+<ol>
+  <li>Select the desired file name.</li>
+  <li>Click the <strong>Open</strong> button. If the Komodo
+  editor is installed, the source file opens in Komodo. Otherwise, the file
+  opens in the XRef <a class="doc" href="#component_source_viewer">Component Source
+  Code Viewer</a>.</li>
+  <li>Within the source file, navigate to the line of code specified in the
+  <strong>XRef Package Explorer</strong>.</li>
+</ol>
+
+<a class="topText" href="#Top"><img src="images/top.gif" height="11"
+width="11" border="0"/>Top</a>
+
+
+<h2><a name="files_tab">Files Tab</a></h2>
+<p>The <strong>Files</strong> tab displays the Tcl files
+used in the scanned Tcl source code. Files are presented in a collapsible
+tree that can be expanded to drill down into the commands,
+variables and namespaces used within a particular file. Click the
+<strong>Files</strong> column to sort file names in either ascending
+or descending order.</p>
+
+<p><img src="images/xref_files_tab.gif" border="1"></p>
+
+
+<ul>
+  <li><p>The <img src="images/xref_files_icon.gif"> icon denotes a
+  file component.</p></li>
+</ul>
+
+<h3><a name="filtering_files">Filtering Files</a></h3>
+<p>To filter files:</p>
+<ol>
+  <li>Click the <strong>Filter</strong>
+  <img src="images/xref_component_filter1.gif" border="1"> button.
+  The <strong>Filter Files</strong> screen appears.</li>
+
+  <p><img src="images/xref_files_filter.gif"></p>
+
+  <li>Enter the filter condition in the <strong>Files</strong> text box.</li>
+  <li>Select a filter action:</li>
+    <ul>
+      <li>Click <strong>Ok</strong> to enable and close the filter.</li>
+      <li>Click <strong>Apply</strong> to enable the filter.
+      The filter screen stays open.</li>
+      <li>Click <strong>Cancel</strong> to abort and close the filter.</li>
+    </ul>
+</ol>
+
+
+<h3><a name="opening_file_details">Opening File Details</a></h3>
+<p>Use the <strong>Open</strong>
+<img src="images/xref_open_explorer1.gif" border="1"> button to view details
+on a particular file. This button opens the selected file in a code editor. See
+<a class="doc" href="#jumping_file_source">Jumping to the File Source
+Code</a> for more information.</p>
+
+
+<p>Alternatively, drill down into a file list, using the expanding and
+collapsing tree nodes, to display the packages, namespaces, commands,
+and variables used in a particular file. Using the <strong>Open</strong>
+button with one of these components invokes an
+<a class="doc" href="#component_explorers">XRef Component Explorer</a> window
+specific to that code component. For example, opening a variable component
+launches an <strong>XRef Variable Explorer</strong>. To open the details of
+one of these components, see:</p>
+
+<ul>
+  <li><a class="doc" href="#opening_package_details">Opening Package Details</a></li>
+  <li><a class="doc" href="#opening_namespace_details">Opening Namespace Details</a></li>
+  <li><a class="doc" href="#opening_command_details">Opening Command Details</a></li>
+  <li><a class="doc" href="#opening_variable_details">Opening Variable Details</a></li>
+</ul>
+
+
+<h3><a name="jumping_file_source">Jumping to the File Source Code</a></h3>
+<p>To jump to the file's source code:</p>
+
+<ol>
+  <li>Select the desired file name.</li>
+  <li>Click the <strong>Open</strong> button. If the Komodo editor is
+  installed, the source file opens in Komodo. Otherwise, the file opens
+  in the XRef <a class="doc" href="#component_source_viewer"> Component Source Code Viewer</a>.
+  <strong>Note:</strong> Double-clicking the file name also
+  launches the source file into a viewer.</li>
+</ol>
+
+<a class="topText" href="#Top"><img src="images/top.gif" height="11"
+width="11" border="0"/>Top</a>
+
+
+<h2><a name="namespaces_tab">Namespaces Tab</a></h2>
+<p>The <strong>Namespaces</strong> tab alphabetically displays
+all namespaces used and defined within the scanned Tcl source code.
+The <strong>#Definitions</strong> and <strong>#Uses</strong> columns
+display the number of times each namespace is used within the scanned
+Tcl source code. Click a column title to sort namespace content in ascending or
+descending order. The current sort column selected is shaded pink.</p>
+
+<p>Initially, the Cross Reference Tool explorer only displays the
+global namespace '<strong>::</strong>' in the component display. The global
+namespace is the parent node of all namespaces organized within a collapsible
+tree. Expand the global node to view all namespaces under the parent namespace.
+Further expand a particular namespace node to view  all commands and
+variables nested within the scope of that namespace.</p>
+
+
+ <p><img src="images/xref_namespaces_tab.gif" border="1"></p>
+
+
+<ul>
+  <li><p>The <img src="images/xref_namespaces_icon.gif"> icon denotes a
+  namespace component.</p></li>
+</ul>
+
+
+<h3><a name="filtering_namespaces">Filtering Namespaces</a></h3>
+<p>To filter namespaces:</p>
+<ol>
+  <li>Click the <strong>Filter</strong>
+  <img src="images/xref_component_filter1.gif" border="1"> button. The
+  <strong>Filter Namespaces</strong> screen appears.</li>
+
+  <p><img src="images/xref_namespaces_filter.gif"></p>
+
+  <li>Enter the filter conditions, based-on any combination of the
+  following:</li>
+    <ul>
+      <li><strong>Namespace</strong>: The name of the namespace.</li>
+      <li><strong>#Definitions</strong>: Number of times the namespace is
+      defined.</li>
+      <li><strong>#Uses</strong>: Number of times the namespace is used.</li>
+    </ul>
+  <li>Select a filter action:</li>
+    <ul>
+      <li>Click <strong>Ok</strong> to enable and close the filter.</li>
+      <li>Click <strong>Apply</strong> to enable the filter.
+      The filter screen stays open.</li>
+      <li>Click <strong>Cancel</strong> to abort and close the filter.</li>
+    </ul>
+</ol>
+
+
+<h3><a name="opening_namespace_details">Opening Namespace Details</a></h3>
+<p>Use the <strong>Open</strong>
+<img src="images/xref_open_explorer1.gif" border="1">
+button to view details on a particular namespace, such as the name of the file
+where the namespace exists. Opening namespace details invokes an
+<strong>XRef Namespace Explorer</strong> window, which displays lower-level
+code details specific to the namespace selected. To open a namespace's
+details in an <strong>XRef Namespace Explorer</strong> window:</p>
+
+<ol>
+  <li>Select the desired namespace.</li>
+  <li>Click the <strong>Open</strong> button. An
+  <strong>XRef Namespace Explorer</strong> window appears. This explorer
+  is titled 'XRef Namespace: [::namespace_name]'. Note: Alternatively,
+  double-click the namespace name to invoke and
+  <strong>XRef Namespace Explorer</strong>.</li>
+</ol>
+
+   <p><img src="images/xref_namespaces_component_explorer.gif"></p>
+
+
+
+
+<p>The <strong>XRef Namespace Explorer</strong> displays the namespaces,
+commands, and variables that are within the scope of the selected namespace
+component. These components are accessible though toggling these component tabs.
+The <strong>Uses</strong> and <strong>Definition</strong> tabs list the files
+that are within the scope of this namespace. Both the <strong>Uses</strong>
+and <strong>Definitions</strong> tabs contain the following columns:</p>
+<ul>
+  <li><strong>File</strong> column: The file(s) where the namespace is
+  used or defined.</li>
+  <li><strong>Line</strong> column: Provides the source-code line number
+  where the package is used or defined.</li>
+  <li><strong>Objects?</strong> column: Displays 'yes' if objects
+  are defined within the specified location, otherwise, 'no'.</li>
+  <li><strong>Begin</strong> column: The number of bytes in the file
+  before the namespace definition.</li>
+  <li><strong>Size</strong> column: The length of the definition in bytes.</li>
+</ul>
+
+
+<p>This combination of <strong>XRef Namespace Explorer</strong> tabs and
+columns are useful for obtaining very low-level details on the components within
+the selected namespace.</p>
+
+<p>It is possible to invoke numerous <strong>XRef Namespace Explorers</strong>
+while inspecting the scanned database. To continue exploring namespace
+component details, click the <strong>Open</strong> button once again.
+The total number of <strong>XRef Namespace Explorers</strong> that can
+be invoked depends on the structure and contents of your Tcl source code.</p>
+
+
+<p>Alternatively, drill down into a namespace list, using the expanding and
+collapsing tree nodes, to display the commands and variables
+within the scope of a particular namespace. Using the <strong>Open</strong>
+button with one of these components invokes an
+<a class="doc" href="#component_explorers">XRef Component Explorer</a> window
+specific to that code component. To open the details of one of these
+components, see:</p>
+
+<ul>
+  <li><a class="doc" href="#opening_command_details">Opening Command Details</a></li>
+  <li><a class="doc" href="#opening_variable_details">Opening Variable Details</a></li>
+</ul>
+
+
+<h3><a name="show__parent_namespace">Show Parent Namespace</a></h3>
+<p>Use the <strong>Show parent namespace</strong>
+<img src="images/xref_left_red_arrow.gif"> button to invoke
+an <strong>XRef Namespace Explorer</strong> that displays the parent
+namespace of the current namespace. To view the parent namespace of the
+current namespace:</p>
+
+<ul>
+  <li>Click the <strong>Show parent namespace</strong> button. An
+  <strong>XRef Namespace Explorer</strong> appears.
+  The title of this explorer follows the pattern:
+  'XRef Namespace: [::namespace_name]'.</li>
+</ul>
+<p><strong>Note:</strong> The global namespace '<strong>::</strong>'
+does not have a parent.</p>
+
+
+
+<h3><a name="jumping_namespace_source">Jumping to the Namespace Source Code</a></h3>
+<p>At some point when invoking multiple
+<strong>XRef Namespace Explorers</strong>, the lowest
+level of code is reached. At this point, you can jump to the actual
+source file where the namespace either used or defined.
+To jump to the source file:</p>
+
+<ol>
+  <li>Select the desired namespace name.</li>
+  <li>Click the <strong>Open</strong> button. If the Komodo editor is
+  installed, the source file opens in Komodo. Otherwise, the file opens in
+  the XRef <a class="doc" href="#component_source_viewer">Component Source Code
+  Viewer</a>.</li>
+  <li>Within the source file, navigate to the line of code specified in the
+  <strong>XRef Namespace Explorer</strong>.</li>
+</ol>
+
+<a class="topText" href="#Top"><img src="images/top.gif" height="11"
+width="11" border="0"/>Top</a>
+
+
+<h2><a name="commands_tab">Commands Tab</a></h2>
+<p>The <strong>Commands</strong> tab alphabetically displays
+all commands used and defined within the scanned Tcl source code.
+The <strong>#Definitions</strong> and <strong>#Uses</strong> columns
+display the number of times each command is used within the scanned Tcl
+source code. Click a column title to sort command content in ascending or
+descending order. The current sort column selected is shaded pink.</p>
+
+<p>Commands are presented in a collapsible tree that can be expanded to drill
+down into the variables used and defined within a particular command.</p>
+
+ <p><img src="images/xref_commands_tab.gif" border="1"></p>
+
+
+<ul>
+  <li><p>The <img src="images/xref_commands_icon.gif"> icon denotes a
+  command component.</p></li>
+</ul>
+
+
+<h3><a name="filtering_commands">Filtering Commands</a></h3>
+<p>To filter commands:</p>
+
+<ol>
+  <li>Click the <strong>Filter</strong>
+  <img src="images/xref_component_filter1.gif" border="1"> button. The
+  <strong>Filter Commands</strong> screen appears.</li>
+  
+   <p><img src="images/xref_commands_filter.gif"></p>
+  
+  <li>Enter the filter conditions, based-on any combination of the
+  following:<br>
+    <ul>
+      <li><strong>Name</strong>: Command name.</li>
+      <li><strong>#Definitions</strong>: Number of times the command is
+      defined.</li>
+      <li><strong>#Uses</strong>: Number of times the command is used.</li>
+    </ul>
+  <li>Select a filter action:<br>
+    <ul>
+      <li>Click <strong>Ok</strong> to enable and close the filter.</li>
+      <li>Click <strong>Apply</strong> to enable the filter.
+      The filter screen stays open.</li>
+      <li>Click <strong>Cancel</strong> to abort and close the filter.</li>
+    </ul>
+</ol>
+
+
+<h3><a name="opening_command_details">Opening Command Details</a></h3>
+<p>Use the <strong>Open</strong>
+<img src="images/xref_open_explorer1.gif" border="1">
+button to view details on a particular
+command, such as the variables used within the command.
+Opening a command's details invokes an <strong>XRef Command Explorer</strong>
+window, which displays lower-level code details specific to the command selected.
+To open command details in an <strong>XRef Command Explorer</strong> window:</p>
+
+<ol>
+  <li>Select the desired command.</li>
+  <li>Click the <strong>Open</strong> button. An
+  <strong>XRef Commands Explorer</strong> window appears.
+  This explorer is titled 'XRef Command: [command_name]'.
+  Note: Alternatively, double-click the command name to invoke an
+  <strong>XRef Command Explorer</strong>.</li>
+</ol>
+
+<p>Alternatively, drill down into a command list, using the expanding and
+collapsing tree nodes, to display the variables defined and used within
+a particular command. See, <a class="doc" href="#opening_variable_details">
+Opening Variable Details</a> for more information.</p>
+
+
+
+  <p><img src="images/xref_commands_component_explorer.gif"></p>
+
+
+
+<p>The <strong>XRef Command Explorer</strong> displays the variables that are
+used and defined within the selected command component.
+Variable components are accessible though toggling to the
+<strong>Variable</strong> tab. Toggle between the <strong>Uses</strong>
+and <strong>Definitions</strong> tabs to view what files are used and where
+those files are defined. The <strong>Definitions</strong> tab contains the
+following columns:</p>
+
+<ul>
+  <li><strong>File</strong> column: The file(s) where the command is
+  defined.
+  <li><strong>Line</strong> column: Provides the source-code line number
+  where the command is defined.</li>
+  <li><strong>Type</strong> column: The component type
+  (command or variable).</li>
+  <li><strong>Prot</strong> column: Component protection level.
+  For example, 'public'.</li>
+  <li><strong>Scope</strong> column: The scope of the command.</li>
+  <li><strong>Origin?</strong> column: Displays the name of the command at
+  its original location if imported into a namespace.
+  Displays the initial name of the command if renamed.</li>
+</ul>
+
+
+<p>This combination of <strong>XRef Command Explorer</strong> tabs and columns
+is useful for obtaining low-level details on the components within
+the selected command. It is possible to invoke numerous <strong>XRef Command
+Explorers</strong> while inspecting the scanned database. To continue exploring
+command component details, click the <strong>Open</strong> button once
+again. The total number of <strong>XRef Command Explorers</strong> that can
+be invoked depends on the structure and contents of your Tcl source code.</p>
+
+
+
+<h4><a name="show__execution_namespace">Show Execution Namespace</a></h4>
+<p>Use the <strong>Show execution namespace</strong>
+<img src="images/xref_left_red_arrow.gif"> button to invoke
+an <strong>XRef Command Explorer</strong>, which displays the parent
+namespace of the current command. To view the parent namespace of the
+current command:</p>
+
+<ul>
+  <li>Click the <strong>Show execution namespace</strong> button. An
+  <strong>XRef Command Explorer</strong> appears.</li>
+</ul>
+<p><strong>Note:</strong> The global namespace '<strong>::</strong>'
+does not have a parent.</p>
+
+
+
+<h4><a name="show__origin_command">Show Origin of the Command</a></h4>
+<p>Use the <strong>Show origin</strong>
+<img src="images/xref_right_red_arrow.gif"> button to show the origin of
+the command.</p>
+
+<ul>
+  <li>Click the <strong>Show origin</strong> button. An
+  <strong>XRef Command Explorer</strong> appears displaying the origin of
+  the command.</li>
+</ul>
+
+<h3><a name="jumping_command_source">Jumping to the Command Source Code</a></h3>
+<p>At some point when invoking multiple <strong>XRef Command Explorers</strong>,
+the lowest level of code is reached. At this point, you can jump to the actual
+source file where the command is declared. To jump to the source file:</p>
+<ol>
+  <li>Select the desired command name.</li>
+  <li>Click the <strong>Open</strong> button. If the Komodo editor is
+  installed, the source file opens in Komodo. Otherwise, the file opens in the
+  XRef <a class="doc" href="#component_source_viewer">Component Source Code Viewer</a>.</li>
+  <li>Within the source file, navigate to the line of code specified in the
+  <strong>XRef Command Explorer</strong>.</li>
+</ol>
+
+<a class="topText" href="#Top"><img src="images/top.gif" height="11"
+width="11" border="0"/>Top</a>
+
+<h2><a name="variables_tab">Variables Tab</a></h2>
+<p>The <strong>Variable</strong> tab alphabetically lists
+all variables used and defined within the scanned Tcl source code.
+The <strong>#Definitions</strong> and <strong>#Uses</strong> columns
+display the number of times each variable is used. This tab provides the
+lowest-level view of the database. For this reason, variables are presented
+in a flat list and cannot be expanded for drilling further down into the
+code.</p>
+
+<p><img src="images/xref_variables_tab.gif" border="1"></p>
+
+
+<ul>
+  <li><p>The <img src="images/xref_variables_icon.gif"> icon denotes a
+  variable component.</p></li>
+</ul>
+
+
+
+<h3><a name= "filtering_variables">Filtering Variables</a></h3>
+<p>To filter variables:</p>
+
+<ol>
+  <li>Click the <strong>Filter</strong>
+  <img src="images/xref_component_filter1.gif" border="1"> button. The
+  <strong>Filter Variables</strong> screen appears.</li>
+  
+  <p><img src="images/xref_variables_filter.gif"></p>
+  
+  <li>Enter the filter conditions, based on any combination of the
+  following:<br>
+    <ul>
+      <li><strong>Scope</strong>: Variable scope.</li>
+      <li><strong>Name</strong>: Variable name.</li>
+      <li><strong>#Definitions</strong>: Number of times the variable is
+      defined.</li>
+      <li><strong>#Uses</strong>: Number of times the variable is used.</li>
+    </ul>
+  <li>Select a filter action:<br>
+    <ul>
+      <li>Click <strong>Ok</strong> to enable and close the filter.</li>
+      <li>Click <strong>Apply</strong> to enable the filter.
+      The filter screen stays open.</li>
+      <li>Click <strong>Cancel</strong> to abort and close the filter.</li>
+    </ul>
+</ol>
+
+
+<h3><a name="opening_variable_details">Opening Variable Details</a></h3>
+<p>Use the <strong>Open</strong>
+<img src="images/xref_open_explorer1.gif" border="1">
+button to view details on a particular
+variable, such as the files containing the variable definitions.
+Opening a variable's details invokes an <strong>XRef Variable Explorer</strong>
+window, which displays lower-level code details specific to the variable
+selected. To open a variable's details in an
+<strong>XRef Variable Explorer</strong> window:</p>
+
+<ol>
+  <li>Select the desired variable.</li>
+  <li>Click the <strong>Open</strong> button. An
+  <strong>XRef Variable Explorer</strong> window appears. This explorer is
+  titled 'XRef Variable: [namespace :: variable_name]'.
+  Note: Alternatively, double-click the variable name to
+  invoke an <strong>XRef Variable Explorer</strong>.</li>
+</ol>
+
+
+<p><img src="images/xref_variables_component_explorer.gif"></p>
+
+
+<p>The <strong>XRef Variable Explorer</strong> displays the files where the
+selected variable is used and defined. Toggle between the
+<strong>Uses</strong> and <strong>Definitions</strong> tabs to
+view the all the files where the variable is used and defined. The
+<strong>Definitions</strong> tab contains the following columns:</p>
+
+<ul>
+  <li><strong>File</strong> column: The file(s) where the variable is
+  defined.
+  <li><strong>Line</strong> column: Provides the source-code line number
+  where the variable is defined.</li>
+  <li><strong>Type</strong> column: The variable definition type.</li>
+  <li><strong>Origin</strong> column: Displays the name of the variable at
+  its original location if imported into a namespace or procedure scope.</li>
+  <li><strong>Callers?</strong> column: Commands that call the procedure the
+  specified variable belongs to. This is only for variables imported into
+  a procedure scope via <code>[upvar]</code>.</li>
+</ul>
+
+
+
+<h4><a name="show__defining_scope">Show Defining Scope of the Variable</a></h4>
+<p>Use the <strong>Show defining scope</strong>
+<img src="images/xref_left_red_arrow.gif"> button to invoke
+an <strong>XRef Variable Explorer</strong>, which displays the namespace or
+procedure the variable is defined in. To view the namespace or procedure
+scope of the variable:</p>
+<ul>
+  <li>Click the <strong>Show defining scope</strong> button. An
+  <strong>XRef Variable Explorer appears</strong>.</li>
+</ul>
+<p><strong>Note:</strong> The global namespace '<strong>::</strong>'
+does not have a parent.</p>
+
+<h4><a name="show__origin_variable">Show Origin of the Variable</a></h4>
+<p>Use the <strong>Show origin</strong>
+<img src="images/xref_right_red_arrow.gif"> button to show the origin of the
+variable.</p>
+<ul>
+  <li>Click the <strong>Show origin</strong> button. An
+  <strong>XRef Variable Explorer</strong> appears displaying the origin
+  of the variable.</li>
+</ul>
+
+
+<h3><a name="jumping_variable_source">Jumping to the Variable Source Code</a></h3>
+<p>To jump to a variable's source code:</p>
+<ol>
+  <li>Select the desired file where the variable is used or declared.</li>
+  <li>Click the <strong>Open</strong> button. If the Komodo editor
+  is installed, the source variable opens in Komodo. Otherwise, the variable
+  opens in the XRef <a class="doc" href="#component_source_viewer">Component
+  Source Code Viewer</a>. <strong>Note:</strong>
+  Double-clicking the variable name also launches the source file
+  into a viewer.</li>
+</ol>
+
+<a class="topText" href="#Top"><img src="images/top.gif" height="11"
+width="11" border="0"/>Top</a>
+
+<h2><a name="building_database">Building a Cross Reference Tool Database</a></h2>
+<p>The Cross Reference Tool builds component databases by scanning
+the Tcl source contained in the specified input. Use <strong>File | Save</strong>
+to store the extracted component information in a database. Cross Reference Tool
+database files have a ".txr" extension. There are two approaches
+to building a database for use with the XRef tool. These include:</p>
+
+<ol>
+  <li><a class="doc" href="#source_code">Specifying Tcl Source Code Files</a></li>
+  <li><a class="doc" href="#projects_packages">Specifying Projects and Packages</a></li>
+</ol>
+
+
+<h3><a name="source_code">Specifying Tcl Source Code Files</a></h3>
+<p>The XRef Tool can extract Tcl program component information
+from various Tcl source files. On the command-line, specify the input as follows:</p>
+
+
+<p>Windows</p>
+<ul>
+  <li>Command Line: <code>tclxref.exe -scan dbfile.txr file1.tcl file2.tcl ...</code><br>
+  Where <code>dbfile</code> is the name of the database file used to store the
+  extracted component information.</li>
+</ul>
+
+<p>Unix</p>
+<ul>
+  <li>Shell Prompt: <code>tclxref -scan dbfile.txr file1.tcl file2.tcl ...</code><br>
+  Where <code>dbfile</code> is the name of the database file used to store the
+  extracted component information.</li>
+</ul>
+
+
+
+<h3><a name="projects_packages">Specifying Projects and Packages</a></h3>
+<p>The Cross Reference Tool can extract program component information from
+programs and packages contained in TclApp (or Prowrap) projects,
+Tcl Dev Kit Package definitions (".tap" files), and from Komodo
+project files. Use the Windows File Menu, command line, or the Unix shell
+prompt as follows:</p>
+
+
+<p>Windows</p>
+<p>File Menu:</p>
+  <ul>
+    <li>TclApp Projects: <strong>File | Scan files for database
+    | Tcl Dev Kit TclApp/Prowrap project</strong></li>
+    <li>Package Definitions: <strong>File | Scan files for database
+    | Tcl Dev Kit Package Definition</strong></li>
+    <li>TEApot Package Definitions: <strong>File | Scan files for
+      database | TEApot meta data</strong></li>
+    <li>Komodo Project Files: <strong>File | Scan files for database
+    | Komodo project</strong></li>
+  </ul>
+
+<p>Command Line:</p>
+<ul>
+  <li>TclApp Projects: <code>tclxref.exe -tpj tclapp.tpj</code></li>
+  <li>TAP Package Definitions: <code>tclxref.exe -tap package.tap</code></li>
+  <li>TEApot Package Definitions: <code>tclxref.exe -teapot teapot.txt</code></li>
+  <li>Komodo Project Files: <code>tclxref.exe -komodo project.kpf</code></li>
+</ul>
+
+<p>Unix</p>
+<p>Shell Prompt:</p>
+<ul>
+  <li>TclApp Projects: <code>tclxref -tpj tclapp.tpj</code></li>
+  <li>TAP Package Definitions: <code>tclxref -tap package.tap</code></li>
+  <li>TEApot Package Definitions: <code>tclxref -teapot teapot.txt</code></li>
+  <li>Komodo Project Files: <code>tclxref -komodo project.kpf</code></li>
+</ul>
+<br>
+
+
+<h3><a name="opening_database">Opening a Database</a></h3>
+<p>Use the following commands to load a database file into an
+XRef explorer window. XRef tool database files have a ".txr" extension.</p>
+
+<p>Windows</p>
+<ul>
+  <li>File Menu: <strong>File | Open database</strong></li>
+  <li>Command Line: <code>tclxref.exe -gui dbfile</code><br>
+  Where <code>dbfile</code> is the name of the database file used to store the
+  extracted component information.</li>
+</ul>
+
+<p>Unix</p>
+<ul>
+  <li>File Menu: <strong>File | Open database</strong></li>
+  <li>Shell Prompt: <code>tclxref -gui dbfile.txr</code><br>
+  Where <code>dbfile</code> is the name of the database file used to store the
+  extracted component information.</li>
+</ul>
+<br>
+
+
+<h3>Opening a Database in a New Window</h3>
+<p>To open a database file in a new XRef explorer window:</p>
+<p>Windows</p>
+<ul>
+  <li>File Menu: <strong>File | Open database in new window</strong></li>
+</ul>
+<br>
+
+
+<h3><a name="closing_database">Closing a Database</a></h3>
+<p>To close a Tcl database file:</p>
+<p>Windows</p>
+<ul>
+  <li>File Menu: <strong>File | Close</strong></li>
+</ul>
+
+
+
+<a class="topText" href="#Top"><img src="images/top.gif" height="11"
+width="11" border="0"/>Top</a>
+
+</body>
+</html>
+

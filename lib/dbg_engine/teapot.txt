@@ -1,0 +1,62 @@
+Package engine 0.1
+Meta platform    tcl
+Meta summary     Debug session
+Meta description Composition of all the low-level databases into a single session
+Meta category    Debugger support
+Meta subject     debugger backend
+
+Package instrument 1.0
+Meta platform    tcl
+Meta summary     Instrumentation core
+Meta description Handling the instrumentation of scripts
+Meta category    Debugger support
+Meta subject     debugger instrumentation
+
+Package loc 1.0
+Meta platform    tcl
+Meta summary     Handling of location references
+Meta description Commands to manipulate and use location information
+Meta category    Debugger support
+Meta subject     debugger location
+
+Package pdx 1.0
+Meta platform    tcl
+Meta summary     Handling of debugger extensions in .pdx files
+Meta description Management of debugger extensions providing extended instrumentation definitions.
+Meta category    Debugger support
+Meta subject     debugger extension
+
+Package dbgtalk 0.1
+Meta platform    tcl
+Meta summary     Communication with the nub
+Meta description Communication with the nub in the debugged application
+Meta category    Debugger support
+Meta subject     debugger communication
+
+Package breakdb 1.0
+Meta platform    tcl
+Meta summary     Breakpoint database and management
+Meta description Database of breakpoints known to the debugger
+Meta category    Debugger support
+Meta subject     debugger breakpoints database
+
+Package blk 1.0
+Meta platform    tcl
+Meta summary     Block database and management
+Meta description Database of blocks known to the debugger. A generalization of files. A file is a block, a block can be dynamic code as well.
+Meta category    Debugger support
+Meta subject     debugger blocks database
+
+Package filedb 1.0
+Meta platform    tcl
+Meta summary     File database and management
+Meta description Database of files known to the debugger
+Meta category    Debugger support
+Meta subject     debugger files database
+
+Package util 1.0
+Meta platform    tcl
+Meta summary     Miscellaneous stuff
+Meta description Miscellaneous helper and support commands.
+Meta category    Debugger support
+Meta subject     debugger utilities

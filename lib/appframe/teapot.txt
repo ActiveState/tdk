@@ -1,0 +1,20 @@
+Package tcldevkit::tk 1.0
+Meta platform    tcl
+Meta summary     Checking for Tk
+Meta description Check availability of Tk, for applications having GUI and command line modes of operation.
+Meta category    Tk
+Meta subject     Tk
+
+Package tcldevkit::appframe 1.0
+Meta platform    tcl
+Meta summary     Application framework
+Meta description A basic framework for the creation of application.
+Meta category    Application
+Meta subject     framework application
+
+Package tcldevkit::config 2.0
+Meta platform    tcl
+Meta summary     Read/write configuration files
+Meta description Commands to handle a standard configuration file format used by the TDK applications.
+Meta category    Configuration
+Meta subject     configuration preferences

@@ -1,0 +1,155 @@
+Compilation of packages
+=======================
+
+We have a work-item:
+
+        Supress the compilation of files which are in packages, or
+        alternatively allow the user to select wether to compile all
+        packages, no packages, maybe select compilation per package.
+
+I am not sure that the user of tclapp wants to bother with this. The
+default is different depending on the intended availability of a
+package.
+
+Public packages, like Bwidgets don't have to be compiled, their
+default should be 'off'. This loads faster as no decoding is required,
+and the uncompiled file is smaller. And extracting them out of the
+wrapped application gives the extractor no benefit. 
+
+For private packages of the developer or organisation on the other
+hand the default should be compile, to ensure that only obfuscated
+code goes out.
+
+The above implies that the base information regarding compilation
+should come out of the .tap file for a package. Overides by the user
+should be possible, but not considered the normal behaviour.
+
+
+-- Current Status --
+
+I have a small change to tclapp which suppresses the compilation of
+all packages right now. ... As it is written based on a general
+mechanism for meta data per destination file the same mechanism can be
+employed to make this more package based (let each file efer to its
+package (token) for access to this information by the wrap engine
+(copy engine).
+
+-- -------------- --
+
+The full set of changes to make based on the thoughts above would be:
+
+*       TAP files
+        Extended specification
+        Contents        New keyword     Compile (Boolean)
+
+*       Package Editor
+        UI              New checkbox    Compile Y/N
+        Read/Save the extended tap file
+
+*       TclApp
+        Extend .tap reader
+        Extend internal pkg database
+        Let files refer to their package
+        Use reference + compile info to determine whether to compile
+        a file in a package.
+
+        (Files outside of a package are handled via the standard 'compile'
+        checbox in the 'Wrapping' tab)
+
+The above would implement compilation of fiels in packages based on
+information in .tap files. Implementation should be possible within a
+day. The above does not cover the ability of the user to overide the
+package default from the command line or UI.
+
+
+
+
+"Loose" packages
+================
+
+A loose package is a tcl package which is given as a list of files to
+TclApp instead of being specified by name.
+
+Loose packages occur for example if a user of TclApp wishes to wrap a
+package for which TclApp does not have a .tap file. In that case
+specifying the list of files directly is the only way to wrap the package.
+
+They may also occur if the user is not aware of his ability to specify
+the package in question by name, or wishes to overide the default
+location TclApp places all packages into.
+
+
+Problems of loose packages
+==========================
+
+The default location for packages is the archive directory 'lib'. The
+package 'starkit' (wrap support) automatically adds this directory to
+the auto_path so that [package require] will find the wrapped
+packages.
+
+A loose package however is usually placed in a non-standard path,
+either 'lib/application/...' if the user did not intervene by setting
+-anchor, or because -anchor was set to a patrh != 'lib'. such
+non-standard path are not in the auto_path, causing [package require]
+to fail for the package as it isn't able to find it.
+
+This problem came up at the beginning of the Beta 1 period for TDK 2.5
+
+
+Solutions to the problem
+========================
+
+There are several solutions possible, not necessarily mutually
+exclusive.
+
+1)      A new application written for the Beta 2 period is the Package
+        Editor. It enables users of the TDK to generate their own .tap
+        files.
+
+        This means that the first reason for usage of a loose packages
+        (missing .tap file for package outside ActiveTcl) is not valid
+        anymore.
+
+        It does not solve the problem of a user in want of a
+        non-standard location for a particular package.
+
+
+2)      Automatically add all subdirectories of 'lib/application' to
+        the auto_path upon startup. This solves the problem for loose
+        packages without specific -anchor. These are usually packages
+        for which there is no .tap file. For these (1) is considered
+        the better path.
+
+        It does not solve the problem of a user in want of a
+        non-standard location outside of lib/application for a
+        particular package.
+
+
+3)      Provide a variable containing the path to lib/application
+        which can be used in application-specific initialization code
+        to easily specify additional paths added to the auto_path.
+
+        This solution requires the user to remember to write his own
+        initialization code, and to actually write such code. This is
+        not very convenient. It also has the problems of (2).
+
+        (For anything outside of lib/application we can use the
+        contents of the variable starkit::topdir as base
+        directory. And that is what we currently have, i.e. the
+        current situation.)
+
+
+4)      Provide an option, -libdir (or -pkdir ?), and companion UI
+        elements to specify directories to be added to the auto_path.
+        This solves the problem for any location of a package, and is
+        actually necessary only if the user requested a specific
+        package location. For packages without .tap files (1) is still
+        a better solution.
+
+
+Discussion of the solutions
+===========================
+
+IMHO combining (1) and (4) provide us with the best combination of
+ease and range for the problem at hand, especially as (1) is already
+implemented as general support for users having their own packges.

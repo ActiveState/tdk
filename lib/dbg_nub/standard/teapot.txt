@@ -1,0 +1,5 @@
+Package nub 1.0
+Meta entrysource nubloader.tcl
+Meta included    nub.tcl nubloader.tcl
+Meta platform    tcl
+Meta description Standard Debugger Nub

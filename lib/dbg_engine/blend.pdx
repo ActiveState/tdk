@@ -1,0 +1,64 @@
+# blend.pdx -- -*- tcl -*-
+#
+#	This file implements the TclPro Debugger extension for the
+#	TclBlend extension.
+#
+# Copyright (c) 1998-2000 Ajuba Solutions
+# Copyright (c) 2001-2006 ActiveState Software Inc.
+#
+# All rights reserved.
+# 
+# RCS: @(#) $Id: blend.pdx,v 1.5 2000/06/26 21:07:26 stanton Exp $
+
+# Register the TclBlend extension
+
+instrument::addExtension 2.0 {java}
+
+namespace eval blend {
+}
+
+# Register handlers for each of the TclBlend commands
+
+instrument::addCommand java::bind	{parseSimpleArgs 1 3 {parseWord parseWord parseBody}}
+##instrument::addCommand try		{parseSimpleArgs 1 -1 blend::parseTry}
+instrument::addCommand java::try	{parseSimpleArgs 1 -1 blend::parseTry}
+
+# blend::parseTry --
+#
+#	This routine wraps the java::try command.
+#	Parse args of the pattern:
+#		?catch exception_pair script ... ? ?finally script?
+#
+# Arguments:
+#	tokens		The list of word tokens for the current command.
+#	index		The index of the next word to be parsed.
+#
+# Results:
+#	Returns the index of the last token + 1 (all have been parsed).
+
+proc blend::parseTry {tokens index} {
+    # The first script argument is required.
+
+    set argList [list parseBody]
+
+    set i [expr {$index + 1}]
+    set argc [llength $tokens]
+    while {$i < $argc} {
+	# At this point in the loop, there are 3X + 2 more args.
+	
+	if {$i == [expr {$argc - 2}]} {
+	    lappend argList parseWord parseBody
+	    incr i 2
+	} else {
+	    lappend argList parseWord parseWord parseBody
+	    incr i 3
+	}
+    }
+
+    # in case "try" was call with wrong num args, just check the extras
+    # against parseWord for now--the user will get a Tcl runtime exception.
+
+    lappend argList parseWord
+
+    return [instrument::parseSimpleArgs 1 -1 $argList $tokens $index]
+}

@@ -1,0 +1,157 @@
+
+User interface specification for the TclPro compiler (procomp)
+==============================================================
+
+TOC
+---
+
+* Current state
+* Mapping of command line arguments to a graphical user interface
+* New features ?
+* User interface elements
+* Footnotes
+
+Current state
+-------------
+	procomp is a command line tool. The recognized argument
+	structures and options are:
+
+	Argument structure
+		procomp ?options? path1 ?path2 ...?
+
+	Options		| Meaning
+	================+======================================================
+(o1)	-force		| Force overwrite; if an output file exists, delete it.
+	----------------+------------------------------------------------------
+(o2)	-help		| Print a help message.
+	----------------+------------------------------------------------------
+(o3)	-nologo		| Suppress copyright banner.
+	----------------+------------------------------------------------------
+(o4)	-out name	| Specifies that the output path is 'name'. If only one
+			| file is being compiled, 'name' may specify the
+			| complete output file name.  Otherwise 'name' must be
+			| the name of an existing directory to which all
+			| compiled files will be written.
+	----------------+------------------------------------------------------
+(o5)	-prefix type	| Specifies whether a prefix string should be
+			| prepended to the emitted output files, and
+			| if so how it should be generated. 'type'
+			| value can be one of the following. Any other
+			| value for type is assumed to be a path to a
+			| file that will be used as the output file
+			| prefix.
+			|
+			|	Type	| Meaning
+			|	--------+--------------------------------------
+			|	none	| Do not add a prefix string.
+			|	--------+--------------------------------------
+			|	auto	| Extract the prefix from the input
+			|		| file: everything from the start of
+			|		| the file to the first non-comment or
+			|		| empty line is prepended to the output
+			|		| (default).
+			|	--------+--------------------------------------
+			|	tag	| Extract the prefix from the input
+			|		| file: everything from the start of
+			|		| the file to the first occurrence of a
+			|		| comment line starting with the string
+			|		| "TclPro::Compiler::Include" is
+			|		| prepended to output.
+			|	--------+--------------------------------------
+	----------------+------------------------------------------------------
+(o6)	-quiet		| Suppress warnings about non-existent files.
+(o7)	-verbose	| Verbose mode: messages are generated to log progress.
+	----------------+------------------------------------------------------
+(a1)	pathN		| One or more files to compile.
+	================+======================================================
+			|
+
+	Note:	'-quiet' and '-verbose' do not seem to be complementary options
+		A better name for '-quiet' might have been '-nowarnings'.
+
+Mapping of command line arguments to a graphical user interface
+---------------------------------------------------------------
+
+	Options		| Meaning
+	================+======================================================
+(o1)	-force		| Checkbox
+	----------------+------------------------------------------------------
+(o2)	-help		| Menu: Launch of browser with HTML help file, or
+			|       launch of Win* HTMLHelp.	[**]
+	----------------+------------------------------------------------------
+(o3)	-nologo		| No mapping.
+			| Copyright notice via Menu Help/About, Splash-Screen?
+	----------------+------------------------------------------------------
+(o4)	-out name	| Entry field + Browse-Button + Directory chooser
+			| Compared to the cmdline tool we restrict
+			| ourselves to specifying an output directory.
+			| (Inactive is signaled by an empty entry field).
+	----------------+------------------------------------------------------
+(o5)	-prefix type	| Combo: Radiobox (4 radio buttons) + Entry field +
+			|	 Browse-Button + File chooser
+			| Radiobox alternate: Option menu.
+			| Error condition: No path entered, but chosen as mode.
+	----------------+------------------------------------------------------
+(o6)	-quiet		| No mapping.
+			| 1. Can't choose non-existent files (see below 'pathN').
+			| 2. A missing file means that changes were done
+			|    outside of the compiler, after selection and
+			|    before actual execution. This is not just a
+			|    warning but a more serious error.
+	----------------+------------------------------------------------------
+(o7)	-verbose	| No mapping.
+			| We always generate progress messages (Log window).
+	----------------+------------------------------------------------------
+(a1)	pathN		| Combo: Listbox + Remove-Button + Browse-Button +
+			|	 File chooser + Entry + Add button. Browse => Add.
+	================+======================================================
+			|
+
+New features ?
+--------------
+
+(f1)	Save/Load a configuration
+(f2)	Save/Load a file selection
+
+
+User interface elements
+-----------------------
+
+*	A single toplevel window
+
+*	Menubar			| Notes
+	========================+=======================================
+	->	File ->	Exit	|
+	->	Help ->	Help	| Launch help	 (Ref: o2, -help)
+		     ->	About	| Show copyright (Ref: o3, -nologo)
+	========================+=======================================
+
+*	Main portion is tabbed notebook (=> Implies usage of BWidgets).
+	(ui_main)
+
+	Tab			| Notes
+	========================+=======================================
+(ui_cto)Options			| Configure the system
+				| (Ref: o1, -force)
+				| (Ref: o4, -out name)
+				| (Ref: o5, -prefix type)
+	------------------------+---------------------------------------
+(ui_ctf)Files			| Enter the files to compile
+				| (Ref: a1, pathN)
+	------------------------+---------------------------------------
+(ui_te)	Execution		| Available only if configuration is ok.
+				| Button 'Run', Log-Window (Progress)
+	========================+=======================================
+
+
+Footnotes
+---------
+
+[**]	This is currently something only done by the debugger.
+	It might be worth to place this functionality into its own
+	package, shared by all tools.
+
+	Also note that this the a sort of trivial functionality which
+	we could give back (via tcllib). It makes the creation of
+	'professional' applications easier for others in general,
+	without impairing the value of our own tools, IMHO.

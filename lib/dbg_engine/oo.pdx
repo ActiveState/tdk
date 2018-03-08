@@ -1,0 +1,182 @@
+# oo.pdx -- -*- tcl -*-
+#
+#	This file implements custom instrumenter extensions
+#	for the oo package.
+#
+# Copyright (c) 2008 ActiveState Software Inc.
+#
+# All rights reserved.
+#
+# RCS: @(#) $Id: tcltest.pdx,v 1.4 2000/05/30 22:54:53 hershey Exp $
+
+# Register the oo extension
+
+instrument::addExtension 2.0 {oo}
+
+namespace eval oo {
+}
+
+# Register handlers for each of the toplevel oo commands
+
+instrument::addCommand oo::define \
+    {parseSimpleArgs 2 -1 {
+	parseWord
+	{parseOption {
+	    {constructor {wrapCommand DbgNub_WrapOOBody 2 {parseWord parseBody}}}
+	    {destructor  {wrapCommand DbgNub_WrapOOBody 1 {parseBody}}}
+	    {export      {parseSimpleArgs 1 -1 {parseWord}}}
+	    {filter      {parseSimpleArgs 0 1 {parseWord}}}
+	    {forward     {parseSimpleArgs 2 -1 {parseWord}}}
+	    {method      {wrapCommand DbgNub_WrapOOBody 3 {parseWord parseWord parseBody}}}
+	    {mixin       {parseSimpleArgs 0 1 {parseWord}}}
+	    {self.class  {parseSimpleArgs 1 1 {parseWord}}}
+	    {superclass  {parseSimpleArgs 1 -1 {parseWord}}}
+	    {unexport    {parseSimpleArgs 1 -1 {parseWord}}}
+	} {parseSimpleArgs 1 1 {{parseBody oo::parseOOClass}}}}
+    }}
+
+instrument::addCommand oo::class \
+    {parseSimpleArgs 1 -1 {
+	{parseOption {
+	    {create {parseSimpleArgs 2 2 {
+		parseWord
+		{parseBody oo::parseOOClass}
+	    }}}
+	} {parseSimpleArgs 1 -1 {parseWord}}}
+    }}
+
+# oo::parseOOClass --
+#
+#	This is a very special script parser for the oo class
+#	commands.  This will only instrument the bodies of special
+#	functions and will not instrument anything at the toplevel.
+#
+# Arguments:
+#	range		The range of the body being parsed.
+#
+# Results:
+#       Returns the instrumented code.
+
+proc oo::parseOOClass {range} {
+    # Iterate over all of the commands in the script range, advancing the
+    # range at the end of each command.
+
+    variable ::instrument::script
+    variable ::instrument::errorHandler
+    variable ::instrument::suppress
+
+    instrument::pushContext
+    set first 1
+    for {} {[parse charlength $script $range] > 0} \
+	    {set range $tail} {
+	# Parse the next command
+
+	if {[catch {
+	    lassign [parse command $script $range] \
+		    comment cmdRange tail tree
+	}]} {
+	    # An error occurred during parsing.
+
+	    if {$errorHandler ne ""} {
+		set ec $::errorCode
+		instrument::pushContext
+		instrument::setLocation [list [lindex $ec 2] 1]
+		set location [instrument::getLocation]
+		instrument::popContext
+		if {[instrument::runHandler $location $ec]} {
+		    # Ignore the error and skip to the end of the statement.
+		    
+		    if {!$first} {
+			instrument::appendString \n
+		    }
+
+		    # Emit everything else as a single command with no
+		    # instrumentation.
+
+		    instrument::beginCommand $range
+		    set suppress 1
+		    instrument::endCommand $range
+		    break
+		}
+	    }
+	    # Note we are bailing all the way out here, so we don't need
+	    # to pop the context or do any other cleanup.
+
+	    error "Unable to parse" $::errorInfo [list CAUGHT $::errorCode]
+	}
+
+	if {([llength $tree] == 0) \
+		|| ([parse charlength $script $cmdRange] <= 0)} {
+	    continue
+	}
+
+	if {!$first} {
+	    instrument::appendString "\n"
+	} else {
+	    set first 0
+	}
+
+	# Update the line number and set the anchor at the beginning of the
+	# command, skipping over any comments or whitespace.
+
+	instrument::beginCommand $cmdRange
+
+	set ::instrument::suppress 1
+
+	set argc [llength $tree]
+	set index 0
+	while {$index < $argc} {
+	    set cmdToken [lindex $tree $index]
+	    if {[instrument::getLiteral $cmdToken cmdName]} {
+		incr index
+		set cmdName [string trimleft $cmdName :]
+
+		# Invoke the parsers for all the special commands, i.e.
+		# @ constructor, destructor, method
+
+		switch -- $cmdName {
+		    method {
+			if {($argc - $index) != 3} {
+			    break
+			}
+
+			# Bugzilla 91407. Route execution through the
+			# wrapper setting up the method's proper entry
+			# in the context stack.
+			set index [instrument::wrapCommand DbgNub_WrapOOBody 3 \
+				       {parseWord parseWord parseBody} $tree $index]
+		    }
+		    constructor {
+			if {($argc - $index) != 2} {
+			    break
+			}
+
+			# Bugzilla 91407.
+			set index [instrument::wrapCommand DbgNub_WrapOOBody 2 \
+				       {parseWord parseBody} $tree $index]
+		    }
+		    destructor {
+			if {($argc - $index) != 1} {
+			    break
+			}
+
+			# Bugzilla 91407.
+			set index [instrument::wrapCommand DbgNub_WrapOOBody 1 \
+				       {parseBody} $tree $index]
+		    }
+		    default {
+			# Skip to the end of the command since we can't
+			# instrument anything at the top level of the class
+			# declaration.
+			break
+		    }
+		}
+	    } else {
+		set index [instrument::parseCommand $tree $index]
+	    }
+	}
+	instrument::endCommand [lindex [lindex $tree end] 1]
+    }
+    instrument::popContext
+    return
+}

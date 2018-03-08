@@ -1,0 +1,1230 @@
+2002-11-14  Andreas Kupries  <andreask@activestate.com>
+
+	* breakWin.tcl: Fixed Bugzilla 21424.
+
+2002-11-13  Andreas Kupries  <andreask@activestate.com>
+
+	* menu.tcl: Fixed Bugzilla 21409.
+
+2002-07-24  Andreas Kupries  <andreask@activestate.com>
+
+	* watchWin.tcl: Bugzilla 19719. Addendum: Disable the transform
+	  selector (option menu) if the entry containing the varname is
+	  empty.
+
+2002-07-23  Andreas Kupries  <andreask@activestate.com>
+
+	* util.tcl: Self debugging helper procedure, dump call stack.
+
+	* selection.tcl: Typo fix.
+
+	* watchWin.tcl: 
+	* varWin.tcl: 
+	* system.tcl: 
+	* proj.tcl: 
+	* inspectorWin.tcl: Implementation of Bugzilla 19719.
+
+2002-07-19  Andreas Kupries  <andreask@activestate.com>
+
+	* codeWin.tcl: Optimized [mangle] and [binaryClean] to use [string
+	  map] instead of only 8.0 functionality.
+
+2002-07-16  Andreas Kupries  <andreask@activestate.com>
+
+	* checker.tcl: Fixed key pattern so that old informaiton is truly
+	  deleted. Bugzilla 19848.
+
+2002-07-15  Andreas Kupries  <andreask@activestate.com>
+
+	* gui.tcl: 
+	* codeWin.tcl:
+	* nub.tcl: 
+	* dbg.tcl: 
+	* block.tcl:
+	* break.tcl:
+	* system.tcl: Bugzilla 19824 fixes. Explanations in the code. Look
+	  for marker 'Bugzilla 19824'.
+
+2002-07-12  Andreas Kupries  <andreask@activestate.com>
+
+	* tkcon.tcl: Bugzilla 18397 fixed. The arrow keys now scroll
+	  through the command history, like Ctrl-p/n
+
+2002-07-11  Andreas Kupries  <andreask@activestate.com>
+
+	* gui.tcl
+	* debugger.tcl.in: 
+	* dbg.tcl: 
+	* nub.tcl: Bugzilla 19825. See comments in the code.
+
+2002-07-05  Andreas Kupries  <andreask@activestate.com>
+
+	* coverage.tcl: Fixed Bugzilla 19622 which caused the profile
+	  counters to be off when stepping.
+
+2002-07-04  Andreas Kupries  <andreask@activestate.com>
+
+	* proj.tcl: Added handling of file format 2.0.
+	* system.tcl (projVersion). Default value bumped to 2.0. New
+	  projects automatically use the new file format. Bugzilla 19737.
+
+	* coverage.tcl:
+	* gui.tcl: Query user if he wishes to retain coverage informaiton
+	  from the last run of the application. Only if coverage
+	  information is present and the debugger in coverage
+	  mode. Bugzilla 19627.
+
+2002-06-21  Andreas Kupries  <andreask@activestate.com>
+
+	* projWin.tcl (AddToCombo, lunique): Fixed Bugzilla 19698
+	  ... Removing duplicate entries from lists in comboboxes.
+
+2002-06-20  Andreas Kupries  <andreask@activestate.com>
+
+	* dbg.tcl (Instrument, validateBreakpoints): Fixed Bugzilla
+	  19718. Exclude moved bp's from transfer via special transient
+	  states. Set transient state. Convert the transient states into
+	  the regular states.
+
+	* system.tcl (getInterps, uniquePaths): Bugzilla 19618
+	  ... collapse the list to contain only unique paths
+
+	* projWin.tcl (CreateScriptWindow): Bugzilla 19618 ... collapse
+	  lists to contain only unique paths. Fixed Bugzilla 19617
+	  ... This explicit setting of the value to display interferes
+	  with the implicit selection done through => -textvariable
+
+	* gui.tcl (start): Fixed Bugzilla 19617, 19700. Switched from
+	  using the xList's to the X preferences themselves. Difference
+	  btween old and Bwidget comboboxes.
+	
+	  (quit) Fixed Bugzilla 19619: Cearing coverage cache to remove
+	  outdated block id's.
+
+	* coverage.tcl (createWindow): Fixed Bugzilla 19690. The selected
+	  line of the table is shown inverted.
+
+2001-10-17  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
+	* instrument.tcl:
+	* gui.tcl:
+	* dbg.tcl:
+	* codeWin.tcl: Changed "tclParser" to "parser", in accordance to
+	  the change made to the "tclparser" project of tclpro.
+
+2001-09-05  Andreas Kupries  <andreask@pliers.activestate.com>
+
+	* Added ActiveState Copyright to all files.
+
+2001-06-03  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* nub.tcl: fixed variable display for compatability with 8.0 (ruppert)
+	[Bug #414895]
+
+2001-03-14  Karl Lehenbauer <karl@procplace.com>
+
+	* mkIndex.tcl.in: Altered Nativepath proc to work correctly with 
+	  new Cygwin drive specification syntax when running on Windows.
+	  (Was //d/foo -> D:/foo   Now also /cygdrive/d/foo -> D:/foo)
+
+2001-2-26 Brent Welch <brent.welch@interwoven.com>
+
+	* configure.in:
+	* Makefile.in:
+	Turned off use of the .tbc files
+
+2001-2-8 Brent Welch <brent.welch@interwoven.com>
+
+        * debugger.tcl.in: Made printing the Copyright not the default.
+	Replaced -nologo cmd line arg with -logo.
+
+2000-10-10  Scott Stanton  <stanton@ajubasolutions.com>
+
+	* nub.tcl: Fixed so auto_import'ed code is only instrumented if
+	the autoLoad flag is set.  [Bug: 5038]
+
+2000-10-06  Scott Stanton  <stanton@ajubasolutions.com>
+
+	* tests/nub.test: 
+	* nub.tcl: Fixed rename checking to only match renames of global
+	commands, not commands in other namespaces that happen to mask
+	global commands.
+
+2000-10-04  Scott Stanton  <stanton@ajubasolutions.com>
+
+	* tests/nub.test: 
+	* nub.tcl: 
+	* initdebug.tcl: Added debugger_setCatchFlag to allow scripts to
+	override the normal error suppressing behavior of the "catch"
+	wrapper.  If the catch flag is set to 1, then the debugger will
+	break on errors even if they would normally be masked by an
+	enclosing catch statement. [Bug: 6252]
+
+2000-07-28  Brent Welch  <welch@ajubasolutions.com>
+
+	* coverage.tcl:
+	 Switched to use images/win_cover.gif instead of base64-inlined image.
+	* image.tcl:
+	Created coverage toolbar button from images/win_cover.gif
+	* debugger.tcl.in:
+	Removed "turn on coverage" print statement.
+	* system.tcl:
+	Fixed getInterps to find executables on windows.
+
+2000-07-25  Brent Welch  <welch@ajubasolutions.com>
+
+	* pkgIndex.tcl - no need to source the system.tcl
+	(or system.tbc) file explicitly.
+
+2000-07-22  Brent Welch  <welch@ajubasolutions.com>
+
+	* Changed pkgIndex.tcl file to source directly the
+	debugger.tcl and system.tcl files so that the
+	system:: api calls work during early dialogs.
+
+2000-06-30  Scott Stanton  <stanton@ajubasolutions.com>
+
+	* tests/dbgLaunch.tcl: Made the executable name settable with an
+	arg to testDbg.
+
+	* tests/nub.test: 
+	* nub.tcl: Changed DbgNub_GetVar to avoid triggering array traces
+	when fetching an array element.  This won't work in all cases
+	because of upvar aliases, but it should handle the typical
+	scenario. [Bug: 4095]
+
+2000-06-26  Scott Stanton  <stanton@ajubasolutions.com>
+
+	* portWin.tcl: Added "Cancel" button to socket error dialog.
+	[Bug: 3164] 
+
+	* block.tcl: Lint.
+
+	* tests/nub.test: 
+	* nub.tcl: Fixed DbgNub_GetVar to check for Windows bug where null
+	env entries are implicitly unset even though they appear in the
+	array names list. [Bug: 4120]
+
+	* tests/blend.test: 
+	* blend.pdx: Fixed blend instrumentation that interfered with the
+	Tk bind command. [Bug: 5429]
+
+2000-06-14  Scott Stanton  <stanton@ajubasolutions.com>
+
+	* menu.tcl: Fixed duplicate accelerator key. [Bug: 3857]
+
+2000-05-15  Scott Stanton  <stanton@scriptics.com>
+
+	* proj.tcl: Fixed improper computation of project base name that
+	resulted in clipping the "untitled" project name.
+
+	* gui.tcl: Changed the user break dialog to use tk_messageBox
+	instead of tk_dialog in order to get better look and feel and to
+	get proper transient behavior.  It now appears above the main
+	dialog window in the stacking order.  Changed to deiconify
+	debugger when hitting a breakpoint or when the application
+	exits. [Bug: 488]
+
+	* menu.tcl: Restart menu item is not properly disabled for remote
+	projects. [Bug: 5377]
+
+2000-05-09  Scott Stanton  <stanton@scriptics.com>
+
+	* system.tcl: Avoid calling "file nativename" on http URLs.
+
+	* menu.tcl: Fixed problems with quoting of help file names.
+	[Bug: 3937] 
+
+2000-05-04  Sandeep Tamhankar <sandeep@scriptics.com>
+
+	* procWin.tcl: Fixed bug 3244, where the first item in the textbox
+	would get auto-selected along with the already-selected item after
+	hitting Instrument/Uninstrument.  Sometime within the past month,
+	someone also fixed a bug where the Instrument and Uninstrument
+	buttons could be enabled or disabled simultaneously.
+	
+2000-04-12  Melissa Chawla  <hershey@scriptics.com>
+
+	* block.tcl: added code to initialize which ranges can be covered
+	after a new block is instrumented.
+
+	* codeWin.tcl: added code to update which ranges are highlighted
+	at a breakpoint.
+
+	* dbg.tcl: added code to tell the nub to start storing coverage if
+	coverage is enabled.
+
+	* debugger.tcl.in: added -coverage flag to turn on the code
+	coverage feature.  Now sources the new coverage.tcl and
+	pre-existing tcltest.pdx files.
+
+	* gui.tcl: added code to initialize the coverage gui and update it
+	whenever the debugger stops.
+
+	* nub.tcl: added code to store the current location in DbgNub
+	array whenever DbgNub_Do is called if coverage is turned on.  (it
+	is off by default).
+
+	* Makefile.in: added coverage.tcl and tcltest.pdx files.
+
+2000-04-11  Scott Stanton  <stanton@scriptics.com>
+
+	* projWin.tcl: The glob lists were being reversed before items
+	were removed.  This resulted in the wrong item being
+	deleted. [Bug: 5010]
+
+2000-03-21  Melissa Chawla  <hershey@scriptics.com>
+
+	* debugger.tcl.in:
+	* scwizards.pdx: removed this file and all references to it.
+	Scwizards is nolonger an external API.
+
+2000-03-11    <stanton@scriptics.com>
+
+	* images/refresh_d.gif: 
+	* images/refresh.gif: Fixed so these images properly set their
+	transparency color.
+
+	* nub.tcl: Fixed code that called "info" command without proper
+	namespace qualifier.
+
+	* system.tcl: 
+	* debugger.tcl.in: Added "package require registry" so code will
+	work on Windows in a normal Tcl shell.
+
+2000-01-07  Sandeep Tamhankar  <sandeep@scriptics.com>
+
+	* proj.tcl: Fixed bug 1227, where invalid ports were accepted in
+	the Default Project Settings window.
+
+	* portWin.tcl: Fixed bug where low port numbers (which are
+	reserved by the OS) would cause a stack trace.  Also fixed a typo
+	in the "Error Opening Port" dialog box.
+
+	* menu.tcl: Fixed bug 1617, where the "Show Code" button in the
+	Window-Windows window was enabled even when there were no files in
+	the list.
+
+2000-01-06  Sandeep Tamhankar  <sandeep@scriptics.com>
+
+	* system.tcl: Fixed the "invalid color" error (bugs 2656 & 3581),
+	which was caused by some miscalculations in
+	system::setWidgetAttributes.
+
+1999-12-23  Melissa Chawla  <hershey@scriptics.com>
+
+	* system.tcl:  Fixed bug 3936 by calling ::start with
+	[file nativename $url] rather than just the $url.
+
+	* menu.tcl:  Fixed bug 3937 by listifying the url argument
+	when creating the menu item openURL callback scripts.
+
+1999-11-29  Melissa Chawla  <hershey@nutella.scriptics.com>
+
+	* instrument.tcl: added code to store "coverable" ranges in
+	instrument::ranges.
+
+	* block.tcl: added blk::getRanges proc to recover "coverable"
+	ranges.  Changed blk::isInstrumented to catch the error and return
+	0 if the block is empty.
+
+	* dbg.tcl
+	* nub.tcl: added nub procedures to store coverage.  Added a
+	coverage item to the message sent on break.
+
+	* codeWin.tcl: remove code that ignores invalid breakpoints
+	because we nolonger have invalid breakpoints (RFE 99).
+
+	* dbg.tcl: added validateBreakpoints, binarySearch, and
+	moveLineBreakpoint procedures to move invalid breakpoints to the
+	nearest valid line.  Added call to validateBreakpoints if
+	dbg::Instrument (RFE 99).
+
+	* prefWin.tcl:
+	* system.tcl: changed "Browser" pref tab to "Other" and added
+	WarnInvalidBp pref to that tab.  The new global pref has a default
+	value of 1.  changed system::getInterps to use the
+	projectInfo::executable array for the names of tclsh and wish
+	files.
+
+	* menu.tcl:
+	* gui.tcl: changed to enable refreshButton when current block is
+	not instrumented, even if that state is stopped or running.
+	
+1999-11-28  Melissa Chawla  <hershey@nutella.scriptics.com>
+
+	* codeWin.tcl: fixed bug 3623 by removing the last newline in the
+	codebar when uninstrumented code is displayed.
+
+	* debugger.tcl.in: removed nologo option from debugger.  Updated
+	pdx file locator to use projectInfo variables.
+
+1999-11-22  Melissa Chawla  <hershey@nutella.scriptics.com>
+
+	* gui.tcl: reevaluate state for refreshFile button whenever
+	gui::changeState or gui::updateStatusFile is called.  Fixed bug
+	3631 by adding "kill" to the list of buttons to enable when the
+	debugger state is changed to "stopped".
+
+	* image.tcl
+	* toolbar.tcl
+	* system.tcl
+	* bindings.tcl: added bindings, images, toolbar buttons, menu
+	items, and invoakation callback procs for new refreshFile
+	feature. (RFE 3255).
+
+1999-11-18  Sandeep Tamhankar  <sandeep@scriptics.com>
+
+	* projWin.tcl: Fixed Project Preferences window (bug 2442) -- you
+	can now select elements in the textbox by clicking in the white
+	space next to them.  The solution is to insert items in the text
+	boxes, followed by "\n".
+
+1999-11-17  Sandeep Tamhankar  <sandeep@scriptics.com>
+
+	* procWin.tcl: I fixed bug #3244, where the procedure window's
+	buttons were doing erratic things once a pattern was entered.  The
+	problem was inconsistent record-keeping with respect to which item
+	was currently selected.  Now, whenever a pattern is entered, the
+	first item in the list is automatically (and consistently) selected.
+
+1999-11-15  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* system.tcl
+	* menu.tcl: Fixed Tcl/Tk help menu (bug 3562)--now the installer
+	and tools agree on where to find the help file.  Added projectInfo
+	namespace variables to point to Tcl/Tk and Connect help.
+
+1999-11-15  Scott Stanton  <stanton@scriptics.com>
+
+	* nub.tcl: Procedures that are deleted while still on the stack
+	were generating errors in DbgNub_PushStack because "namespace
+	origin" generates an error instead of returning an empty string
+	like "info commands". So now the nub checks for existence with
+	"info commands" before attempting to resolve the procedure
+	name. [Bug: 3613]
+
+1999-11-12  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* uplevel.pdx
+	* debugger.tcl.in: Added sourcing of uplevel.pdx: fixed bug 477.
+
+	* debugger.tcl.in: Removed sourcing of scwizards.pdx.  This should
+	not be added until the scwizards.pdx file is brought up to date:
+	entered bug 3592.
+
+1999-11-11  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* bindings.tcl:
+	* system.tcl:
+	* menu.tcl: Fixed bug 3562.  Changed Debugger help to use html
+	help at Scriptics' web site.  Removed Tcl/Tk help from debugger
+	on Unix.
+
+1999-11-09  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* proj.tcl: Fixed bug 2449: preserved the breakpoints before
+	updating project info from a saved project file, and then restored
+	the existing line breakpoints.
+
+1999-11-08  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* proj.tcl: Fixed bug 2702 by wrapping a call to
+	projWin::CancelProjectSettings inside a call to projWin::isOpen.
+
+1999-11-05  Scott Stanton  <stanton@scriptics.com>
+
+	* initdebug.tcl: Added sentinel to avoid redefining debugger_*
+	procedures if they are already defined.  This will fix the
+	problems that occur if initdebug.tcl is sourced after
+	debugger_init has successfully connected to a debugger.
+	[Bug: 3481]
+
+	* debugger.tcl.in: Changed to handle case where .about window is
+	destroyed before the <Destroy> binding can be established.
+	[Bug: 3285]
+
+1999-11-02  Scott Stanton  <stanton@scriptics.com>
+
+	* nub.tcl: On Linux, the socket may return an error instead of EOF
+	on the read side when the debugger disconnects from the nub.  So,
+	now we catch this case and clean up.
+
+1999-11-01  Scott Stanton  <stanton@scriptics.com>
+
+	* nub.tcl: DbgNub_SendMessage did not handle the case where the
+	"flush" fails due to the socket detecting a closed remote pipe.
+	DbgNub_Instrument did not handle failures while waiting for the
+	instrumented code.  It failed to reset the DbgNub(iscript) value
+	before waiting for the reply so it didn't detect a lost
+	connection properly and ended up returning old code from the
+	previous instrumented block.  [Bug: 3252]
+	
+	* nub.tcl: DbgNub_GetVar incorrectly truncated trailing whitespace
+	when fetching values with a maximum length specified. [Bug: 3260]
+
+1999-11-01  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* tclCom.pdx:  updated foreachitem table entry to accept either 3
+	or 4 arguments, where the last args is always a script.
+
+1999-10-22  Scott Stanton  <stanton@scriptics.com>
+
+	* nub.tcl: Changed nub variable truncation code to copy variable
+	before truncation to avoid losing the internal rep.  This is
+	important for extensions like TclBlend where the internal rep is
+	precious.  Also fixed an off by one error in the maxlen computation.
+
+1999-10-21  Scott Stanton  <stanton@scriptics.com>
+
+	* debugger.tcl.in: Added description for -display argument.
+	[Bug: 3125] 
+
+	* gui.tcl: Changed to use aboutCmd parameter to display about box
+	so we can customize the about for each product.
+
+1999-10-20  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* inspectorWin.tcl: fixed bug 2703 that cause data display window
+	to appear empty if opened twice on the same variable.
+
+	* blend.pdx: fixed bug in the way the java::try command was
+	getting instrumented.
+
+	* instrument.tcl: fixed bug in parseSimpleArgs that caused
+	controll structures with max numArgs = -1 not to get
+	instrumented.
+
+1999-10-19  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* tclCom.pdx: added support for the new tclcom::foreachitem
+	command.
+
+1999-10-19  Scott Stanton  <stanton@scriptics.com>
+
+	* tests/guiLaunch.tcl: 
+	* tests/dbgLaunch.tcl: Updated test files to reflect recent changes.
+	
+	* system.tcl: 
+	* proj.tcl: 
+	* menu.tcl: 
+	* gui.tcl: 
+	* debugger.tcl.in: Changed debugger::init to take application
+	specific parameters and store in a debugger::parameters array.
+	This centralizes the parameter setting and makes it easier to
+	document and maintain.  Made the default project type a settable
+	parameter.  [Bug: 3040]
+	
+	* system.tcl: 
+	* gui.tcl: 
+	* debugger.tcl.in: Changed to use Winico to set the window icon to
+	::projectInfo::iconImage. [Bug: 3108]	 
+
+1999-10-18  Scott Stanton  <stanton@scriptics.com>
+
+	* gui.tcl: 
+	* debugger.tcl.in: Changed startup to display about box before
+	displaying the main window. Unless explicitly dismissed, the about
+	box is displayed for 2.5 seconds.  The debugger continues to
+	initialize in the background. [Bug: 3095]
+	
+	* debugger.tcl.in: Changed startup code to only display banner
+	when -help or -version flags are specified. [Bug: 2929]
+
+1999-10-13  Scott Stanton  <stanton@scriptics.com>
+
+	* system.tcl: Removed stale code. [Bug: 3070]
+
+	* tests/system.test: 
+	* tests/protest.tcl: 
+	* tests/proj.test: 
+	* tests/nub.test: 
+	* tests/initProject.tcl: 
+	* tests/guiLaunch.tcl: 
+	* tests/dbgLaunch.tcl: 
+	* tests/all.tcl: 
+	* Makefile.in: Lots of test script cleanup to make it work in the
+	new build environment.
+
+	* nub.tcl: Fixed initial value to DbgNub(script) to be in list
+	form to avoid unwanted substitutions. [Bug: 3093]
+
+1999-10-12  Scott Stanton  <stanton@scriptics.com>
+
+	* system.tcl: Fixed bug in code that caused preferences to go into
+	the wrong directory.
+
+	* debugger.tcl.in: 
+	* cmdline.tcl: 
+	* Makefile.in: Moved cmdline.tcl into a separate package/module.
+
+1999-10-11  Scott Stanton  <stanton@scriptics.com>
+
+	* system.tcl: 
+	* proj.tcl: 
+	* menu.tcl: 
+	* gui.tcl: 
+	* debugger.tcl.in: Fixed command line parsing to look for -help
+	instead of -prohelp.  Replaced references to version with
+	references to projectInfo.
+	
+	* version.tcl.in: 
+	* configure.in: 
+	* Makefile.in: Changed so .tbc files are only generated for
+	release builds.  Changed to use projectInfo library instead of
+	private copy of version.tcl.
+
+1999-09-10  Scott Stanton  <stanton@scriptics.com>
+
+	* nub.tcl: Fixed additional mismatch in stack frames due to
+	partially resolved procedure names.
+
+1999-09-07  Scott Stanton  <stanton@scriptics.com>
+
+	* prodebug.tcl: 
+	* nub.tcl: added debugger_attached API to make it possible to
+	check to see if the debugger is currently attached to the process.
+
+	* nub.tcl: Fixed bug where procedure frames that correspond to
+	indirectly resolved namespace names would appear as deleted
+	frames. [Bug: 2697]
+
+	* nub.tcl: Changed debugger_eval so it appears on the stack as a
+	separate frame to fix a problem where calls to debugger_eval would
+	mess up the stack order when called from uninstrumented
+	frames. [Bug: 2698]
+
+1999-08-12  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* proj.tcl: fixed bug (2536) that caused a stack trace when new
+	projects are opened, canceled, and then closed.  This bus was
+	fixed by resetting the projWin::destroyCmd var to empty when the
+	proj::closeProjDialog procedure gets the "don't save" event from
+	the message box.
+
+1999-08-06  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* nub.tcl: fixed bug that caused sourced files not to get
+	instrumented after code is autoloaded.  The fix was to reset the
+	DbgNub(inAutoLoad) variable to 0 before testing whether to set it
+	to 1.
+
+1999-07-31  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* nub.tcl: applied Scott S.'s patch to tell the nub that no error
+	has been handled.
+
+1999-07-30  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* system.tcl:
+	* projWin.tcl: Further fixing of bug 490.  Empty interp lists for
+	preexisting projects and project defaults from prior versions are
+	now filled in.
+
+1999-07-26  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* system.tcl: Fixed bug 490 by finding the protclsh and prowish
+	files relative to the prodebug executable.  The Windows
+	implementation of this feature nolonger uses the registry to find
+	these files.  Windows now uses the same code as the Unix to find
+	these interps.
+
+	* gui.tcl: Updated credits to include the entire company.
+	
+1999-07-23    <stanton@scriptics.com>
+
+	* nub.tcl: Changed implementation of debugger_eval to support
+	-name switch.  This adds the ability to associate a virtual file
+	name with a block of code so breakpoints are persistent.
+
+	* dbg.tcl: Fixed handling of ERROR values on dbg::Send to cleanly
+	propagate errors.
+
+1999-07-23  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* find.tcl: Fixed bug 2429 by changing \{$findVar\} to [list
+	$findVar].
+
+	* proj.tcl: Fixed bug 2279 by adding a call to
+	projWin::CancelProjSettings, which closes the project settings
+	window, to proj::closeProjCmd.
+
+1999-07-22  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* nub.tcl:  Fixed bug 2289.  Initialize the DbgNub(script) stack
+	with the value of [info script], rather than the empty string.
+	The initial value must be set for the remote debugging case, as
+	the script is not sourced.  For the local debugging case, the
+	initial value is temporarily appLaunch.tcl, which is not correct,
+	but this value will never be accessed because the "initial" script
+	will be sourced, thereby pushing the correct script name on the
+	stack.
+
+1999-07-02  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* projWin.tcl: "*" is added to an empty "instrument these files"
+	listbox when either apply or ok is pressed.  Fixed bug where
+	glob patterns were being compared using glob style matching
+	instead of exact matching.
+
+1999-07-01  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* codeWin.tcl:
+	* menu.tcl:
+	* gui.tcl: fixed RFE 51 by adding a horizontal scrollbar.  Changed
+	elements of code window to use grid rather than pack.  Added
+	gui::scrollDbgTextX procedure to display the horizontal scrollbar
+	when it is needed.  Added code::moveScrollbarX to move ove the
+	elevator of the scrollbar while maintaining the alignment between
+	the CodeWin, CodeBar and LineBar.
+
+1999-06-25  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* projWin.tcl: fixed RFE 697 by adding a gui (in the
+	"instrumentation" tab of the project window) for specifying which
+	files to instrument (in addition to the existing gui for
+	specifying which files not to instrument).
+
+	* proj.tcl: added calls to projWin::nonEmptyInstruText to force
+	an empty "instruText" window to have a "*" in it when the user
+	presses "Apply" or "OK".
+
+	* nub.tcl: The nub proc "DbgNub_sourceWrapper" was modified to
+	check files against the value "DbgNub(includeFiles)", the new
+	user-entered value retrieved by the nub from the debugger.
+
+	* dbg.tcl: modified to add the new "doInstrument" project
+	preference.
+
+	* system.tcl: modified to give DbgNub(includeFiles) the default value
+	"*"; by default, all files are instrumented.
+
+1999-06-24  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* inspectorWin.tcl: fixed bug 30 by adding a "close" button to the
+	upper-right corner of the Data Display window.  Now all auxilliary
+	windows have a close button.
+
+1999-06-18  Melissa Hirschl  <hershey@matisse.scriptics.com>
+
+	* system.tcl: fixed bug 1204.  Instead of "file join .. .. $dir",
+	code now calls "file dirname" twice to get the same effect without
+	leaving "../../" in the file path.
+
+1999-06-02    <wart@scriptics.com>
+	* gui.tcl:
+	* licenseWin.tcl:  Fixed bug that was causing the "About" box
+	to ping the license server.  License info is now cached.
+	[Bug: 1238]
+
+	* system.tcl:  If no preferences are found, the debugger attempts
+	to promote preferences from older versions.  If no older preferences
+	are found, a default set is created.
+
+1999-05-13    <surles@scriptics.com>
+
+	* gui.tcl: 
+	* proj.tcl: 
+	* projWin.tcl: Modified the APIs so it would more aggressively
+	search for an initial file to display in the code window when
+	the initial startup script is set.  Also fixed the problem with
+	displaying relative paths.  [Bug: 1222 1254 1313]
+
+	* proj.tcl: 
+	* projWin.tcl: Fixed bugs that caused preferences to be applied
+	even when Cancel is pressed.  Added another callback command so we
+	now have one for "Apply/OK" and one for "Cancel." [Bug: 2026]
+
+	* proj.tcl: Fixed bug that caused multiple project files with
+	mixed case to be entered more then once in the "Recently Used"
+	list of projects.  This fix was only applied for Windows.  
+	[Bug: 1232] 
+
+	* projWin: Added .test file type to the "Open File Dialog" for
+	script files.  This is useful because most Tcl test files use this
+	extension.
+
+	* projWin: Fixed bug in Label for the list of files not to be
+	instrumented.  The previous label "glob Pattern" was misleading
+	because it only performed a string comparison between the file
+	being sourced and the pattern.  The new label read "String Match
+	Pattern."  Additionally, I added a Copy and Paste binding on the
+	listbox and entry widget respectively.  This makes editing
+	existing entries much easier.  [Bug: 696]
+
+	* toolbar.tcl: Fixed bug that was removing the binding on <Enter>
+	and <Leave> for the first two buttons in the Debugger Toolbar.
+	This bug was added when we started adding context sensitive
+	messages to these buttons based on the state of  Debugger. 
+	[Bug: 2019] 
+	
+1999-05-04    <stanton@scriptics.com>
+
+	* nub.tcl:
+	* dbg.tcl:
+	* prodebug.tcl: Changed socket layer to use "utf-8" encoding when
+	communicating with 8.1 and later interpreters and to use the
+	"iso8859-1" for 8.0 and earlier interpreters.
+
+1999-02-19    <surles@YODA>
+
+	* menu.tcl: Fixed logic bug that prevented the "Save Project" menu
+	entry from ever being enabled.
+
+	* gui.tcl: Made the Connection Status Window transient to the main
+	window and attempted to preserve it window geometry.
+
+1999-02-18    <surles@YODA>
+
+	* proj.tcl: Fixed code based on a more rigorous examination of
+	what is supposed to happen when Apply is pressed given the various
+	GUI states and modes of entering and exiting the Project Settings
+	Window. 
+
+	* projWin.tcl: Added "break" at the end of the <Return> and
+	<Escape> bindings so they will not filter up.  Without the break,
+	if you press Return in the entry box, both the entry box and the
+	top level attempt to kill the window.
+
+	* gui.tcl: Fixed bug where the serverPort was not re-initialized
+	after a running app is killed by the GUI or by some other,
+	external, means.
+	
+1999-02-17    <surles@YODA>
+
+	* prodebug.tcl
+	* system.tcl Changed the default remote port to be 2576
+	
+	* gui.tcl
+	* menu.tcl
+	* proj.tcl
+	* projWin.tcl Made the Project Settings window less modal.  Now
+	the menu items are enabled when the window is being displayed,
+	there are less bugs relating to when a project is initialized and
+	a more consitent definition of the interactions of a new, current
+	and default project setting window. [Bug: 1211]
+	
+	* gui.tcl
+	* portWin.tcl Moved the gui::badPortUI routine into its own module
+	due the number of bugs and inflexibility of the code.  In this one
+	block of code I found 7 bugs, many of them caused a Tcl stack
+	trace.  [Bug: 1219]
+
+1999-02-16    <surles@YODA>
+
+	* toolbar.tcl: 
+	* gui.tcl: Added logic that changes the help message for the Run a
+	and Step buttons based on the state of the GUI.  
+
+1999-02-11    <stanton@GASPODE>
+
+	* menu.tcl: Fixed typo in menu invokeCmd.
+	
+	* gui.tcl: Added global key bindings to .mainDbgWin.
+
+1999-02-09    <surles@YODA>
+	* projWin.tcl:
+	* prefWin.tcl:
+	* system.tcl: Changed the Temp group to be TempPref and TempProj
+	so there is no conflict when both windows are opened.
+
+	* find.tcl: Fixed bug that did not focus on the code win when Find
+	Next was pressed.  Fixed bug that did not test for valid entries
+	in the Goto Window. [Bug 1185] [Bug 1186]
+
+	* gui.tcl:
+	* pref.tcl: Created gui wrapper around the dbg::quit command so
+	the file caching mechanism is flushed everytime quit is
+	requested.  Otherwise a stack trace would occur when a remote
+	project is loaded, a file is being viewed in the code win, and the
+	project is changed to be a local project.  The quit was called,
+	deleting all blocks, but the file remaind in view with a stale
+	block reference.
+
+	* projWin.tcl:
+	* proj.tcl: Removed vwait commands and now pass the command to
+	execute when the Project Settings Window is dismissed.  Now the
+	projWin::showWindow command takes a command to execute when the
+	window is canceled, versus setting a vwait variable.
+
+	* pref.tcl: Added cleanup in the pref::groupDelete command that
+	unset the dirty bit.
+
+	* menu.tcl: Fixed bug that wasn't disabling menu items correctly
+	for remote apps.  Step In and Run need to be disabled if the state
+	is new and the project is remote.  Restart needs to be disabled if
+	the project is remote, or if there is no project loaded.
+
+	* system.tcl: 
+	* breakWin.tcl:
+	* codeWin.tcl:
+	* font.tcl:
+	* gui.tcl:
+	* licenseWin.tcl:
+	* menu.tcl:
+	* proj.tcl:
+	* projWin.tcl:
+	* system.tcl:
+	* tabnotebook.tcl:
+	* varWin.tcl:
+	* watchWin.tcl: Removed the following prefs from the preferences
+	system: arrow, bar, color, exeFile, exeString, fontList, and
+	projectPath.
+
+1999-02-08    <surles@YODA>
+
+	* menu.tcl: Removed the fileList and prevOpenDir variables from
+	the menu namespace since they were no longer being used.
+
+	* system.tcl: 
+	* menu.tcl: Removed the dbgHelpFile and tclHelpFile from the user
+	preferences.
+	
+	* menu.tcl: 
+	* proj.tcl:
+	* gui.tcl: Made relative paths entered for local projects default
+	to the same path as the location of the project file. [Bug: 1087]
+
+	* system.tcl: 
+	* menu.tcl: 
+	* proj.tcl: Moved the previously opened project to the
+	GlobalDefault group for consistency.  Previously it was being
+	saved in variuos places depending on the state of the GUI and this
+	was inconsistent.  Putting it into the the GlobalDefaults group is
+	less preferable then making it a Project pref, but simplifies the
+	code emensely. 
+
+1999-02-05    <stanton@GASPODE>
+
+	* dbg.tcl: Changed getProcBody to properly substitute the body
+	before returning it. [Bug: 347]
+
+1999-02-04    <surles@YODA>
+	* watchWin.tcl:
+	* proj.tcl: Projects were not preserving watch variables.
+
+	* watchWin.tcl: The watch window wasn't updating correctly.  Now
+	when users add vars when the gui is stopped, the window reflects
+	this change. [Bug: 1027]
+	
+	* codeWin.tcl: Put catch around the command that gets the source
+	from a block.  If the block is an unreadable file an error is
+	generated.  This error is now caught and reported to the
+	user. [Bug: 454]
+
+	* breakWin.tcl: 
+	* evalWin.tcl: 
+	* inspectorWin.tcl: 
+	* watchWin.tcl: 
+	* menu.tcl: Modified default size of auxillary window to account
+	for the addition of the "Close" buttons.
+
+	* system.tcl: Improved the logic about preserving the previously
+	loaded project file.  I was still using "file exists" when I
+	should have been using the projectNeverSaved bit.
+
+	* startup.tcl (proc): Moved most of the init code out of the
+	namespace eval and into its own procedure.  Added an update call
+	after the mainDbgWindow is drawn so we do not have focus ars
+	beteen it and the "File Missing" window.
+
+	* projWin.tcl: Force the focus to the main window when the Project
+	Settings Window is deleted.
+
+	* proj.tcl: Force the focus on the "File Missing Window" and added
+	a test in the initPort that does not kill the app if it is running.
+
+1999-02-04    <stanton@GASPODE>
+
+	* dbg.tcl: Changed getProcBody to properly substitute the body
+	before returning it. [Bug: 347]
+
+
+	* find.tcl: Fixed so goto window doesn't generate an error when
+	the goto entry is blank.
+	
+	* breakWin.tcl: 
+	* evalWin.tcl: 
+	* find.tcl: 
+	* gui.tcl: 
+	* menu.tcl: 
+	* prefWin.tcl:
+	* procWin.tcl:
+	* projWin.tcl:
+	* watchWin.tcl: Added <Escape> binding to all dialogs to invoke the
+	cancel/close action.  Ensured that all buttons have the
+	appropriate -default setting.
+
+	* menu.tcl: Updated debug menu so logging output works again.
+
+1999-02-05  Bryan Surles  <surles@scriptics>
+
+	* gui.tcl
+	* dbg.tcl
+	* gui.tcl 
+	* menu.tcl
+	* proj.tcl
+	* projWin.tcl
+	* project.tcl
+	* startup.tcl
+	* system.tcl
+	* toolbar.tcl Cleanup of code to get *some* of the modules to 
+	adhere to the Tcl coding standards.  Broke out the project file 
+	into proj.tcl and projWin.tcl and changed the namespaces from
+	prj to proj and projWin where appropriate.
+
+
+1999-02-02    <surles@YODA>
+	* menu.tcl:  
+	* pref.tcl:  
+	* system.tcl:  
+	* startup.tcl:  
+	* project.tcl: Fixed bug that did not report errors if the
+	preference save or restore command failed. [Bug: 1081] [Bug: 1082]
+
+	* project.tcl: Fixed the file based project APIs so that the open,
+	save and close APIs are less atomic.  Separated the gui aspect
+	from the actions.
+	Fixed bug that did not add newly saved file to the recently used
+	project list. [Bug: 1080]
+	Fixed bug that referred to new, unsaved, projects as a file when
+	it should use the simple "Untitled" name. [Bug: 1083]
+	Fixed bug related to remote projects, the project setting window
+	and the connection status window [Bug: 1090] [Bug: 1091] [Bug: 1129]
+
+	* pref.tcl: Added comments and implemented Ray's comments from his
+	code review.
+
+	* system.tcl: Fixed the close window to save the correct
+	information on close.
+
+	* menu.tcl: Updated the menu callbacks for the new(est) file based
+	project APIs.
+
+	* gui.tcl: Changed the code::resetWindow algorithm to clear out
+	the code window and status window if the block being displayed no
+	longer exists.  Puts a catch around the dbg::kill call when there
+	was a parse error.  This was beacuse there was a race condition
+	and the script may have already died by the time the after event
+	fired.  
+
+1999-01-30    <surles@YODA>
+
+	* pref.tcl:  
+	* menu.tcl:  
+	* project.tcl: Changed the groupGetDirty API to groupIsDirty
+	for clarity.
+
+	* pref.tcl: Cleaned up the code and the comments, removed code
+	that was never used.
+
+1999-01-29    <surles@YODA>
+
+	* nub.tcl: Fixed minor bug that miscalculated the number of
+	characters to return in the DbgNub_GetResult command.
+
+1999-01-28    <surles@YODA>
+
+	* system.tcl: Added cleaner initialization of preferences and
+	removed a preference that was not being used (some how projRemote
+	was changed to appType...)
+
+	* result.tcl: Added test that checks to see if the result frame
+	even exists, before it checks to see if it is mapped.  It
+	generated a bg Tcl error so it was never seen, but certain tests
+	failed because of it.
+
+	* project.tcl: Fixed bug where the default project settings window
+	was not cleaning up prrperly after the window is destroyed.  Also,
+	put a break statement in the <Return> binding on the "Add" button
+	for the instrumentation window.
+
+1999-01-22    <stanton@GASPODE>
+
+	* licenseWin.tcl: revamped license error dialogs to be more
+	context sensitive.
+
+1999-01-21    <stanton@GASPODE>
+
+	* menu.tcl: Added keyboard shortcuts for all menu entries.
+
+	* gui.tcl: Revised about box so it resizes based on text
+	contents.  Added Easter egg.
+
+1999-01-20    <stanton@GASPODE>
+
+	* system.tcl: 
+	* project.tcl: Eliminated yview from project file to reduce the
+	number of times the user has to save the project.
+
+1999-01-19    <stanton@GASPODE>
+
+
+	* startup.tcl: Fixed bug where LicenseExit can be invoked before
+	it is defined.
+	
+	* project.tcl: 
+	* prefWin.tcl: Updated focus rings and added default button
+	behavior. 
+
+	* system.tcl: 
+	* project.tcl:
+	* gui.tcl: Revamped error handling to simplify the interface in
+	the preferences and the error dialog.  Stopping behavior is now
+	separated from suppress/deliver behavior. [RFE: 123]
+
+	* nub.tcl:
+	* dbg.tcl: Replaced catchOverride with errorAction that combines
+	all of the error reporting flavors.
+
+	* system.tcl: 
+	* bindings.tcl: Fixed so disableKey tag doesn't mask the standard
+	Windows system bindings for menu traversal.  Remapped <<Dbg_Kill>>
+	so it doesn't mask the Windows standard F10 binding.
+
+1999-01-19    <stanton@GASPODE>
+	
+	* procWin.tcl: Fixed bug that caused code window to changed when
+	an instrumented procedure in a file was uninstrumented.
+
+	* stackWin.tcl: 
+	* file.tcl: 
+	* dbg.tcl: 
+	* block.tcl: Added blk::isDynamic interface.
+
+	* project.tcl: Fixed so breakpoints are restored before displaying
+	the current file so line breakpoints show up when a project is
+	first opened.
+
+	* image.tcl: Fixed typo that caused var_disable icon to be used
+	for break_disable.
+
+	* nub.tcl: Fixed interaction between stop on error and step to
+	result that caused step to result to miss the end of a command
+	that generated a caught error.
+
+1999-01-16    <stanton@GASPODE>
+
+	* system.tcl:
+	* project.tcl:
+	* dbg.tcl: Fixed broken preference handling for catchOverride.
+
+	* project.tcl:
+	* prefWin.tcl: Fixed bug where global window positions were getting
+	lost in some cases.
+
+	* project.tcl: Fixed bug in RemoveSelectedInstru that made it
+	impossible to remove items from the list.
+
+	* codeWin.tcl: Fixed misalignment of codebar and code windows.
+
+1999-01-14    <stanton@GASPODE>
+
+	* project.tcl: 
+	* menu.tcl: 
+	* icon.tcl: 
+	* breakWin.tcl: 
+	* break.tcl: Moved dirty tests for breakpoint changes into gui
+	code to minimize cases where it sets the bit.  Fixed a bad test
+	for dirty that kept the "save" menu item from being enabled in
+	most cases.
+
+	* result.tcl: Removed debugging statements.
+
+	* system.tcl: 
+	* project.tcl: Moved current version number for project files into
+	a variable in project.tcl, removed thisVersion from preference file.
+
+	* menu.tcl: Removed menu key bindings from preferences file.
+
+	* watchWin.tcl: 
+	* inspectorWin.tcl: 
+	* gui.tcl: Cleaned up Data Display window and added support for
+	displaying current interpreter result.
+
+	* toolbar.tcl: Added Step to Result icon.
+
+	* system.tcl: Added highlight_cmdresult and showResult global
+	prefs.  Fixed broken update scripts for highlight colors.  Fixed
+	code that failed to save the last project setting.
+
+	* codeWin.tcl:
+	* bindings.tcl:
+	* image.tcl:
+	* startup.tcl: 
+	* result.tcl:
+	* menu.tcl: Added support for stepResult and the result window.
+
+	* project.tcl: Added support for saving and restoring line
+	breakpoints from the current project.  Changed to save/restore
+	current yview instead of the current line.  Changed to clean up
+	the entire debugger engine when a project is closed.  This keeps
+	breakpoints from bleeding across projects.  Fixed the application
+	preferences so they apply properly when the preferences dialog is
+	not dismissed.
+
+	* prefWin.tcl: Added preference for command result highlight color.
+
+	* nub.tcl: Added support for post execution breakpoints (e.g. step
+	to result) and caching the last result and return code.
+
+	* gui.tcl: Eliminated the currentError flag since the break state
+	flag contains the same information. Added an optional window to
+	display the current interpreter result. Added support for step to
+	result, including a new toolbar button and a different
+	highlighting color.  Changed resetWindow so any cached blocks are
+	removed.
+
+	* dbg.tcl: Added cmdresult event.  Moved list of valid events into
+	namespace variable so it is easier to maintain.  Added
+	dbg::getResult to fetch the most recent result and return code
+	from the nub.
+
+	* codeWin.tcl: Fixed bug that resulted in breakpoints not being
+	displayed in uninstrumented files.
+
+	* break.tcl: changed to mark preferences dirty whenever a line
+	breakpoint is added or removed
+
+1999-01-12    <stanton@GASPODE>
+
+	* dbg.tcl: Improved logging interface to allow filtering.
+
+	* block.tcl: Changed to cache sorted line number list right after
+	instrumentation.
+	* codeWin.tcl: Fixed performance bug in updateCodeBar that was
+	using a non-linear algorithm. [Bug: 1032]
+
+1999-01-07    <stanton@GASPODE>
+
+	* instrument.tcl: removed 'case' from table
+	fixed lots of bad table entries
+	added non exp* commands for expect
+	added missing parseSwitches and parseExpTrapCmd implementations
+
+1999-01-06    <stanton@GASPODE>
+
+	* instrument.tcl: Fixed bug in initialization when no extensions
+	were being loaded.
+
+	* system.tcl:
+	* startup.tcl: Moved kill to system.tcl
+
+	* prefWin.tcl: 
+	* nub.tcl:
+	* dbg.tcl: Added support for stopping on caught as well as
+	uncaught errors.
+	
+	* gui.tcl: Added declaration for format array.
+
+1998-12-31    <stanton@GASPODE>
+
+	* startup.tcl:
+	* prefWin.tcl: Changed incr76 extension name to incrTcl.
+
+	* nub.tcl: cleaned up some stale arguments, merged
+	DbgNub_IncrNamespaceEval and DbgNub_NamespaceEval 
+
+	* instrument.tcl: revamped instrumenter APIs to be more table
+	driven, added expect support
+

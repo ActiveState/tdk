@@ -1,0 +1,87 @@
+2005-11-10  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
+	*
+	* Released and tagged Tklib 0.4.1 ========================
+	* 
+
+2005-11-02  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
+	*
+	* Released and tagged Tklib 0.4 ========================
+	* 
+
+2005-05-28  Aaron Faupell <afaupell@users.sourceforge.net>
+
+	* ico.tcl fixed padding algorithm to handle icons >48px
+
+2005-05-27  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* ico.tcl (::ico::Show): handle >48px icons by resizing the frame.
+	Currently >48px icons are not decoded properly by ico though.
+
+2004-08-20  Aaron Faupell <afaupell@users.sourceforge.net>
+
+	* ico.tcl bugfix in writeIconEXE, called SearchForIcos
+	with wrong args
+
+2004-08-20  Aaron Faupell <afaupell@users.sourceforge.net>
+
+	* ico.tcl: added writing of BMP and ICODATA types.
+
+2004-08-18  Aaron Faupell <afaupell@users.sourceforge.net>
+
+        * ico.tcl: added support for reading from BMP files
+        Modified transparentColor to work on pixel list also.
+        * ico.man: updated with the new functionality
+
+2004-08-18  Andreas Kupries  <andreask@activestate.com>
+
+	* ico.man: Fixed problems with formatting of ico manpage.
+
+2004-08-17  Aaron Faupell <afaupell@users.sourceforge.net>
+
+	* ico.tcl: CheckEXE removed and replaced by new SearchForIcos which
+	calls SearchForIcosNE or SearchForIcosPE which atually parse the
+	window resource tables resulting in a nice speed improvement
+	over the old linear search. Also corrected all usage of fconfigure.
+
+2004-07-27  Aaron Faupell <afaupell@users.sourceforge.net>
+
+	* ico.tcl: undocumented windows feature: if the first palette entry
+	isnt black, the transparent background displays in odd colors. fixed
+	getPaletteFromColors to initialize palette with black. changed header
+	writing to use 0 for planes to be consistant with windows.
+
+2004-07-26  Aaron Faupell <afaupell@users.sourceforge.net>
+
+	* ico.tcl: renamed some of the private API to be more descriptive.
+	bugfix in writeIcon and translateColors and CopyIcon. simplified
+	writeIconEXE.
+
+2004-07-26  Andreas Kupries  <andreas_kupries@users.sourceforge.net>
+
+	* ico.man: Reworked the documentation a bit (fixed bugs, reordered
+	  stuff a bit).
+
+2004-07-26  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* pkgIndex.tcl, ico.man, ico.tcl: add -type ICODATA as a way pass
+	ICO data instead of a filename. Currently supports read, not write.
+	Made 'package require Tk' only get called as necessary for the api.
+	Code cleanup, update to v0.3.
+
+	* ico.man (new):
+	* ico.tcl: revamp of API from Aaron, more public APIs.
+
+2004-07-24  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* ico.tcl (::ico::getIconImageFromData): add call to retrive icon
+	image from ICO info as data (not "official", may change).
+
+2004-07-22  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* ico.tcl: added to tklib as v0.2.
+	Primary usage is like so:
+		set file bin/wish.exe
+		set icos [::ico::getIcons $file]
+		set img  [::ico::getIconImage $file -index 1]

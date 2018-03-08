@@ -1,0 +1,1976 @@
+# -*- tcl -*- snit.pcx --
+#
+#	This file implements the TclPro Checker extension for SNIT.
+#
+# Copyright (c) 2008 ActiveState Software Inc.
+# All rights reserved.
+# 
+# RCS: @(#) $Id: oratcl.pcx,v 1.5 2000/05/30 22:28:53 wart Exp $
+
+# ### ######### ###########################
+## Requisites
+
+package require pcx          ; # PCX API
+#package require analyzer
+
+# ### ######### ###########################
+## Tcl core version dependencies of the package this checker is for.
+
+pcx::register snit
+pcx::tcldep   1.3 needs tcl 8.4
+pcx::tcldep   2.1 needs tcl 8.5
+
+# ### ######### ###########################
+# Define the namespace for the package specific commands
+
+namespace eval ::snit {}
+
+# ### ######### ###########################
+## Helper commands to
+## (a) define dynamic rules in a static format, and
+## (b) (de)activate them during checking.
+
+proc snit::check {ver mode label command {rule {}}} {
+    # FUTURE: Think of a nicer data structure for this. Also consider
+    # to move this over into the checker core, as general facility
+    # for .pcx rules.
+
+    variable dyn
+    set k [list $label $ver $mode]
+    lappend dyn($k) $command $rule
+    return
+}
+
+proc snit::inherit {dst _from_ src} {
+    #puts INHERIT\t$dst\t<-\t$src
+    variable dyn
+    # Copy the rules for label src to label dst.
+    foreach ks [array names dyn [list $src * *]] {
+	#puts \t==$ks
+	set kd [lreplace $ks 0 0 $dst]
+	foreach {c r} $dyn($ks) {
+	    lappend dyn($kd) $c $r
+	}
+    }
+    return
+}
+
+proc snit::push {label} {
+    #puts PUSH\t$label
+    variable dyn
+    set mode [expr {[analyzer::isScanning] ? "scan" : "std"}]
+    set ver  [pcx::getCheckVersion snit]
+
+    if {$mode eq "scan"} {
+	# In scan mode we pull the checkers as well, for scan
+	# definitions which fall back to them.
+	array set tmpc {}
+	foreach k [lsort [array names dyn [list $label * std]]] {
+	    if {[package vcompare [lindex $k 1] $ver] > 0} break
+	    array set tmpc $dyn($k)
+	}
+    }
+
+    array set tmp {}
+    foreach k [lsort [array names dyn [list $label * $mode]]] {
+	if {[package vcompare [lindex $k 1] $ver] > 0} break
+	array set tmp $dyn($k)
+    }
+    set commands {}
+    foreach name [lsort [array names tmp]] {
+	#puts \t++$name
+	lappend commands $name
+	if {($tmp($name) eq "") && ($mode eq "scan")} {
+	    # Scan checker falls back to regular checker.
+	    pushChecker $name $tmpc($name)
+	} else {
+	    pushChecker $name $tmp($name)
+	}
+	#puts \t\t[topChecker $name]
+    }
+    return $commands
+}
+
+proc snit::pop {cmds} {
+    #puts POP\t$cmds
+    foreach name $cmds {
+	#puts \t--$name
+	popChecker $name
+	#puts \t\t[topChecker $name]
+    }
+    return
+}
+
+# ### ######### ###########################
+
+proc snit::cdclass {} {
+    set top [context::topScope]
+    context::popScope
+    set where [context::topScope]
+    context::pushScope $top
+    return $where
+}
+
+proc snit::cdget {key} {
+    variable cd
+    if {[info exists cd($key)]} {
+	return $cd($key)
+    }
+    # Default information for yet unknown snit type.
+    #
+    # type:       In {type, widget, widgetadaptor}
+    # instvar:    dict var-name -> xref-var-id (Instance variables)
+    # typevar:    dict var-name -> xref-var-id (Type variables)
+    # method:     ?
+    # typemethod: ?
+    # proc:       ?
+    # option:     dict option-name -> option-data
+    # pragma:     dict pragma-name -> state(bool)
+    #
+    # option-data = dict ...
+    return {
+	type       {}
+	instvar    {}
+	typevar    {}
+	method     {}
+	typemethod {}
+	proc       {}
+	option     {}
+	pragma     {}
+    }
+}
+
+proc snit::cdset {key v} {
+    variable cd
+    set cd($key) $v
+    return
+}
+
+proc snit::cdextend {value __ dv args} {
+    # Extend a list of definitions, prevent the entering of duplicates
+    # for a key, also handling first entry.
+    # args = keys = path into nested dict structure
+    upvar 1 $dv thedict
+    if {[catch {dict get $thedict {*}$args} def]} {
+	set def [list $value]
+    } else {
+	set def [lsort -uniq [linsert $def end $value]]
+    }
+    dict set thedict {*}$args $def
+    return
+}
+
+proc snit::cdhasndopt {dv} {
+    # Look for non-delegated options in the class definition (in
+    # thedict).
+    upvar 1 $dv thedict
+    dict for {o v} [dict get $thedict option] {
+	dict with v {
+	    if {!$delegated} { return 1 }
+	}
+    }
+    return 0
+}
+
+# ### ######### ###########################
+
+# ### ######### ###########################
+## Package specific message types and their human-readable
+## translations.
+
+pcx::message badArgument         {arglist may not contain "%1$s" explicitly} err
+pcx::message warnArgument        {Avoid reserved name "%1$s" in arglist} warn
+pcx::message badOption           {badly named option "%1$s"} err
+pcx::message badUsingFmt         {Bad format for using clause: "%1$s"} err
+pcx::message dMissingTo          {Missing "to"} err
+pcx::message doBadAs             {Cannot specify "as" with "delegate option *"} err
+pcx::message dmBadAs             {Cannot specify "as" with "*"} err
+pcx::message doBadExcept         {Can only specify "except" with "delegate option *"} err
+pcx::message dmBadExcept         {Can only specify "except" with "*"} err
+pcx::message dmBadAsUsing        {Cannot specify both "as" and "using"} err
+pcx::message badInstallHull      {installhull is valid only for snit::widgetadaptors} err
+pcx::message badExecutionContext {This command is valid only in an instance context} err
+
+pcx::message warnOptionRedefine  {Redefined option "%1$s"} warn
+pcx::message badOptionRedefine   {Cannot define both regular and delegated option "%1$s"} err
+pcx::message unknownOption       {Option "%1$s" is not known} warn
+pcx::message unknownclassVar     {Type variable "%1$s" is not known} warn
+pcx::message unknowninstanceVar  {Instance variable "%1$s" is not known} warn
+
+pcx::message warnTypemethodRedefine {Redefined type method "%1$s"} warn
+pcx::message badTypemethodRedefine  {Cannot define both regular and delegated type method "%1$s"} err
+pcx::message unknownTypemethod      {Type method "%1$s" is not known} warn
+
+pcx::message warnMethodRedefine {Redefined instance method "%1$s"} warn
+pcx::message badMethodRedefine  {Cannot define both regular and delegated instance method "%1$s"} err
+pcx::message unknownMethod      {Instance method "%1$s" is not known} warn
+pcx::message expectedFullMethod {Instance method "%1$s" is known, but a partial call} warn
+
+pcx::message warnProcRedefine {Redefined proc "%1$s"} warn
+pcx::message unknownProc      {Proc "%1$s" is not known} warn
+
+# ### ######### ###########################
+# Define the set of command-specific checkers used by this package.
+
+# Note: We are using snit-specific checker for everything, as a form
+# of semantic markup for all arguments of importance to snit. The
+# implementations then decide how much special work they have to
+# actually perform.
+
+# ### ######### ###########################
+# Class definitions
+# snit::{type,widget,widgetadaptor} name body
+
+pcx::scan  1.3     snit::type
+pcx::check 1.3 std snit::type \
+    {checkContext 1 1 {checkSimpleArgs 2 2 {
+	{newScope class {snit::checkSnitClassNameDef type}}
+	{snit::checkSnitClassBody type}
+    }}}
+
+pcx::scan  1.3     snit::widget
+pcx::check 1.3 std snit::widget \
+    {checkContext 1 1 {checkSimpleArgs 2 2 {
+	{newScope class {snit::checkSnitClassNameDef widget}}
+	{snit::checkSnitClassBody widget}
+    }}}
+
+pcx::scan  1.3     snit::widgetadaptor
+pcx::check 1.3 std snit::widgetadaptor \
+    {checkContext 1 1 {checkSimpleArgs 2 2 {
+	{newScope class {snit::checkSnitClassNameDef widgetadaptor}}
+	{snit::checkSnitClassBody widgetadaptor}
+    }}}
+
+# A form of the above commands for dynamic class generation. It may
+# stil use literals.
+pcx::check 1.3 std snit::compile \
+    {checkSimpleArgs 3 3 {
+	{checkOption {
+	    {type          {checkSimpleArgs 2 2 {
+		snit::checkSnitClassNameDef
+		{snit::checkSnitClassBody type}}}}
+	    {widget        {checkSimpleArgs 2 2 {
+		snit::checkSnitClassNameDef
+		{snit::checkSnitClassBody widget}}}}
+	    {widgetadaptor {checkSimpleArgs 2 2 {
+		snit::checkSnitClassNameDef
+		{snit::checkSnitClassBody widgetadaptor}}}}
+	} {}}
+    }}
+
+# ### ######### ###########################
+# Class definitions, commands for extending of classes at runtime.
+
+# snit::typemethod type name arglist body
+# snit::method     type name arglist body
+# snit::macro           name arglist body
+
+pcx::scan  1.3      snit::typemethod
+pcx::check 1.3 std  snit::typemethod \
+    {checkContext 1 1 {checkSimpleArgs 4 4 {
+	{newScope class snit::checkSnitClassNameUse}
+	{checkDynLit 2 {
+	    checkSimpleArgs 3 3 {
+		{snit::checkSnitTypeMethodNameDef 0}
+		snit::checkSnitTypeMethodArguments
+		snit::checkSnitTypeMethodBody
+	    }
+	} {checkContext 1 1 {checkSimpleArgs 3 3 {
+	    {newScope typemethod {snit::checkSnitTypeMethodNameDef 0}}
+	    snit::checkSnitTypeMethodArguments
+	    snit::checkSnitTypeMethodBody
+	}}}}
+    }}}
+
+pcx::scan  1.3      snit::method
+pcx::check 1.3 std  snit::method \
+    {checkContext 1 1 {checkSimpleArgs 4 4 {
+	{newScope class snit::checkSnitClassNameUse}
+	{checkDynLit 2 {
+	    checkSimpleArgs 3 3 {
+		{snit::checkSnitMethodNameDef 0}
+		snit::checkSnitMethodArguments
+		snit::checkSnitMethodBody
+	    }
+	} {checkContext 1 1 {checkSimpleArgs 3 3 {
+	    {newScope method {snit::checkSnitMethodNameDef 0}}
+	    snit::checkSnitMethodArguments
+	    snit::checkSnitMethodBody
+	}}}}
+    }}}
+
+pcx::scan 1.3 snit::macro \
+    {addContext 1 1 {} {} {checkSimpleArgs 3 3 {
+	{newScope proc snit::checkSnitMacroNameDef}
+	snit::checkSnitMacroArguments
+	snit::checkSnitMacroBody
+    }}}
+pcx::check 1.3 std snit::macro \
+    {checkDynLit 2 {
+	checkSimpleArgs 3 3 {
+	    snit::checkSnitMacroNameDef
+	    snit::checkSnitMacroArguments
+	    snit::checkSnitMacroBody
+	}
+    } {checkContext 1 1 {checkSimpleArgs 3 3 {
+	{newScope proc snit::checkSnitMacroNameDef}
+	snit::checkSnitMacroArguments
+	snit::checkSnitMacroBody
+    }}}}
+
+# ### ######### ###########################
+# Predefined snit option validation commands, simple
+
+# snit::FOO validate ?value? | name
+# FOO in { boolean, window }
+
+pcx::check 1.3 std snit::boolean snit::checkSnitSimpleValidator
+pcx::check 1.3 std snit::window  snit::checkSnitSimpleValidator
+
+# ### ######### ###########################
+# Predefined snit option validation commands, configurable
+
+# snit::FOO validate ?value? | name ?option value...?
+# FOO in { double, enum, fpixels, integer, listtype, pixels, stringtype}
+
+pcx::check 1.3 std snit::double  \
+    {snit::checkSnitConfigurableValidator {
+	{-min checkFloat}
+	{-max checkFloat}
+    }}
+
+pcx::check 1.3 std snit::enum \
+    {snit::checkSnitConfigurableValidator {
+	{-values checkList}
+    }}
+
+pcx::check 1.3 std snit::fpixels \
+    {snit::checkSnitConfigurableValidator {
+	{-min checkPixels}
+	{-max checkPixels}
+    }}
+
+pcx::check 1.3 std snit::integer \
+    {snit::checkSnitConfigurableValidator {
+	{-min checkInt}
+	{-max checkInt}
+    }}
+
+# NOTE The -type /word/ is a recursive validation definition, with the
+# typename missing.
+
+pcx::check 1.3 std snit::listtype \
+    {snit::checkSnitConfigurableValidator {
+	{-minlen checkWholeNum}
+	{-maxlen checkWholeNum}
+	{-type   checkList}
+    }}
+
+pcx::check 1.3 std snit::pixels \
+    {snit::checkSnitConfigurableValidator {
+	{-min checkPixels}
+	{-max checkPixels}
+    }}
+
+pcx::check 1.3 std snit::stringtype \
+    {snit::checkSnitConfigurableValidator {
+	{-minlen checkWholeNum}
+	{-maxlen checkWholeNum}
+	{-glob   checkPattern}
+	{-regexp checkRegexp}
+	{-nocase checkBoolean}
+    }}
+
+
+# ### ######### ###########################
+## Dynamic rules, class context (type, widget, widgetadaptor)
+
+# typevariable name ?value|-array value?
+# variable     name ?value|-array value?
+
+snit::check 1.3 scan type typevariable 
+snit::check 1.3 std  type typevariable \
+        {checkSimpleArgs 1 3 {
+	    {snit::checkSnitVarNameDef class}
+	    {checkNumArgs {
+		{1 checkWord}
+		{2 {checkSwitches 1 {
+		    {-array checkWord}
+		} {}}}
+	    }}
+	}}
+
+snit::check 1.3 scan type variable 
+snit::check 1.3 std  type variable \
+        {checkSimpleArgs 1 3 {
+	    {snit::checkSnitVarNameDef instance}
+	    {checkNumArgs {
+		{1 checkWord}
+		{2 {checkSwitches 1 {
+		    {-array checkWord}
+		} {}}}
+	    }}
+	}}
+
+# typemethod name argumentlist body
+# method     name argumentlist body
+# proc       name argumentlist body
+
+snit::check 1.3 scan type typemethod
+snit::check 1.3 std  type typemethod \
+    {checkDynLit 2 {
+	checkSimpleArgs 3 3 {
+	    {snit::checkSnitTypeMethodNameDef 0}
+	    snit::checkSnitTypeMethodArguments
+	    snit::checkSnitTypeMethodBody
+	}
+    } {checkContext 1 1 {checkSimpleArgs 3 3 {
+	{newScope typemethod {snit::checkSnitTypeMethodNameDef 0}}
+	snit::checkSnitTypeMethodArguments
+	snit::checkSnitTypeMethodBody
+    }}}}
+
+snit::check 1.3 scan type method
+snit::check 1.3 std  type method \
+    {checkDynLit 2 {
+	checkSimpleArgs 3 3 {
+	    {snit::checkSnitMethodNameDef 0}
+	    snit::checkSnitMethodArguments
+	    snit::checkSnitMethodBody
+	}
+    } {checkContext 1 1 {checkSimpleArgs 3 3 {
+	{newScope method {snit::checkSnitMethodNameDef 0}}
+	snit::checkSnitMethodArguments
+	snit::checkSnitMethodBody
+    }}}}
+
+
+snit::check 1.3 scan type proc \
+    {addContext 1 1 {} {} {checkSimpleArgs 3 3 {
+	{newScope proc snit::checkSnitProcNameDef}
+	snit::checkSnitProcArguments
+	snit::checkSnitProcBody
+    }}}
+snit::check 1.3 std  type proc \
+    {checkDynLit 2 {
+	checkSimpleArgs 3 3 {
+	    snit::checkSnitProcNameDef
+	    snit::checkSnitProcArguments
+	    snit::checkSnitProcBody
+	}
+    } {checkContext 1 1 {checkSimpleArgs 3 3 {
+	{newScope proc snit::checkSnitProcNameDef}
+	snit::checkSnitProcArguments
+	snit::checkSnitProcBody
+    }}}}
+
+# typeconstructor body
+# constructor arguments body
+# destructor body
+
+snit::check 1.3 std type typeconstructor \
+    {checkDynLit 0 {
+	checkSimpleArgs 1 1 {
+	    snit::checkSnitTypeConstructorBody
+	}
+    } {checkContext 0 1 {checkSimpleArgs 1 1 {
+	{newNamedScope typemethod typeconstructor snit::checkSnitTypeConstructorBody}
+    }}}}
+
+snit::check 1.3 std type constructor \
+    {checkDynLit 1 {
+	checkSimpleArgs 2 2 {
+	    snit::checkSnitConstructorArguments
+	    snit::checkSnitConstructorBody
+	}
+    } {checkContext 0 1 {checkSimpleArgs 2 2 {
+	{newNamedScope method constructor snit::checkSnitConstructorArguments}
+	snit::checkSnitConstructorBody
+    }}}}
+
+snit::check 1.3 std type destructor \
+    {checkDynLit 1 {
+	checkSimpleArgs 1 1 {
+	    snit::checkSnitDestructorBody
+	}
+    } {checkContext 0 1 {checkSimpleArgs 1 1 {
+	{newNamedScope method destructor snit::checkSnitDestructorBody}
+    }}}}
+
+# (type)component comp ?-public typemethod? ?-inherit flag?
+
+snit::check 1.3 scan type typecomponent
+snit::check 1.3 std  type typecomponent {snit::checkSnitComponentDef class}
+snit::check 1.3 scan type component
+snit::check 1.3 std  type component     {snit::checkSnitComponentDef instance}
+
+# expose comp ?as method?
+
+snit::check 1.3 scan type expose
+snit::check 1.3 std  type expose \
+    {WarnDeprecated -1 {} "component -public" {
+	{component {
+	    iflenorig == 2 { get 1 inserts 2 {-public @} replace 3 }
+	    iflenorig == 4 { insert 2 -public ldrop 3 }
+	}}
+    } {
+	checkSimpleArgs 1 3 {
+	    {snit::checkSnitVarNameDef instance}
+	    {checkOption {
+		{as {checkSimpleArgs 1 1 {
+		    {snit::checkSnitMethodNameUse 1}
+		}}}
+	    } {}}
+	}}}
+
+# onconfigure option arguments body
+# oncget      option body
+
+snit::check 1.3 std type onconfigure \
+    {WarnDeprecated -1 {} "option -configuremethod" {
+	{option {
+	    get 2 wstrinsert 0 {_option_name } replace 2
+	    insert 2 -configuremethod
+	    get 1 wstrinsert 0 _xxx_configure_ insert-w 3
+	    get 1 wstrinsert 0 _xxx_configure_ insert-w 4
+	    inserts 4 {; method}
+	}}
+    } {
+	checkDynLit 2 {
+	    checkSimpleArgs 3 3 {
+		snit::checkSnitOptionNameUse
+		snit::checkSnitOptionConfigureArguments
+		snit::checkSnitMethodBody
+	    }
+	} {checkContext 1 1 {checkSimpleArgs 3 3 {
+	    {newScope method snit::checkSnitOptionNameUse}
+	    snit::checkSnitOptionConfigureArguments
+	    snit::checkSnitMethodBody
+	}}}
+    }}
+
+snit::check 1.3 std type oncget \
+    {WarnDeprecated -1 {} "option -cgetmethod" {
+	{option {
+	    inserts 2 {-cgetmethod {{_option_name}}}
+	    get 1 wstrinsert 0 _xxx_cget_ insert-w 3
+	    get 1 wstrinsert 0 _xxx_cget_ insert-w 4
+	    inserts 4 {; method}
+	}}
+    } {
+	checkDynLit 1 {
+	    checkSimpleArgs 2 2 {
+		snit::checkSnitOptionNameUse
+		snit::checkSnitMethodBody
+	    }
+	} {checkContext 1 1 {checkSimpleArgs 2 2 {
+	    {newScope method snit::checkSnitOptionNameUse}
+	    snit::checkSnitMethodBody
+	}}}
+    }}
+
+# pragma ?options...?
+# TODO: Collect pragma information per class, for better checking of
+#       typemethods, etc. based on the defined constraints.
+
+snit::check 1.3 scan type pragma
+snit::check 1.3 std  type pragma \
+    {checkSwitches 1 {
+	{-canreplace      checkBoolean}
+	{-hasinfo         checkBoolean}
+	{-hasinstances    checkBoolean}
+	{-hastypedestroy  checkBoolean}
+	{-hastypeinfo     checkBoolean}
+	{-hastypemethods  checkBoolean}
+	{-simpledispatch  checkBoolean}
+    } {}}
+
+# option
+
+# option namespec ?defaultValue?
+# option namespec ?options...?
+
+snit::check 1.3 scan type option
+snit::check 1.3 std  type  option \
+    {checkSimpleArgs 1 -1 {
+	{checkListValues 1 3 {
+	    {snit::checkSnitOptionNameDef 0}
+	    checkWord
+	    checkWord
+	}}
+	snit::checkSnitOptionDefinition
+    }}
+
+# delegate
+
+# delegate (type)method *    ?to comp? ?using pattern? ?except exceptions?
+# delegate (type)method name  to comp ?as target?
+# delegate (type)method name ?to comp?  using pattern
+# delegate option *        to comp ?except exceptions?
+# delegate option namespec to comp ?as target?
+
+snit::check 1.3 scan type delegate
+snit::check 1.3 std  type delegate \
+    {checkSimpleArgs 2 -1 {
+	{checkOption {
+	    {method     {checkSequence {
+		{checkSimpleArgs 1 7 {
+		    {checkOption {
+			{* {snit::checkSnitDelegateBegin star}}
+		    } {snit::checkSnitDelegateBegin plain {snit::checkSnitMethodNameDef 1}}}
+		    {checkOption {
+			{as      snit::checkSnitDelegateClauseAs}
+			{except {snit::checkSnitDelegateClauseExceptionMethod instance}}
+			{to     {snit::checkSnitDelegateClauseComponent       instance}}
+			{using  {snit::checkSnitDelegateClauseUsing           instance}}
+		    } {}}
+		}}
+		snit::checkSnitDelegateEndMethod
+	    }}}
+	    {typemethod {checkSequence {
+		{checkSimpleArgs 1 7 {
+		    {checkOption {
+			{* {snit::checkSnitDelegateBegin star}}
+		    } {snit::checkSnitDelegateBegin plain {snit::checkSnitTypeMethodNameDef 1}}}
+		    {checkOption {
+			{as      snit::checkSnitDelegateClauseAs}
+			{except {snit::checkSnitDelegateClauseExceptionMethod class}}
+			{to     {snit::checkSnitDelegateClauseComponent       class}}
+			{using  {snit::checkSnitDelegateClauseUsing           class}}
+		    } {}}
+		}}
+		snit::checkSnitDelegateEndMethod
+	    }}}
+	    {option     {checkSequence {
+		{checkSimpleArgs 3 5 {
+		    {checkOption {
+			{* {snit::checkSnitDelegateBegin star}}
+		    } {snit::checkSnitDelegateBegin plain {
+			snit::checkSnitOptionNameDef 1
+		    }}}
+		    {checkOption {
+			{as      snit::checkSnitDelegateClauseAs}
+			{except  snit::checkSnitDelegateClauseExceptionOption}
+			{to     {snit::checkSnitDelegateClauseComponent instance}}
+		    } {}}
+		}}
+		snit::checkSnitDelegateEndOption
+	    }}}
+	} {}}}}
+
+# Copy shared rules
+
+snit::inherit widget        from type
+snit::inherit widgetadaptor from type
+
+# Widget specific class context commands
+#
+# widgetclass name
+# hulltype    type
+
+snit::check 1.3 std widget widgetclass \
+    {checkSimpleArgs 1 1 {checkWord}}
+
+snit::check 1.3 std widget hulltype \
+    {checkSimpleArgs 1 1 {{checkKeyword 1 {
+	frame      tk::frame      ttk::frame
+	toplevel   tk::toplevel   ttk::toplevel
+	labelframe tk::labelframe ttk::labelframe
+    }}}}
+
+# ### ######### ###########################
+## Method commands (runtime context)
+
+# We have six sets of commands for the three different types of
+# classes (type, widget, widgetadaptor) times the two possible scopes
+# (class, instance). Most, but not all commands are viable in instance
+# scope.
+
+# instance, class
+snit::check 1.3 std rt.type.class mytypemethod \
+    {checkSimpleArgs 1 -1 {
+	snit::checkSnitTypeMethodNameUse
+	snit::checkSnitTypeMethodNameOrWord
+    }}
+
+# instance, class
+snit::check 1.3 std rt.type.class myproc \
+    {checkSimpleArgs 1 -1 {
+	snit::checkSnitProcNameUse
+	checkWord
+    }}
+
+# instance, class
+snit::check 1.3 std rt.type.class mytypevar \
+    {checkSimpleArgs 1 1 {
+	{snit::checkSnitVarNameUse class}
+    }}
+
+# instance, class
+snit::check 1.3 std rt.type.class from \
+    {checkSimpleArgs 2 3 {
+	checkVarName
+	checkWord
+	checkWord
+    }}
+
+# instance, class
+snit::check 1.3 std rt.type.class typevariable \
+    {checkSimpleArgs 1 1 {
+	{snit::checkSnitVarNameDef class}
+    }}
+
+# instance, class
+snit::check 1.3 std rt.type.class typevarname \
+    {WarnDeprecated -1 {} "mytypevar" {} {
+	checkSimpleArgs 1 1 {
+	    {snit::checkSnitVarNameUse class}
+	}
+    }}
+
+# instance, class
+snit::check 1.3 std rt.type.class codename \
+    {WarnDeprecated -1 {} "myproc" {} {
+	checkSimpleArgs 1 1 {
+	    snit::checkSnitProcNameUse
+	}
+    }}
+
+# The checker accepts instance-only commands in a class context as
+# well, and issues an additional error message for this use in the
+# wrong location.
+
+# instance
+snit::check 1.3 std rt.type.class mymethod \
+    {analyzer::warn snit::badExecutionContext "" {
+	checkSimpleArgs 1 -1 {
+	    {snit::checkSnitMethodNameUse 0}
+	    snit::checkSnitMethodNameOrWord
+	}
+    }}
+
+# instance
+snit::check 1.3 std rt.type.class myvar \
+    {analyzer::warn snit::badExecutionContext "" {
+	checkSimpleArgs 1 1 {
+	    {snit::checkSnitVarNameUse instance}
+	}
+    }}
+
+# instance
+snit::check 1.3 std rt.type.class install \
+    {analyzer::warn snit::badExecutionContext "" {
+	checkSimpleArgs 4 -1 {
+	    {snit::checkSnitComponentUse instance}
+	    {checkKeyword 1 {using}}
+	    checkWord
+	    checkWord
+	    checkWord
+	}}}
+
+# instance
+snit::check 1.3 std rt.type.class variable \
+    {analyzer::warn snit::badExecutionContext "" {
+	checkSimpleArgs 1 1 {
+	    {snit::checkSnitVarNameDef instance}
+	}
+    }}
+
+# instance
+snit::check 1.3 std rt.type.class varname \
+    {analyzer::warn snit::badExecutionContext "" {
+	WarnDeprecated -1 {} "myvar" {} {
+	    checkSimpleArgs 1 1 {
+		{snit::checkSnitVarNameUse instance}
+	    }
+	}
+    }}
+
+# instance
+snit::check 1.3 std rt.type.class installhull \
+    {analyzer::warn snit::badExecutionContext "" {
+	analyzer::warn snit::badInstallHull {checkSimpleArgs 1 -1 {
+	    {checkOption {
+		{using {checkSimpleArgs 1 -1 {checkWord}}}
+	    } {snit::checkSnitComponentUse instance}}
+	}}
+    }}
+
+snit::inherit rt.widget.class        from rt.type.class
+snit::inherit rt.widgetadaptor.class from rt.type.class
+
+# installhull in the widgetadaptor is ok, here only the execution
+# context is bad.
+snit::check 1.3 std rt.widgetadaptor.class installhull \
+    {analyzer::warn snit::badExecutionContext "" {
+	checkSimpleArgs 1 -1 {
+	    {checkOption {
+		{using {checkSimpleArgs 1 -1 {checkWord}}}
+	    } {snit::checkSnitComponentUse instance}}
+	}
+    }}
+
+snit::inherit rt.type.instance       from rt.type.class
+
+# instance
+snit::check 1.3 std rt.type.instance mymethod \
+    {checkSimpleArgs 1 -1 {
+	{snit::checkSnitMethodNameUse 0}
+	snit::checkSnitMethodNameOrWord
+    }}
+
+# instance
+snit::check 1.3 std rt.type.instance myvar \
+    {checkSimpleArgs 1 1 {{snit::checkSnitVarNameUse instance}}}
+
+# instance
+snit::check 1.3 std rt.type.instance install \
+    {checkSimpleArgs 4 -1 {
+	{snit::checkSnitComponentUse instance}
+	{checkKeyword 1 {using}}
+	checkWord
+	checkWord
+	checkWord
+    }}
+
+# instance
+snit::check 1.3 std rt.type.instance variable \
+    {checkSimpleArgs 1 1 {{snit::checkSnitVarNameDef instance}}}
+
+# instance
+snit::check 1.3 std rt.type.instance varname \
+    {WarnDeprecated -1 {} "myvar" {} {
+	checkSimpleArgs 1 1 {{snit::checkSnitVarNameUse instance}}}}
+
+# instance
+snit::check 1.3 std rt.type.instance installhull \
+    {analyzer::warn snit::badInstallHull {
+	checkSimpleArgs 1 -1 {
+	    {checkOption {
+		{using {checkSimpleArgs 1 -1 {checkWord}}}
+	    } {snit::checkSnitComponentUse instance}}
+	}}}
+
+snit::inherit rt.widget.instance        from rt.type.instance
+snit::inherit rt.widgetadaptor.instance from rt.type.instance
+
+# The command 'installhull' is specific to widgetadaptors. Check it
+# for types and widgets too, but issue an additional error message.
+
+#instance
+snit::check 1.3 std rt.widgetadaptor.instance installhull \
+    {checkSimpleArgs 1 -1 {
+	{checkOption {
+	    {using {checkSimpleArgs 1 -1 {checkWord}}}
+	} {snit::checkSnitComponentUse instance}}
+    }}
+
+# ### ######### ###########################
+## Initialization
+
+## This package relies on the standard initialization sequence of
+## 'pcx::init'. This is automatically called if no 'init' command
+## is found in the namespace of the checker package.
+
+# ### ######### ###########################
+## Checkers for specific commands, and helpers
+# ### ######### ###########################
+
+proc snit::checkSnitClassNameUse {tokens index} {
+    # TODO: 2pass, check word against collected class names
+    # no check in scan phase (may be called as part of method scanning)
+
+    # NOTE: Cannot use topScope directly, name is right, but location
+    # differs from the location the class is actually at (only caller
+    # are the snit::(type)method commands for the dynamic extension of
+    # a class at runtime.
+
+    return [checkWord $tokens $index]
+}
+
+proc snit::checkSnitClassNameDef {which tokens index} {
+    # which is classtype, one of {type, widget, widgetadaptor}
+
+    checkNamespace $tokens $index
+
+    set word [lindex $tokens $index]
+    if {[getLiteral $word className]} {
+	# Collect cross-reference information.
+	# A class is a namespace as well.
+	xref::nsDefine [context::top]
+	if {[analyzer::isScanning]} {
+	    # TODO NOTE: The class checker command is defined by
+	    # 'checkSnitClassBody', as we will know the user-specified
+	    # typemethod's only by then.
+
+	    set where [context::topScope]
+	    set cd    [cdget $where]
+	    dict set cd type $which
+
+	    if {[string match "widget*" $which]} {
+		# Define the magic hull instance component (variable).
+		cdextend [xref::varId hull] -> cd instvar hull
+	    }
+
+	    cdset $where $cd
+	}
+
+	# See also TclOO.pcx
+	##
+	# Create a generic user command to capture uses of the class
+	# command.
+	##
+	# TODO: See if we can extend this to a definition knowing the
+	# standard class methods, and from that, ability to define
+	# object instance commands.
+
+	set name [namespace tail $className]
+	set proc [context::join [context::top] $name]
+
+	set pInfo [cdb newProcInfo]
+	set pInfo [cdb setName $pInfo $proc]
+	set pInfo [cdb setBase $pInfo [context::head $proc]]
+	set pInfo [cdb setType $pInfo snit::${which}]
+	set pInfo [cdb setMin  $pInfo 0]
+	set pInfo [cdb setMax  $pInfo -1]
+	set pInfo [cdb setDef  $pInfo 1]
+
+	uproc::add $pInfo 0
+    }
+
+    incr index
+    return $index
+}
+
+proc snit::checkSnitClassBody {which tokens index} {
+    # TODO: 2pass: Generate/take dynamic rules for collected snit::macros, activate them.
+    variable classtype
+    set oldclasstype $classtype
+    set classtype $which
+
+    set cmds [snit::push $which]
+    set index [checkBody $tokens $index]
+    snit::pop $cmds
+    set classtype $oldclasstype
+    return $index
+}
+
+# ### ######### ###########################
+## Handle type methods (definition)
+
+# Three different calling contexts:
+# (1) lexical class context, and
+# (2) dynamic class context, artificial (runtime extension commands).
+# (3) 'snit::checkSnitDelegateBegin plain'
+#
+# Note that (3) is an error if a regular method is defined already,
+# and vice versa. Check and report. Otherwise a redefinition warrants
+# only a warning.
+
+proc snit::checkSnitTypeMethodNameUse {tokens index} {
+    variable usemulti 0
+    if {![analyzer::isScanning]} {
+	set word [lindex $tokens $index]
+	if {[getLiteral $word methodname]} {
+
+	    # The call is made from a method body, and the class body
+	    # is one level up from that.
+
+	    set where [cdclass]
+	    set cd    [cdget $where]
+
+	    #puts ///////////////////////////////////////////////////
+	    #puts //$where
+	    #puts //$cd
+	    #puts //$methodname
+	    #puts //[dict get $cd typemethod]
+
+	    if {[catch {dict get $cd typemethod $methodname}]} {
+		logError snit::unknownTypemethod [getTokenRange $word] $methodname
+		#puts //ERROR\ ERROR
+	    } else {
+		set usemulti [dict get $cd typemethod $methodname multiword]
+		if {$usemulti} {
+		    variable useprefix [list $methodname]
+		}
+	    }
+
+	    #puts ///////////////////////////////////////////////////
+	}
+    }
+    return [checkWord $tokens $index]
+}
+
+proc snit::checkSnitTypeMethodNameOrWord {tokens index} {
+    variable usemulti
+    if {![analyzer::isScanning] && $usemulti} {
+	set usemulti 0
+	set word [lindex $tokens $index]
+	if {[getLiteral $word methodname]} {
+	    variable useprefix
+
+	    # The call is made from a method body, and the class body
+	    # is one level up from that.
+
+	    set where [cdclass]
+	    set cd    [cdget $where]
+
+	    #puts ///////////////////////////////////////////////////
+	    #puts //$where
+	    #puts //$cd
+	    #puts //$methodname
+	    #puts //[dict get $cd typemethod]
+
+	    lappend useprefix $methodname
+	    if {[catch {dict get $cd typemethod $useprefix}]} {
+		logError snit::unknownTypemethod [getTokenRange $word] $useprefix
+		#puts //ERROR\ ERROR
+	    } else {
+		set usemulti [dict get $cd typemethod $useprefix multiword]
+		if {!$usemulti} { set useprefix {} }
+	    }
+
+	    #puts ///////////////////////////////////////////////////
+	}
+    }
+    return [checkWord $tokens $index]
+}
+
+proc snit::checkSnitTypeMethodNameDef {delegated tokens index} {
+    set word [lindex $tokens $index]
+    if {[getLiteral $word methodname]} {
+	set where   [cdclass]
+	set cd      [cdget $where]
+
+	if {[catch {dict get $cd typemethod $methodname} def]} {
+	    # Unknown typemethod, record now. Stored data: Name, maps to
+	    # delegation status (dict for future extensibility).
+
+	    if {[llength $methodname] > 1} {
+		# Multi-word method name => each prefix is an actual
+		# method, dispatching to sub-methods.
+		for {set i 0} {$i < [llength $methodname]} {incr i} {
+		    set mprefix [lrange $methodname 0 $i]
+		    dict set cd typemethod $mprefix delegated $delegated
+		    dict set cd typemethod $mprefix multiword 1
+		}
+	    }
+
+	    dict set cd typemethod $methodname delegated $delegated
+	    dict set cd typemethod $methodname multiword 0
+	    cdset $where $cd
+	} elseif {[analyzer::isScanning] || ![analyzer::isTwoPass]} {
+	    # Known typemethod. We report dups only in the scan phase,
+	    # or if only the analyse phase was run. Otherwise the
+	    # analyse phase will incorrectly report all type methods
+	    # as dups due to finding all the records made by the scan
+	    # phase.
+
+	    # We compare remembered to current delegation status to
+	    # decide between warning and error.
+	    if {[dict get $def delegated] == $delegated} {
+		set code snit::warnTypemethodRedefine
+	    } else {
+		set code snit::badTypemethodRedefine
+	    }
+	    logError $code [getTokenRange $word] $methodname
+	}
+    }
+    return [checkWord $tokens $index]
+}
+
+proc snit::checkSnitTypeMethodArguments {tokens index} {
+    return [checkAll {
+	checkArgList 
+	{checkListValues 0 -1 {
+	    snit::checkSnitMethodArgumentName
+	}}
+    } $tokens $index]
+}
+
+proc snit::checkSnitTypeMethodBody {tokens index} {
+    return [snit::checkSnitRuntimeBody class $tokens $index]
+}
+
+# ### ######### ###########################
+## Handle methods (definition)
+
+# Calling contexts, and TODO, see above, same as type methods, for methods
+
+proc snit::checkSnitMethodNameUse {full tokens index} {
+    variable usemulti 0
+    if {![analyzer::isScanning]} {
+	set word [lindex $tokens $index]
+	if {[getLiteral $word methodname]} {
+
+	    # This checker can be run from 2 different lexical
+	    # contexts: class (expose command) and method bodies
+	    # (mymethod). Determine which it is, and always pull the
+	    # class scope.
+
+	    set where [context::topScope]
+	    if {[lindex $where 0] ne "class"} {
+		# We are in a method, pull class we are in.
+		set where [cdclass]
+	    }
+	    set cd [cdget $where]
+
+	    #puts ///////////////////////////////////////////////////
+	    #puts //$where
+	    #puts //$cd
+	    #puts //$methodname
+	    #puts //[dict get $cd method]
+
+	    if {[catch {dict get $cd method $methodname}]} {
+		logError snit::unknownMethod [getTokenRange $word] $methodname
+		#puts //ERROR\ ERROR
+	    } else {
+		set usemulti [dict get $cd method $methodname multiword]
+		if {$usemulti} {
+		    if {$full} {
+			set usemulti 0
+			logError snit::expectedFullMethod [getTokenRange $word] $methodname
+		    } else {
+			variable useprefix [list $methodname]
+		    }
+		}
+	    }
+
+	    #puts ///////////////////////////////////////////////////
+	}
+    }
+    return [checkWord $tokens $index]
+}
+
+proc snit::checkSnitMethodNameOrWord {tokens index} {
+    variable usemulti
+    if {![analyzer::isScanning] && $usemulti} {
+	set usemulti 0
+	set word [lindex $tokens $index]
+	if {[getLiteral $word methodname]} {
+	    variable useprefix
+
+	    # This checker can be run from 2 different lexical
+	    # contexts: class (expose command) and method bodies
+	    # (mymethod). Determine which it is, and always pull the
+	    # class scope.
+
+	    set where [context::topScope]
+	    if {[lindex $where 0] ne "class"} {
+		# We are in a method, pull class we are in.
+		set where [cdclass]
+	    }
+	    set cd [cdget $where]
+
+	    #puts ///////////////////////////////////////////////////
+	    #puts //$where
+	    #puts //$cd
+	    #puts //$methodname
+	    #puts //[dict get $cd method]
+
+	    lappend useprefix $methodname
+	    if {[catch {dict get $cd method $useprefix}]} {
+		logError snit::unknownMethod [getTokenRange $word] $useprefix
+		#puts //ERROR\ ERROR
+	    } else {
+		set usemulti [dict get $cd method $useprefix multiword]
+		if {!$usemulti} { set useprefix {} }
+	    }
+
+	    #puts ///////////////////////////////////////////////////
+	}
+    }
+    return [checkWord $tokens $index]
+}
+
+proc snit::checkSnitMethodNameDef {delegated tokens index} {
+    set word [lindex $tokens $index]
+    if {[getLiteral $word methodname]} {
+
+	# 2 callers: method, and delegate method. The first has a
+	# method context on top, and the class underneath it. The
+	# other has a class context on top. Always pull the class,
+	# regardless of location.
+
+	set where [context::topScope]
+	if {[lindex $where 0] ne "class"} {
+	    set where [cdclass]
+	}
+	set cd [cdget $where]
+
+	if {[catch {dict get $cd method $methodname} def]} {
+	    # Unknown method, record now. Stored data: Name, maps to
+	    # delegation status (dict for future extensibility).
+
+	    if {[llength $methodname] > 1} {
+		# Multi-word method name => each prefix is an actual
+		# method, dispatching to sub-methods.
+		for {set i 0} {$i < [llength $methodname]} {incr i} {
+		    set mprefix [lrange $methodname 0 $i]
+		    dict set cd method $mprefix delegated $delegated
+		    dict set cd method $mprefix multiword 1
+		}
+	    }
+
+	    dict set cd method $methodname delegated $delegated
+	    dict set cd method $methodname multiword 0
+	    cdset $where $cd
+	} elseif {[analyzer::isScanning] || ![analyzer::isTwoPass]} {
+	    # Known method. We report dups only in the scan phase, or
+	    # if only the analyse phase was run. Otherwise the analyse
+	    # phase will incorrectly report all methods as dups due to
+	    # finding all the records made by the scan phase.
+
+	    # We compare remembered to current delegation status to
+	    # decide between warning and error.
+
+	    if {[dict get $def delegated] == $delegated} {
+		set code snit::warnMethodRedefine
+	    } else {
+		set code snit::badMethodRedefine
+	    }
+	    logError $code [getTokenRange $word] $methodname
+	}
+    }
+    return [checkWord $tokens $index]
+}
+
+proc snit::checkSnitMethodArguments {tokens index} {
+    return [checkAll {
+	checkArgList
+	{checkListValues 0 -1 {
+	    snit::checkSnitMethodArgumentName
+	}}
+    } $tokens $index]
+}
+
+proc snit::checkSnitMethodBody {tokens index} {
+    return [snit::checkSnitRuntimeBody instance $tokens $index]
+}
+#proc snit::checkSnitSpecialMethodNameDef {prefix tokens index} { return [checkWord $tokens $index] }
+
+# ### ######### ###########################
+## Handle macros
+
+# Calling contexts, see above, same as type methods.
+
+# TODO: 2pass: collect macro names. No checking. Macros become class
+# context commands (push/pop in checkSnitClassBody), checking is
+# implicit. We may wish to disable all regular commands in a class
+# context. Or at least warn.
+
+proc snit::checkSnitMacroNameUse   {tokens index} { return [checkWord $tokens $index] }
+proc snit::checkSnitMacroNameDef   {tokens index} { return [checkWord $tokens $index] }
+proc snit::checkSnitMacroArguments {tokens index} {
+    if {[analyzer::isScanning]} {
+	return [analyzer::addArgList $tokens $index]
+    } else {
+	return [checkArgList $tokens $index]
+    }
+}
+proc snit::checkSnitMacroBody {tokens index} {
+    # TODO: Need class body commands available in the macro body.
+    return [checkBody $tokens $index]
+}
+
+# ### ######### ###########################
+## Handle procs
+# Called only from a lexical context.
+
+proc snit::checkSnitProcNameUse {tokens index} {
+    if {![analyzer::isScanning]} {
+	set word [lindex $tokens $index]
+	if {[getLiteral $word procname]} {
+	    # This checker is always run from method bodies (myproc,
+	    # codename). We pull the class scope which is underneath.
+
+	    set where [cdclass]
+	    set cd    [cdget $where]
+
+	    #puts ///////////////////////////////////////////////////
+	    #puts //$where
+	    #puts //$cd
+	    #puts //$procname
+	    #puts //[dict get $cd option]
+
+	    if {[catch {dict get $cd proc $procname}]} {
+		logError snit::unknownProc [getTokenRange $word] $procname
+		#puts //ERROR\ ERROR
+	    }
+
+	    #puts ///////////////////////////////////////////////////
+	}
+    }
+    return [checkWord $tokens $index]
+}
+
+proc snit::checkSnitProcNameDef {tokens index} {
+    set word [lindex $tokens $index]
+    if {[getLiteral $word procname]} {
+	set where   [cdclass]
+	set cd      [cdget $where]
+
+	if {[catch {dict get $cd proc $procname} def]} {
+	    # Unknown proc, record now. Stored data: Name, maps to
+	    # delegation status (dict for future extensibility).
+	    dict set cd proc $procname {}
+	    cdset $where $cd
+	} elseif {[analyzer::isScanning] || ![analyzer::isTwoPass]} {
+	    # Known proc. We report dups only in the scan phase, or if
+	    # only the analyse phase was run. Otherwise the analyse
+	    # phase will incorrectly report all proc as dups due to
+	    # finding all the records made by the scan phase.
+
+	    logError snit::warnProcRedefine [getTokenRange $word] $procname
+	}
+    }
+    if {[analyzer::isScanning]} {
+	return [addUserProc $tokens $index]
+    } else {
+	return [checkWord $tokens $index]
+    }
+}
+
+proc snit::checkSnitProcArguments {tokens index} {
+    if {[analyzer::isScanning]} {
+	return [analyzer::addArgList $tokens $index]
+    } else {
+	return [checkAll {
+	    checkArgList
+	    {checkListValues 0 -1 {
+		snit::checkSnitProcArgumentName
+	    }}
+	} $tokens $index]
+    }
+}
+proc snit::checkSnitProcBody      {tokens index} {
+    return [snit::checkSnitRuntimeBody class $tokens $index]
+}
+
+# ### ######### ###########################
+## Constructor, desctructor
+# Called only from a lexical context.
+
+proc snit::checkSnitConstructorArguments {tokens index} {
+    return [checkAll {
+	checkArgList
+	{checkListValues 0 -1 {
+	    snit::checkSnitMethodArgumentName
+	}}
+    } $tokens $index]
+}
+proc snit::checkSnitTypeConstructorBody  {tokens index} { return [snit::checkSnitRuntimeBody class    $tokens $index] }
+proc snit::checkSnitConstructorBody      {tokens index} { return [snit::checkSnitRuntimeBody instance $tokens $index] }
+proc snit::checkSnitDestructorBody       {tokens index} { return [snit::checkSnitRuntimeBody instance $tokens $index] }
+
+# ### ######### ###########################
+## Options
+
+# Called only from
+# (1) a lexical context.                   (option command)
+# (2) 'snit::checkSnitDelegateBegin plain' (also lexical context, delegate command)
+#
+# Note that (2) is an error if a regular option is defined already,
+# and vice versa. Check and report. Otherwise a redefinition warrants
+# only a warning.
+
+proc snit::checkSnitOptionNameDef { delegated tokens index } {
+    set word [lindex $tokens $index]
+    if {[getLiteral $word optname]} {
+	set where   [context::topScope]
+	set cd      [cdget $where]
+
+	if {[catch {dict get $cd option $optname} def]} {
+	    # Unknown option, record now. Stored data: Name, maps to
+	    # delegation status (dict for future extensibility).
+	    dict set cd option $optname delegated $delegated
+	    cdset $where $cd
+	} elseif {[analyzer::isScanning] || ![analyzer::isTwoPass]} {
+	    # Known option. We report dups only in the scan phase, or
+	    # if only the analyse phase was run. Otherwise the analyse
+	    # phase will incorrectly report all options as dups due to
+	    # finding all the records made by the scan phase.
+
+	    # We compare remembered to current delegation status to
+	    # decide between warning and error.
+	    if {[dict get $def delegated] == $delegated} {
+		set code snit::warnOptionRedefine
+	    } else {
+		set code snit::badOptionRedefine
+	    }
+	    logError $code [getTokenRange $word] $optname
+	}
+    }
+
+    return [snit::checkOptionName $tokens $index]
+}
+
+proc snit::checkSnitOptionNameUse { tokens index } {
+    if {![analyzer::isScanning]} {
+	set word [lindex $tokens $index]
+	if {[getLiteral $word optname]} {
+
+	    # While the call is made from onconfigure, which is in a
+	    # class body we have an artificial method context pushed
+	    # on top for the sake of the method body.
+
+	    set where [cdclass]
+	    set cd    [cdget $where]
+
+	    #puts ///////////////////////////////////////////////////
+	    #puts //$where
+	    #puts //$cd
+	    #puts //$optname
+	    #puts //[dict get $cd option]
+
+	    if {[catch {dict get $cd option $optname}]} {
+		logError snit::unknownOption [getTokenRange $word] $optname
+		#puts //ERROR\ ERROR
+	    }
+
+	    #puts ///////////////////////////////////////////////////
+	}
+    }
+    return [snit::checkOptionName $tokens $index]
+}
+
+proc snit::checkSnitOptionConfigureArguments { tokens index } {
+    # Single argument, new value of option.
+    return [checkAll {
+	checkArgList
+	{checkListValues 1 1 {checkWord}}
+    } $tokens $index]
+}
+
+proc snit::checkSnitOptionDefinition {tokens index} {
+    set argc [llength $tokens]
+    set left [expr {$argc - $index}]
+
+    if {!$left} {
+	# No arguments, ok, nothing to do
+	return $argc
+    } elseif {$left == 1} {
+	# single argument is default value.
+	return [checkWord $tokens $index]
+    } else {
+       return [checkSwitches 1 {
+	   {-cgetmethod       {snit::checkSnitMethodNameUse 1}}
+	   {-configuremethod  {snit::checkSnitMethodNameUse 1}}
+	   {-default          checkWord}
+	   {-readonly         checkBoolean}
+	   {-type             checkList}
+	   {-validatemethod   {snit::checkSnitMethodNameUse 1}}
+	} {} $tokens $index]
+    }
+
+    # TODO: -*method, check not only that the word is the name of
+    # a method, but also that its argument list is ok. Constraints:
+    #
+    # -cget...:      1 argument exactly (option name)
+    # -configure...: 2 arguments exactly (option name, new value)
+    # -validate...:  See configure
+
+    error MUST-NOT-COME-TO-THIS-PLACE/[expr {$argc - $index}]
+}
+
+# ### ######### ###########################
+## Checking of runtime bodies ((type)methods, procs, oncget,
+## onconfigure, (type)constructor, destructor)
+
+proc snit::checkSnitRuntimeBody {which tokens index} {
+    variable classtype
+    # WHICH is in {class, instance}, the type of the body, basic
+    # runtime context it will be in. Selects which variables are
+    # visible.
+
+    # Push the proper variable scopes to var tracing. TOS is method
+    # scope, underneath it we find the class scope. Depending on the
+    # type of body we import only type variables, or both type and
+    # instance variables.
+
+    set methodname [context::topScope] ; #puts stderr M|$methodname
+    set where      [cdclass]           ; #puts stderr C|$where
+
+    set       cd [cdget $where]
+    dict with cd {
+	# Type variables, and relevant implicit arguments
+	xref::varDef argument type
+
+	dict for {varname varids} $typevar { #puts stderr I/tv|$varname|
+	    foreach vid $varids {
+		xref::varDef imported $varname origin $vid
+	    }
+	}
+
+	# Additional variables and implicit arguments for instances
+	if {$which eq "instance"} {
+	    xref::varDef argument selfns
+	    xref::varDef argument win
+	    xref::varDef argument self
+
+	    # Locally defined (non-delegated) options imly presence of
+	    # the array options.
+	    if {[cdhasndopt cd]} {
+		xref::varDef local options
+	    }
+
+	    dict for {varname varids} $instvar { #puts stderr I/iv|$varname|
+		foreach vid $varids {
+		    xref::varDef imported $varname origin $vid
+		}
+	    }
+	}
+    }
+
+    set cmds [snit::push rt.${classtype}.$which]
+    set index [checkOrdering checkBody $tokens $index]
+    snit::pop $cmds
+
+    # TODO: scopes, context, etc.
+    return $index
+}
+
+# ### ######### ###########################
+## Option type validation
+
+proc snit::checkSnitSimpleValidator {tokens index} {
+    return [checkSimpleArgs 1 2 {{checkOption {
+	{validate {checkSimpleArgs 1 1 {checkWord}}}
+    } {checkSimpleArgs 1 1 {
+	snit::checkSnitTypeValidatorName}}}} $tokens $index]
+}
+
+proc snit::checkSnitConfigurableValidator {optioncmd tokens index} {
+    # TODO: check that this works, we can always construct the command
+    # piecemal, from the ground up.
+
+    return [checkSimpleArgs 1 -1 \
+		[list [list \
+			   checkOption {
+			       {validate {checkSimpleArgs 1 1 {checkWord}}}
+			   } [list \
+				  checkSimpleArgs 1 -1 \
+				   [list \
+					     snit::checkSnitTypeValidatorName \
+					     [list \
+						  checkSwitches 1 $optioncmd {} \
+						 ] \
+					    ] \
+				 ] \
+			  ]] $tokens $index]
+}
+
+proc snit::checkSnitTypeValidatorName {tokens index} {
+    # TODO check against list of predefined types
+    return [checkWord $tokens $index]
+}
+
+# ### ######### ###########################
+# (type)component comp ?-public typemethod? ?-inherit flag?
+
+# Note: Collection/checking of (type)component names is delegated to
+# checkSnitVarNameDef/checkSnitVarNameUse, components have a variable
+# backing them.
+
+proc snit::checkSnitComponentDef {context tokens index} {
+    # CONTEXT is in {class, instance}
+    return [checkSimpleArgs 1 5 \
+		[list \
+		     [list snit::checkSnitVarNameDef $context] \
+		     {checkSwitches 1 {
+			 {-public  checkWord}
+			 {-inherit checkBoolean}
+		     } {}}
+		] $tokens $index]
+}
+
+proc snit::checkSnitComponentUse {context tokens index} {
+    # CONTEXT is in {class, instance}
+    return [snit::checkSnitVarNameUse $context $tokens $index]
+}
+
+# ### ######### ###########################
+## delegate
+
+proc snit::checkSnitDelegateBegin {what args} {
+    # args = ?chain? tokens index
+    #puts D/Begin/$what/
+    variable dtype $what
+    variable dclauses
+    array unset dclauses
+    array set   dclauses {}
+
+    if {[llength $args] == 2} {
+	# No chain, args = <tokens index>
+	#puts nc/[lindex $args 1]/[llength [lindex $args 0]]
+	return [lindex $args 1]
+    }
+
+    foreach {chain tokens index} $args break
+    set index [{*}$chain $tokens $index]
+    #puts c/$index/[llength $tokens]
+    return $index
+}
+
+proc snit::checkSnitDelegateClauseComponent {context tokens index} {
+    #puts D/to/$context
+    # CONTEXT is in {class, instance}
+    variable dclauses
+    set      dclauses(to) .
+    return [snit::checkSnitComponentUse $context $tokens $index]
+}
+
+proc snit::checkSnitDelegateClauseExceptionOption {tokens index} {
+    #puts D/execept
+    variable dclauses
+    set      dclauses(except) .
+
+    # Note that we are only checking the syntax of the option name,
+    # and not whether it was defined for the class or not.
+
+    # That makes sense, because exceptions are only for *-delegation,
+    # i.e. for the delegation of options which are unknown to the
+    # class __by definition__. So the exceptions have to be unknown as
+    # well, never defined.
+
+    # The exceptions actually essentially ensure that the named
+    # options are not becoming options of the class through the
+    # delegation target.
+
+    return [checkListValues 0 -1 {
+	snit::checkOptionName
+    } $tokens $index]
+}
+
+proc snit::checkSnitDelegateClauseExceptionMethod {context tokens index} {
+    #puts D/execept/$context/method
+    # CONTEXT is in {class, instance}
+    variable dclauses
+    set      dclauses(except) .
+
+    # Note that we are only checking the basic syntax of the exception
+    # list, and not whether the methods were defined for the class or
+    # not.
+
+    # That makes sense, because exceptions are only for *-delegation,
+    # i.e. for the delegation of methods which are unknown to the
+    # class __by definition__. So the exceptions have to be unknown as
+    # well, never defined.
+
+    # The exceptions actually essentially ensure that the named
+    # methods are not becoming methods of the class through the
+    # delegation target.
+
+    return [checkList $tokens $index]
+}
+
+proc snit::checkSnitDelegateClauseAs {tokens index} {
+    #puts D/as
+    variable dclauses
+    set      dclauses(as) .
+    # TODO: check all the possible placeholders (%-subst)
+    return [checkWord $tokens $index]
+}
+
+proc snit::checkSnitDelegateClauseUsing {context tokens index} {
+    #puts D/using
+    # CONTEXT is in {class, instance}
+    variable dclauses
+    set      dclauses(using) .
+
+    # The using clause creates a cmd prefix bsaed on %-substitution
+    # patterns. We check that all the patterns are legal. Actually it
+    # has to be a list before the %-patterns are applied. And we need
+    # at least one word.
+
+    switch -exact -- $context {
+	class    { set sub snit::checkSnitUsingTypePattern }
+	instance { set sub snit::checkSnitUsingPattern     }
+    }
+    return [checkListValues 1 -1 [list $sub] $tokens $index]
+}
+
+proc snit::checkSnitUsingPattern {tokens index} {
+    set word [lindex $tokens $index]
+
+    # no validation of non-literal words
+    if {![getLiteral $word literal]} {
+	return [checkWord $tokens $index]
+    }
+
+    # The check is done by removing all legal patterns and then
+    # checking if there are %-signs left over.
+
+    if {[string match *%* [string map {
+	%% {}	%c {}	%m {}	%M {}	%j {}	%t {}	%n {}	%s {}	%w {}
+    } $literal]]} {
+	logError snit::badUsingFmt [getTokenRange $word] $literal
+    }
+
+    return [incr index]
+}
+
+proc snit::checkSnitUsingTypePattern {tokens index} {
+    set word [lindex $tokens $index]
+
+    # no validation of non-literal words
+    if {![getLiteral $word literal]} {
+	return [checkWord $tokens $index]
+    }
+
+    # The check is done by removing all legal patterns and then
+    # checking if there are %-signs left over.
+
+    if {[string match *%* [string map {
+	%% {}	%c {}	%m {}	%M {}	%j {}	%t {}
+    } $literal]]} {
+	logError snit::badUsingFmt [getTokenRange $word] $literal
+    }
+
+    return [incr index]
+}
+
+proc snit::checkSnitDelegateEndMethod {tokens index} {
+    variable dtype
+    variable dclauses
+
+    #puts D/END/$dtype/method
+    #parray dclauses
+
+    set word  [lindex $tokens $index]
+    set range [getTokenRange $word]
+
+    if {![info exists dclauses(to)]} {
+	logError snit::dMissingTo $range
+    }
+    switch -exact -- $dtype {
+	star {
+	    # * doesn't allow as-clauses
+	    if {[info exists dclauses(as)]} {
+		logError snit::dmBadAs $range
+	    }
+	}
+	plain {
+	    # regular doesn't allow except-clauses
+	    if {[info exists dclauses(except)]} {
+		logError snit::dmBadExcept $range
+	    }
+	}
+    }
+    if {
+	[info exists dclauses(using)] &&
+	[info exists dclauses(as)]
+    } {
+	# as- and using-clauses exclude each other
+	logError snit::dmBadAsUsing $range
+    }
+
+    set dtype inactive
+    return [checkSimpleArgs 0 0 {} $tokens $index]
+}
+
+proc snit::checkSnitDelegateEndOption {tokens index} {
+    variable dtype
+    variable dclauses
+
+    #puts D/END/$dtype/option
+    #parray dclauses
+
+    set word  [lindex $tokens $index]
+    set range [getTokenRange $word]
+
+    if {![info exists dclauses(to)]} {
+	logError snit::dMissingTo $range
+    }
+    switch -exact -- $dtype {
+	star {
+	    if {[info exists dclauses(as)]} {
+		logError snit::doBadAs $range
+	    }
+	}
+	plain {
+	    if {[info exists dclauses(except)]} {
+		logError snit::doBadExcept $range
+	    }
+	}
+    }
+
+    set dtype inactive
+    return [checkSimpleArgs 0 0 {} $tokens $index]
+}
+
+# ### ######### ###########################
+##
+
+proc snit::checkSnitVarNameDef {context tokens index} {
+    # CONTEXT is in {class, instance}
+    # Remember literal variables per class. This information will be
+    # used by 'checkSnitRuntimeBody' to import the proper type and
+    # instance variables into the method/proc scope.
+
+    set word [lindex $tokens $index]
+    if {[getLiteral $word varname]} {
+	#puts stderr $context//[context::topScope]//\t($varname)
+
+	set vartype [expr {($context eq "class") ? "typevar" : "instvar"}]
+	set where   [context::topScope]
+	set cd      [cdget $where]
+
+	# Extend the list of definitions, prevent the entering of
+	# duplicates for a name, also handling first entry.
+
+	cdextend [xref::varId $varname] -> cd $vartype $varname
+	cdset $where $cd
+
+	# Remember the variable for cross-referencing as well.
+	xref::varDef $vartype $varname
+	#puts stderr @@I\t([dict keys [dict get $cd instvar]])
+	#puts stderr @@T\t([dict keys [dict get $cd typevar]])
+    }
+
+    return [checkVarNameDecl $tokens $index]
+}
+
+proc snit::checkSnitVarNameUse {context tokens index} {
+    # 2pass, check variable against declarations for the class.
+    # CONTEXT is in {class, instance}
+
+    if {![analyzer::isScanning]} {
+	set word [lindex $tokens $index]
+	if {[getLiteral $word varname]} {
+
+	    # TODO: The my*var* commands allow array elements,
+	    # i.e. foo($bar) as arguments. For that case we have to
+	    # look for the stem, not the full element. Note that
+	    # components to not allow array elements and must not do
+	    # this extended search.
+
+	    set vartype [expr {($context eq "class") ? "typevar" : "instvar"}]
+
+	    # This checker can be run from 2 different lexical
+	    # contexts: class and method bodies. Determine which it
+	    # is, and always pull the class scope.
+
+	    set where [context::topScope]
+	    if {[lindex $where 0] ne "class"} {
+		# We are in a method, pull class we are in.
+		set where [cdclass]
+	    }
+
+	    set cd [cdget $where]
+
+	    #puts ///////////////////////////////////////////////////
+	    #puts //$where
+	    #puts //$cd
+	    #puts //$varname//$vartype
+	    #puts //[dict get $cd $vartype]
+
+	    if {[catch {dict get $cd $vartype $varname}]} {
+		logError snit::unknown${context}Var \
+		    [getTokenRange $word] $varname
+		#puts //ERROR\ ERROR
+	    }
+	    #puts ///////////////////////////////////////////////////
+	}
+    }
+
+    return [checkVarNameWrite $tokens $index]
+}
+
+# ### ######### ###########################
+##
+
+proc snit::checkSnitMethodArgumentName {tokens index} {
+    set word [lindex $tokens $index]
+
+    # no validation of non-literal words
+    if {[getLiteral $word literal]} {
+	if {
+	    ($literal eq "type") ||
+	    ($literal eq "self") ||
+	    ($literal eq "selfns") ||
+	    ($literal eq "win")
+	} {
+	    logError snit::badArgument [getTokenRange $word] $literal
+	}
+    }
+    return [checkWord $tokens $index]
+}
+
+proc snit::checkSnitProcArgumentName {tokens index} {
+    set word [lindex $tokens $index]
+
+    # no validation of non-literal words
+    if {[getLiteral $word literal]} {
+	if {
+	    ($literal eq "type") ||
+	    ($literal eq "self") ||
+	    ($literal eq "selfns") ||
+	    ($literal eq "win")
+	} {
+	    logError snit::warnArgument [getTokenRange $word] $literal
+	}
+    }
+    return [checkWord $tokens $index]
+}
+
+# snit::checkOptionName --
+#
+#	Check to see the next token is a legal name for a snit option
+#	(or nonliteral).  If not, log a badOption error.
+#
+# Arguments:
+#	tokens		The list of word tokens for the current command.
+#	index		The index of the next word to be checked.
+#
+# Results:
+#	Returns the index of the next token to be checked.
+
+proc snit::checkOptionName {tokens index} {
+    set word [lindex $tokens $index]
+
+    # no validation of non-literal words
+    if {![getLiteral $word literal]} {
+	return [checkWord $tokens $index]
+    }
+
+    # Lifted out of snit itself (Comp.OptionNameIsValid)
+    if {
+	![string match -* $literal] ||
+	[string  match {*[A-Z ]*} $literal]
+    } {
+	logError snit::badOption [getTokenRange $word] $literal
+    }
+
+    return [incr index]
+}
+
+# ### ######### ###########################
+# ### ######### ###########################
+
+namespace eval snit {
+    # Additional data structures (dynamic checker rules, scan
+    # information for 2-pass checking, ...)
+
+    variable dyn
+    variable classtype {}
+
+    # ### ######### ###########################
+    ## Dynamically activated checker rules
+    ## Class-context commands, class definitions.
+
+    # dyn labels: type, widget, widgetadaptor
+
+    # ### ######### ###########################
+    ## Dynamically activated checker rules
+    ## Method context commands, runtime.
+
+    # dyn labels: typemethod, method, proc, macro
+    # ..........: constructor, destructor
+
+    # ### ######### ###########################
+}
+
+# ### ######### ###########################
+pcx::complete

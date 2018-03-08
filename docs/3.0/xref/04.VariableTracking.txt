@@ -1,0 +1,300 @@
+TDK 3.0 Checker Xref    Notes / Variables
+=========================================
+
+Checking definition and usage of variables
+------------------------------------------
+
+The principal commands for defining variables are 'global',
+'variable', 'set', and 'upvar'.
+
+Some other commands declare variables implicitly: 'proc' and similar,
+'class' and similar, for their scopes.
+
+Other commands using 'varnames': Treat them as use-only, even if they
+create a variable too. Else they create 'def' structures for mistyped
+variables, making it impossible to find them as mistyped.
+
+Identification of variables
+---------------------------
+
+Each variable, use or definition is uniquely identified by its name
+and the fully qualified name of the lexical scope it is in.
+
+The only exception to this are proc local variables (and arguments)
+for procedures which are multiply defined.
+
+To handle this case we have to add information about the location of
+the containing lexical scope to the internal name, because each
+definition has to be at a different place.
+
+The above assumes that variable information is handled in a
+centralized manner. Alternatively variable data could be stored in the
+command database (procs, classes) and the namespace database. This
+however may make cross referencing more problematic because var uses
+have to be tagged with the origin database to correctly the source of
+the definition, and makes getting the data more complicated too,
+decisions are required.
+
+So the actual id we use is the name, scope name, and scope
+location. The parts are wrapped in a list. The information is listed
+in the order: location (file, (line), cmd range), scope name, var
+name.
+
+
+Implicit imports
+----------------
+
+Whenever a lexical scope is opened by a command it may implicitly
+import variable definitions, i.e. make them visible, according to the
+rules for the command. For example the scope of a procedure body
+implicitly has definitions for all the arguments of the procecure. And
+extended, in a class system it may have implicit variables for the
+object itself (this, self, ...) and all the instance variables.
+
+To make this easy such definitions are attached to the relevant
+definition of the command in the command database, as part of the
+scanning process. The dictionary key for this data is
+'implicit-variables'. The value is a dictionary mapping from the local
+(i.e.unqualified) name of the variable to the definitions to insert
+into the variable database after scanning has completed. Each
+definition is a dictionary containing the 'type' and possibly an
+origin reference (to the definition in the class for example).
+
+In the scanning phase the implicit imports are collected in the
+command database and then inserted into the variable database while in
+the collation phase executed in between scanning and analysis.
+
+
+
+Database
+--------
+
+The database consists of 2 arrays. One for variable definitions, one
+for usages. Keys are the variable id's discussed in the last section.
+
+Per id'd variable multiple definitions are possible => Collisions.
+
+Data for definition:
+        -       type:   argument        proc/method argument
+                        local           Local to the scope, 'set', variable', 'global'.
+                        imported        global, variable, upvar
+                        aliased         upvar (from variable in same scope)
+ 
+        -       location        of the cmd creating the definition.
+                                undefined for 'argument's.
+
+        -       origin          for imported and aliased variables the
+                                id of the variable brought into scope
+                                in that way.
+
+Data per usage:
+        -       location of the command using the variable.
+
+Note: When assessing if a variable was used before definition the
+order of definitions and uses is important, if there is a definition
+at all for the scope.
+
+
+
+Behaviour of the principal commands (with respect to the database)
+------------------------------------------------------------------
+
+Shortcuts for the action table below.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+DEF(t,x)
+        Create a variable definition of type 't', for 'x', properly
+        scoped.
+
+OO/X    This depends on the OO extension the scope is owned by, and
+        thus on its definition of a scan/check command for the command
+        in question.
+
+IGNORE  Do nothing.
+
+USE(x)  Record usage of variable x, with properly scoped name.
+
+WARN(expr)
+        Generate a warning if 'expr' is fulfilled.
+
+WARN(expr)/defer
+        See WARN(expr), except that the warning is generated later, in
+        the analysis phase, and not immediately.
+
+CHECK(expr)/defer
+        Remember to check the 'expr'ession later on, in the analysis
+        phase.
+
+XREF(expr)
+        Add references to the variable definitions fulfilling the
+        expression.
+
+[.]     Footnote.
+
+
+I.      set     Scope   Phase           Actions
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        0.      class                   OO/X
+
+        i.      proc
+                a.      Scanning        IGNORE
+                b.      Analysis
+                        'set x'         WARN(no def 'x')
+                                        USE(x)
+                                        [2]
+
+                        'set ::x'       WARN(no def '::x')
+                                        USE(::x)
+
+                        'set x [...]'   DEF(local,'x')
+                                        WARN(similar 'x')
+                                        XREF(similar 'x')
+                                        [3]
+
+        ii.     namespace
+                a.      Scanning
+                        'set x'         IGNORE
+
+                        'set ::x'       IGNORE
+
+                        'set x [...]'   DEF(local,'x')
+                                        CHECK(conflicting global?)/defer
+                                        [1]
+
+                        'set ::x [...]' DEF(local,'::x')
+
+                b.      Analysis
+                        'set x'         WARN(no def 'x') :- (I/a/ii).
+
+                        'set ::x'       WARN(no def '::x')
+                                        USE(::x)
+
+                        'set x [...]'   WARN(conflicting global?) :- (I/a/ii).
+
+                        'set ::x [...]' IGNORE.
+
+
+II.     variable Scope   Phase          Actions
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        0.      class                   OO/X
+
+        i.      proc
+                a.      Scanning
+                        variable x      DEF(import,x)
+                        variable ::x    DEF(import,x -> ::x)
+
+                b.      Analysis
+                        variable x      WARN(no def 'x' namespace)
+                                        WARN(def 'x' local)     /shadow
+
+                        variable ::x    WARN(no def '::x' namespace)
+                                        WARN(def 'x' local)     /shadow
+
+                        Also USE(x) if 2nd argument is present.
+
+        ii.     namespace
+                a.      Scanning
+                        variable x      WARN(def 'x')/defer
+                                        DEF(local,x)
+
+                        variable ::x    WARN(def 'x')/defer
+                                        DEF(import,x -> ::x)
+
+                b.      Analysis
+                        variable x      IGNORE
+
+                        variable ::x    WARN(no def '::x' namespace)/defer
+
+                        Also USE(x) if 2nd argument is present.
+
+
+III.    global  Scope   Phase          Actions
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        0.      class                   OO/X
+        i.      proc
+                a.      Scanning
+                        global y        DEF(import,'y')
+
+                        global ::x::y   DEF(import,'::x::y')
+
+                b.      Analysis
+                        global y        WARN(no def 'y' global)
+                                        WARN(def 'y' local)     /shadow
+
+                        global ::x::y   WARN(no def '::x::y' global)
+                                        WARN(def 'y' local)     /shadow
+
+
+        ii.     namespace
+                a.      Scanning
+                        global          IGNORE
+
+                b.      Analysis
+                        global          WARN(undefined op)
+
+
+IV.     upvar   Scope   Phase           Actions
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        0.      class                   OO/X
+        i.      proc
+                a.      Scanning
+                        upvar #0 a b    DEF(import,'b' (a namespaced ok))
+                        upvar #n a b    DEF(import,'b')
+                        upvar  n a b    DEF(import,'b')
+                        upvar a b       === upvar 1 a b
+
+                b.      Analysis
+                        upvar #0 a b    WARN(def 'b' local)     /shadow
+                                        LOCATE(a (poss. namespaced))
+                                        WARN(if can't find def 'a')
+                                        USE(a)
+
+                        upvar #n a b    WARN(def 'b' local)     /shadow
+                                        WARN(unable to locate origin)
+                                        (The general case is impossible, need access to full callstack)
+
+                        upvar  n a b    WARN(def 'b' local)     /shadow
+                                        LOCATE('a', n callers up)
+                                        WARN(if can't find def 'a')
+                                        USE(a) for all possible origins.
+
+                        upvar a b       === upvar 1 a b
+
+        ii.     namespace
+                a.      Scanning
+                        upvar #0 a b    DEF(import,'b' (a namespaced ok))
+                        upvar #n a b    IGNORE
+                        upvar  n a b    IGNORE
+                        upvar a b       === upvar 1 a b
+
+                b.      Analysis
+                        upvar #0 a b    WARN(no def 'a' namespaced)
+                        upvar #n a b    WARN(makes no sense)
+                        upvar  n a b    WARN(makes no sense)
+                        upvar a b       === upvar 1 a b
+
+
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Footnotes
+---------
+
+[1]     If 'x' had a global definition, but not one in the scope the
+        (set')command may actually have created the global definition,
+        and _not_ created one in the scope. This is a known problem of
+        set.
+
+[2]     FUTURE ... Trace variable definition and usage along the
+        possible paths of execution (=> graph). Create a warning if a
+        variable is only partially defined. This needs more support in
+        the checker commands: Building the graph of execution paths
+        (commands as nodes), and where definitions are made and seen.
+
+        This graph can also be used to trace types and values ...
+
+[3]     We have to define a similarity measure
+        => hamming distance = #changes to transform = N
+        => (N - length)/length = similarity in [0,1]
+           < 0 = none           (N > length).
+           0 = none             (N = length).
+           1 = identical        (N = 0).

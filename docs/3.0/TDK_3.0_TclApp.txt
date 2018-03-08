@@ -1,0 +1,55 @@
+TDK 3.0 TclApp / TAPE
+=====================
+
+        Extend to allow the conversion of starkits into starpacks.
+
+[OK]	For command line mode only.
+
+	tclapp -genpak \
+	       basekit \	(Like -prefix in regular use)
+	       starkit \	(The starkit to convert)
+	       result  \	(Like -output)
+	       ...		(Additional regular options)
+
+=====================
+.
+.
+.
+.
+.
+.
+
+
+Internal use:
+
+	The AS Build system for TDK creates both starkit and -pack for
+	procheck, on windows. This extension makes this operation
+	easier to code (less replication).
+
+GUI
+---
+
+This action does not really fit into the current graphical interface.
+
+Force fit:
+	When selecting a kit as the file to wrap, mount and use the
+	contents instead of the file itself.
+
+	Usage of a standard prefix when performs the merge we want.
+
+Problem:
+	When we want to wrap the file as a file, and not as its
+	contents. Example: Generation of the distribution, an
+	executable containing starkits and -packs, as they are,
+	and not their contents !
+
+Need a better solution.
+
+
+Command line
+-------------
+
+This can be handled easily via an additional special mode, like
+'-scan' is.
+
+	tclapp -kittopack basefile kitfile resultfile

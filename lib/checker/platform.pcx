@@ -1,0 +1,40 @@
+# -*- tcl -*- platform.pcx --
+#
+#	This file contains type and command checkers for the platform package
+#
+# Copyright (c) 2007 ActiveState Software Inc.
+
+#
+# RCS: @(#) $Id: coreTcl.tcl,v 1.14 2000/10/31 23:30:54 welch Exp $
+
+# ### ######### ###########################
+## Requisites
+
+package require pcx          ; # PCX API
+
+# ### ######### ###########################
+## Tcl core version dependencies of the package this checker is for.
+
+pcx::register platform platform
+pcx::tcldep   1.0.2 needs tcl 8.4
+
+# ### ######### ###########################
+## Package specific message types and their human-readable
+## translations.
+
+# ### ######### ###########################
+# scanCmdsX.X --
+# Define the set of commands that need to be recuresed into when 
+# generating a list of user defiend procs, namespace and Class 
+# contexts and procedure name resolutions info.
+
+## None
+
+# ### ######### ###########################
+# checkersX.X --
+# Define the set of command-specific checkers used by this package.
+
+pcx::check 1.0.2 std platform::generic  {checkSimpleArgs 0 0 {}}
+pcx::check 1.0.2 std platform::identify {checkSimpleArgs 0 0 {}}
+pcx::check 1.0.2 std platform::patterns {checkSimpleArgs 1 1 {checkWord}}
+

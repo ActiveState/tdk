@@ -1,0 +1,108 @@
+# tclCom.test --
+#
+# This file contains tests for the tclCom.pdx debugger extension file.
+#
+# Copyright (c) 1998-2000 by Ajuba Solutions
+# All rights reserved.
+#
+# RCS: @(#) $Id: tclCom.test,v 1.4 2001/10/17 19:04:06 andreas_kupries Exp $
+
+if {[string compare test [info procs test]] == 1} {
+    lappend auto_path [file join [file dirname [info script]] ..]
+    package require protest
+    namespace import ::protest::*
+}
+
+catch {parse} parseMsg
+if {[regexp "invalid command" $parseMsg]} {
+    package require parser
+}
+
+if {[string compare testGui [info procs testGui]] == 1} {
+    source [file join $::tcltest::testsDirectory guiLaunch.tcl]
+}
+source [file join $::tcltest::testsDirectory .. tclCom.pdx]
+
+test tclCom-1.1 {foreachitem command} {
+    testGui {
+	namespace eval tclcom {
+	    namespace export foreachitem
+	    proc foreachitem {var ls handle body} {
+		eval $body
+	    }
+	}
+	namespace import tclcom::*
+	set a 0
+	foreachitem dummy dummy dummy {
+	    global a
+	    incr a
+	    incr a
+	}
+	tclcom::foreachitem dummy dummy dummy {
+	    global a
+	    incr a
+	    incr a
+	}
+	exit
+    } {
+	# step over the namespace calls
+	for {set i 1} {$i <= 5} {incr i} {
+	    gui::run {dbg::step over}
+	    waitForApp
+	}
+	
+	# step into the 8 incr calls
+	# if the incr calls were not instrumented, then we'll get an error.
+	for {set i 1} {$i <= 10} {incr i} {
+	    gui::run dbg::step
+	    waitForApp
+	}
+	# get the 1st value in the list: "a"
+	lindex [split [$var::valuText get 1.0 end] "\n"] 0
+    }
+} 4
+
+test tclCom-1.2 {foreachitem command} {
+    testGui {
+	namespace eval tclcom {
+	    namespace export foreachitem
+	    proc foreachitem {var ls body} {
+		eval $body
+	    }
+	}
+	namespace import tclcom::*
+	set a 0
+	foreachitem dummy dummy {
+	    global a
+	    incr a
+	    incr a
+	}
+	tclcom::foreachitem dummy dummy {
+	    global a
+	    incr a
+	    incr a
+	}
+	exit
+    } {
+	# step over the namespace calls
+	for {set i 1} {$i <= 5} {incr i} {
+	    gui::run {dbg::step over}
+	    waitForApp
+	}
+	
+	# step into the 8 incr calls
+	# if the incr calls were not instrumented, then we'll get an error.
+	for {set i 1} {$i <= 10} {incr i} {
+	    gui::run dbg::step
+	    waitForApp
+	}
+	# get the 1st value in the list: "a"
+	lindex [split [$var::valuText get 1.0 end] "\n"] 0
+    }
+} 4
+
+cleanupTests
+
+if {[info exists tk_version] && !$tcl_interactive} {
+    exit
+}

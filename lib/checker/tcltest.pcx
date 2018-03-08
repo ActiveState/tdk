@@ -1,0 +1,208 @@
+# -*- tcl -*- tcltest.pcx --
+#
+#	This file contains type and command checkers for the
+#	"tcltest" commands.
+#
+# Copyright (c) 2004-2006 ActiveState Software Inc.
+
+# 
+# RCS: @(#) $Id: tkTable.tcl,v 1.3 2000/10/31 23:30:55 welch Exp $
+
+# ### ######### ###########################
+## Requisites
+
+package require pcx          ; # PCX API
+
+# ### ######### ###########################
+## Tcl core version dependencies of the package this checker is for.
+
+pcx::register tcltest tcltest
+#pcx::tcldep   1.0 needs tcl 8.x
+#pcx::tcldep   1.1 needs tcl 8.x
+#pcx::tcldep   1.2 needs tcl 8.x
+pcx::tcldep   2.1 needs tcl 8.3
+
+# ### ######### ###########################
+
+# ### ######### ###########################
+## Package specific message types and their human-readable
+## translations.
+
+# ### ######### ###########################
+# scanCmdsX.X --
+# Define the set of commands that need to be recuresed into when 
+# generating a list of user defiend procs, namespace and Class 
+# contexts and procedure name resolutions info.
+
+# ### ######### ###########################
+# checkersX.X --
+# Define the set of command-specific checkers used by this package.
+
+# tcltest 2.2 -> Tcl 8.3
+
+# ### ######### ###########################
+## Initialization
+
+## This package relies on the standard initialization sequence of
+## 'pcx::init'. This is automatically called if no 'init' command
+## is found in the namespace of the checker package.
+
+# ### ######### ###########################
+
+# ### ######### ###########################
+# Checkers for specific commands --
+#
+#	Each checker is passed the tokens for the arguments to 
+#	the command.  The name of each checker should be of the
+#	form tkTable::check<Name>Cmd, where <name> is the command
+# 	being checked.
+#
+# Arguments:
+#	tokens		The list of word tokens after the initial
+#			command and subcommand names
+#	index		The index into the token tree where the 
+#			checkers should start checking.
+#
+# Results:
+#	Return the next index, in the tokens tree, to check.
+
+pcx::check 2.1 std tcltest::loadTestedCommands {checkSimpleArgs 0 0 {}}
+pcx::check 2.1 std tcltest::makeDirectory      {checkSimpleArgs 1 2 {checkWord checkFileName}}
+pcx::check 2.1 std tcltest::removeDirectory    {checkSimpleArgs 1 2 {checkWord checkFileName}}
+pcx::check 2.1 std tcltest::makeFile           {checkSimpleArgs 2 3 {checkWord checkWord checkFileName}}
+pcx::check 2.1 std tcltest::removeFile         {checkSimpleArgs 1 2 {checkWord checkFileName}}
+pcx::check 2.1 std tcltest::viewFile           {checkSimpleArgs 1 2 {checkWord checkFileName}}
+pcx::check 2.1 std tcltest::cleanupTests       {checkSimpleArgs 0 1 checkBoolean}
+pcx::check 2.1 std tcltest::runAllTests        {checkSimpleArgs 0 0 {}}
+pcx::check 2.1 std tcltest::customMatch        {checkSimpleArgs 2 2 {checkWord {checkProcCall 2}}}
+pcx::check 2.1 std tcltest::testConstraint     {checkSimpleArgs 1 2 {checkWord checkBoolean}}
+pcx::check 2.1 std tcltest::outputChannel      {checkSimpleArgs 0 1 checkChannelID}
+pcx::check 2.1 std tcltest::errorChannel       {checkSimpleArgs 0 1 checkChannelID}
+pcx::check 2.1 std tcltest::interpreter        {checkSimpleArgs 0 1 checkWord}
+pcx::check 2.1 std tcltest::debug              {checkSimpleArgs 0 1 {{checkKeyword 1 {0 1 2 3}}}}
+pcx::check 2.1 std tcltest::errorFile          {checkSimpleArgs 0 1 checkFileName}
+pcx::check 2.1 std tcltest::limitConstraints   {checkSimpleArgs 0 1 checkBoolean}
+pcx::check 2.1 std tcltest::loadFile           {checkSimpleArgs 0 1 checkFileName}
+pcx::check 2.1 std tcltest::loadScript         {checkSimpleArgs 0 1 checkBody}
+pcx::check 2.1 std tcltest::match              {checkSimpleArgs 0 1 {checkListValues 0 -1 checkPattern}}
+pcx::check 2.1 std tcltest::matchDirectories   {checkSimpleArgs 0 1 {checkListValues 0 -1 checkPattern}}
+pcx::check 2.1 std tcltest::matchFiles         {checkSimpleArgs 0 1 {checkListValues 0 -1 checkPattern}}
+pcx::check 2.1 std tcltest::outputFile         {checkSimpleArgs 0 1 checkFileName}
+pcx::check 2.1 std tcltest::preserveCore       {checkSimpleArgs 0 1 {{checkKeyword 1 {0 1 2}}}}
+pcx::check 2.1 std tcltest::singleProcess      {checkSimpleArgs 0 1 checkBoolean}
+pcx::check 2.1 std tcltest::skip               {checkSimpleArgs 0 1 {checkListValues 0 -1 checkPattern}}
+pcx::check 2.1 std tcltest::skipDirectories    {checkSimpleArgs 0 1 {checkListValues 0 -1 checkPattern}}
+pcx::check 2.1 std tcltest::skipFiles          {checkSimpleArgs 0 1 {checkListValues 0 -1 checkPattern}}
+pcx::check 2.1 std tcltest::temporaryDirectory {checkSimpleArgs 0 1 checkFileName}
+pcx::check 2.1 std tcltest::testsDirectory     {checkSimpleArgs 0 1 checkFileName}
+pcx::check 2.1 std tcltest::verbose            {checkSimpleArgs 0 1 tcltest::checkVerbose}
+pcx::check 2.1 std tcltest::bytestring         {checkSimpleArgs 1 1 checkWord}
+pcx::check 2.1 std tcltest::normalizeMsg       {checkSimpleArgs 1 1 checkWord}
+pcx::check 2.1 std tcltest::normalizePath      {checkSimpleArgs 1 1 checkVarNameWrite}
+pcx::check 2.1 std tcltest::workingDirectory   {checkSimpleArgs 0 1 checkWord}
+pcx::check 2.1 std tcltest::configure          {checkConfigure 1 {
+    {-singleproc       checkBoolean}
+    {-debug            {checkKeyword 1 {0 1 2 3}}}
+    {-verbose          tcltest::checkVerbose}
+    {-preservecore     {checkKeyword 1 {0 1 2}}}
+    {-limitconstraints checkBoolean}
+    {-constraints      checkList}
+    {-tmpdir           checkFileName}
+    {-testdir          checkFileName}
+    {-file             {checkListValues 0 -1 checkPattern}}
+    {-notfile          {checkListValues 0 -1 checkPattern}}
+    {-relateddir       {checkListValues 0 -1 checkPattern}}
+    {-asidefromdir     {checkListValues 0 -1 checkPattern}}
+    {-match            {checkListValues 0 -1 checkPattern}}
+    {-skip             {checkListValues 0 -1 checkPattern}}
+    {-load             checkBody}
+    {-loadfile         checkFileName}
+    {-outfile          checkFileName}
+    {-errfile          checkFileName}
+}}
+pcx::check 2.1 std tcltest::test {tcltest::checkTestCmd}
+
+# ### ######### ###########################
+## Local helper commands.
+
+namespace eval ::tcltest {}
+
+proc tcltest::checkVerbose {tokens index} {
+    set word [lindex $tokens $index]
+    if {![getLiteral $word literal]} {
+	return [checkWord $tokens $index]
+    }
+
+    if {[catch {parse list $literal {}} msg]} {
+	logError badList \
+	    [list [getLiteralPos $word [lindex $::errorCode 2]] 1] $msg
+    }
+    return [incr index]
+
+    # One element list ? -> Can be full keyword, or combination of abbreviations.
+
+    if {[llength $literal] == 1} {
+	if {![regexp {^(pass|body|skip|start|error)$} $literal]} {
+	    if {![regexp {([pbste])+} $literal]} {
+		logError badOption [getTokenRange $word] $keywords $value
+		return [checkWord $tokens $index]
+	    }
+	}
+    }
+
+    # Perform full list check
+    return [checkListValues 1 -1 {checkKeyword 1 {body pass skip start error}} $tokens $index]
+}
+
+proc tcltest::checkTestCmd {tokens index} {
+    # This checker actually accepts a union of v1 and v2
+    # syntax, and both v1 and v2 are correctly recognized.
+    #
+    # v2 = Name, description, then all options, no leftover arguments.
+    # v1 = Name, description, then no options, two or three other arguments.
+
+    set index [checkWord $tokens $index] ;# Name
+    set index [checkWord $tokens $index] ;# Description
+
+    # Process all allowed switches (v2).
+
+    set index [checkSwitches 1 {
+	{-body        checkBody}
+	{-cleanup     checkBody}
+	{-constraints checkList}
+	{-errorOutput checkWord}
+	{-match       checkWord}
+	{-output      checkWord}
+	{-result      checkWord}
+	{-returnCodes checkList}
+	{-setup       checkBody}
+    } {checkNOP} $tokens $index]
+
+    # The checkNOP above causes checkSwitches to see a chain command
+    # and returns its index information, which here is the index of
+    # the first word not belonging to a switch and its arguments.
+    # Without the checkNOP the checkSwitches command would always
+    # return argc, effectively disabling the checks below, as count
+    # would always be zero.
+
+    set argc [llength $tokens]
+    set count [expr {$argc - $index}]
+
+    # Leftover arguments are handled as v1.
+
+    if {$count > 0} {
+	while {$count > 2} {
+	    set index [checkWord $tokens $index] ;# Constraints, whatever.
+	    incr count -1
+	}
+	if {$count > 1} {
+	    set index [checkBody $tokens $index] ;# Body
+	}
+	set index [checkWord $tokens $index] ;# Result
+    }
+
+    return $index
+}
+
+# ### ######### ###########################
+pcx::complete

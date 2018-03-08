@@ -1,0 +1,148 @@
+'\"
+'\" Copyright (c) 1998-1999 by Scriptics Corp.
+'\" All rights reserved.
+'\"
+'\" RCS: @(#) $Id: initdebug.n,v 1.1 2000/08/31 18:03:39 hershey Exp $
+'\"
+.so man.macros
+.TH debugger_init n "1.4" Debugger "Debugger"
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+debugger_init, debugger_eval, debugger_break \- debugging embedded scripts and
+debugging remotely.
+.SH SYNOPSIS
+.nf
+\fBdebugger_init\fR ?\fIhost\fR ?\fIport\fR??
+.VS 1.3
+.sp
+\fBdebugger_eval\fR ?\fIswitches\fR? \fIscript\fR
+.VE 1.3
+.VS 1.4
+.sp
+\fBdebugger_attached\fR
+.VE 1.4
+.sp
+\fBdebugger_break\fR ?\fIstr\fR?
+.BE
+
+.SH INTRODUCTION
+
+The Tcl procedures defined here allow the Debugger to be used to
+debug remote, embedded and CGI applications.  In order for your
+application to establish and maintain communication with the
+debugger, you must modify your application to source the initdebug.tcl
+file and call the \fBdebugger_init\fR and \fBdebugger_eval\fR
+procedures.
+.PP
+
+.SH "COMMAND PROCEDURES"
+.PP
+The following procedures are provided by the debugger library:
+.TP
+\fBdebugger_init\fR ?\fIhostname\fR ?\fIport\fR??
+Establish the connection with the debugger that is currently
+running on \fIhostname\fR and listening on \fIport\fR.  By default
+\fIhostname\fR is \fBlocalhost\fR and the port is \fB2576\fR.  After
+the connection has been made, the debugger will instrument any
+files that are sourced into the interpreter with the \fBsource\fR
+command, or any commands that appear in the arg list of the
+\fBdebugger_eval\fR command.  The command returns 1 if the connection
+was successful and returns 0 if the connection failed.
+.VS 1.3
+.TP
+\fBdebugger_eval\fR ?\fIswitches\fR? \fIscript\fR
+The \fBdebugger_eval\fR command instruments and invokes the specified
+\fIscript\fR.  The \fBdebugger_eval\fR command allows a program to
+explicitly instrument a block of code that might not otherwise be
+instrumented by the debugger.  If the script is not currently
+connected to the debugger, \fBdebugger_eval\fR simply evaluates the
+script argument.
+.PP
+.RS
+If the initial arguments to \fBdebugger_eval\fR start with \fB\-\fR, then
+they are treated as switches.  The following switches are currently
+supported:
+.PP
+.TP 15
+\fB\-name \fIname\fR
+Associate a \fIname\fR with the script.  This causes the debugger
+to remember breakpoint information as if the script were sourced from
+a file of the given \fIname\fR.  This feature can be useful in remote
+debugger situations, or when evaluating blocks of dynamically
+generated code that are used multiple times.  By creating a unique
+\fIname\fR for each block, the user can set breakpoints in the block
+that persist across invocations. 
+.TP
+\fB\-\|\-\fR
+Marks the end of switches.  The argument following this one will
+be treated as \fIscript\fR even if it starts with a \fB\-\fR.
+.RE
+.VE 1.3
+.VS 1.4
+.TP
+\fBdebugger_attached\fR
+The \fBdebugger_attached\fR returns 1 if the script is currently
+connected to the debugger.  Otherwise it returns 0.  
+.VE 1.4
+.TP
+\fBdebugger_break\fR ?\fIstr\fR?
+The \fBdebugger_break\fR command will cause a break to occur when
+executed.  The effect is similar to the effect of a break\-point on
+the line containing the \fBdebugger_break\fR command (the only
+difference is that \fIstr\fR is evaulated before the break occurs).
+When the break occurs a dialog is presented in the debugger's GUI.  If
+\fIstr\fR is given (and not empty) the value of \fIstr\fR is presented
+in the dialog box.  If the script is not currently connected to
+the debugger, \fBdebugger_break\fR acts as a no\-op.
+
+.SH EXAMPLES
+.PP
+The example code below demonstrates the simplest way to establish a remote
+connection and debug an entire script remotely.  The connection is
+established between the local machine and \fBremoteMachine\fR via port
+\fB2576\fR.  At this point it is assumed that the debugger is running on
+\fBremomoteMachine\fR and is listening on port \fB2576\fR.  See the
+User's Guide or online help system for more information on how
+to specify the port that the debugger listens on.  The file \fBmain.tcl\fR
+is then sourced, which will cause the contents of the file, and any
+subsequent sourced files, to become instrumented (unless the
+preferences set in the debugger indicate otherwise.) 
+.PP
+.CS
+source initdebug.tcl
+if {[debugger_init remoteMachine 2576] == 0} {
+    return "cannot communicate with remoteMachine on port 2576"
+}
+source main.tcl
+.CE
+.PP
+The next example shows how to control exactly which commands become
+instrumented.  Establish the connection exactly like the
+previous example.  The commands that create the variables x, y and z
+will not be instrumented and the debugger will not step through
+theses lines.  The commands that create the variables a, b and c are
+inside the \fBdebugger_eval\fR.  This causes these commands to be
+instrumented and the debugger will step through these commands.
+.PP
+.CS
+source initdebug.tcl
+if {[debugger_init remoteMachine 2576] == 0} {
+    return "cannot communicate with remoteMachine on port 2576"
+}
+set x 1
+set y 2
+set z 3
+debugger_eval {
+    set a [expr {$x + 1}]
+    set b [expr {$y + 1}]
+    set c [expr {$z + 1}]
+}
+.CE
+.PP
+This example is especially relevant when debugging embedded
+scripts.  Simply add the first two lines to the beginning of the
+script and wrap the existing script in a call to \fBdebugger_eval\fR.
+
+.SH KEYWORDS
+remote debugging, debugger_init, debugger_eval, instrument, attach, detach

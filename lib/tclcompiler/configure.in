@@ -1,0 +1,60 @@
+#!/bin/bash -norc
+dnl	This file is an input file used by the GNU "autoconf" program to
+dnl	generate the file "configure", which is run during Tcl installation
+dnl	to configure the system for the local environment.
+#
+# RCS: @(#) $Id: configure.in,v 1.8 2005/03/19 00:07:48 hobbs Exp $
+
+AC_INIT([tclcompiler], [1.7.1])
+
+TEA_INIT([3.6])
+
+AC_CONFIG_AUX_DIR(tclconfig)
+
+TEA_PATH_TCLCONFIG
+TEA_LOAD_TCLCONFIG
+
+TEA_PREFIX
+
+TEA_SETUP_COMPILER
+
+TEA_ADD_SOURCES([cmpWPkg.c cmpWrite.c])
+TEA_ADD_HEADERS([])
+TEA_ADD_INCLUDES([])
+TEA_ADD_LIBS([])
+TEA_ADD_CFLAGS([])
+TEA_ADD_STUB_SOURCES([])
+TEA_ADD_TCL_SOURCES([])
+
+if test "${TEA_PLATFORM}" = "windows" ; then
+    AC_DEFINE(BUILD_tclcompiler)
+    CLEANFILES="pkgIndex.tcl *.lib *.dll *.exp *.ilk *.pdb vc*.pch"
+
+    # Required by ActiveState's License_V8 code included in this package.
+    TEA_ADD_LIBS([advapi32.lib])
+else
+    CLEANFILES="pkgIndex.tcl"
+fi
+AC_SUBST(CLEANFILES)
+
+TEA_PRIVATE_TCL_HEADERS
+
+TEA_ENABLE_THREADS
+
+TEA_ENABLE_SHARED
+
+TEA_CONFIG_CFLAGS
+
+TEA_ENABLE_SYMBOLS
+
+AC_DEFINE(USE_TCL_STUBS)
+
+TEA_MAKE_LIB
+
+TEA_PROG_TCLSH
+
+#--------------------------------------------------------------------
+# Finally, substitute all of the various values into the Makefile.
+#--------------------------------------------------------------------
+
+AC_OUTPUT([Makefile])

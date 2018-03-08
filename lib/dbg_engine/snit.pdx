@@ -1,0 +1,177 @@
+# snit.pdx --
+# -*- tcl -*-
+#
+#	This file implements custom instrumenter extensions
+#	for the snit package.
+#
+# Copyright (c) 2008 ActiveState Software Inc.
+#
+# All rights reserved.
+#
+# RCS: @(#) $Id: tcltest.pdx,v 1.4 2000/05/30 22:54:53 hershey Exp $
+
+# Register the snit extension
+
+instrument::addExtension 2.0 {snit}
+
+namespace eval snit {
+}
+
+# Register handlers for each of the toplevel snit commands
+
+instrument::addCommand snit::type \
+    {parseSimpleArgs 2 2 {
+	parseWord {parseBody snit::parseSnitClass}
+    }}
+
+instrument::addCommand snit::widget \
+    {parseSimpleArgs 2 2 {
+	parseWord {parseBody snit::parseSnitClass}
+    }}
+
+instrument::addCommand snit::widgetadaptor \
+    {parseSimpleArgs 2 2 {
+	parseWord {parseBody snit::parseSnitClass}
+    }}
+
+instrument::addCommand snit::typemethod \
+    {parseSimpleArgs 4 4 {parseWord parseWord parseWord parseBody}}
+
+instrument::addCommand snit::method \
+    {parseSimpleArgs 4 4 {parseWord parseWord parseWord parseBody}}
+
+# snit::parseSnitClass --
+#
+#	This is a very special script parser for the snit class
+#	commands.  This will only instrument the bodies of special
+#	functions and will not instrument anything at the toplevel.
+#
+# Arguments:
+#	range		The range of the body being parsed.
+#
+# Results:
+#       Returns the instrumented code.
+
+proc snit::parseSnitClass {range} {
+    # Iterate over all of the commands in the script range, advancing the
+    # range at the end of each command.
+
+    variable ::instrument::script
+    variable ::instrument::errorHandler
+    variable ::instrument::suppress
+
+    instrument::pushContext
+    set first 1
+    for {} {[parse charlength $script $range] > 0} \
+	    {set range $tail} {
+	# Parse the next command
+
+	if {[catch {
+	    lassign [parse command $script $range] \
+		    comment cmdRange tail tree
+	}]} {
+	    # An error occurred during parsing.
+
+	    if {$errorHandler ne ""} {
+		set ec $::errorCode
+		instrument::pushContext
+		instrument::setLocation [list [lindex $ec 2] 1]
+		set location [instrument::getLocation]
+		instrument::popContext
+		if {[instrument::runHandler $location $ec]} {
+		    # Ignore the error and skip to the end of the statement.
+		    
+		    if {!$first} {
+			instrument::appendString \n
+		    }
+
+		    # Emit everything else as a single command with no
+		    # instrumentation.
+
+		    instrument::beginCommand $range
+		    set suppress 1
+		    instrument::endCommand $range
+		    break
+		}
+	    }
+	    # Note we are bailing all the way out here, so we don't need
+	    # to pop the context or do any other cleanup.
+
+	    error "Unable to parse" $::errorInfo [list CAUGHT $::errorCode]
+	}
+
+	if {([llength $tree] == 0) \
+		|| ([parse charlength $script $cmdRange] <= 0)} {
+	    continue
+	}
+
+	if {!$first} {
+	    instrument::appendString "\n"
+	} else {
+	    set first 0
+	}
+
+	# Update the line number and set the anchor at the beginning of the
+	# command, skipping over any comments or whitespace.
+
+	instrument::beginCommand $cmdRange
+
+	set ::instrument::suppress 1
+
+	set argc [llength $tree]
+	set index 0
+	while {$index < $argc} {
+	    set cmdToken [lindex $tree $index]
+	    if {[instrument::getLiteral $cmdToken cmdName]} {
+		incr index
+		set cmdName [string trimleft $cmdName :]
+
+		# Invoke the parsers for all the special commands, i.e.
+		# @ constructor, destructor
+		# @ method, typemethod, proc
+		# @ onconfigure, oncget (deprecated, still valid code)
+
+		# We might need something like 'parseMethod' to handle
+		# the return value of a (type)method, this however is
+		# not sure. ITcl (where this code came from) is C,
+		# snit is Tcl.
+
+		switch -- $cmdName {
+		    proc -
+		    typemethod -
+		    method {
+			if {($argc - $index) != 3} {
+			    break
+			}
+			set index [instrument::parseBody $tree [expr {$argc - 1}]]
+		    }
+		    onconfigure -
+		    oncget -
+		    constructor {
+			if {($argc - $index) != 2} {
+			    break
+			}
+			set index [instrument::parseBody $tree [expr {$argc - 1}]]
+		    }
+		    destructor {
+			if {($argc - $index) != 1} {
+			    break
+			}
+			set index [instrument::parseBody $tree $index]
+		    }
+		    default {
+			# Skip to the end of the command since we can't
+			# instrument anything at the top level of the class
+			# declaration.
+			break
+		    }
+		}
+	    } else {
+		set index [instrument::parseCommand $tree $index]
+	    }
+	}
+	instrument::endCommand [lindex [lindex $tree end] 1]
+    }
+    instrument::popContext
+    return
+}

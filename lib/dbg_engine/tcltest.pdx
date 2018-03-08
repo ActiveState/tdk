@@ -1,0 +1,65 @@
+# tcltest.pdx --
+#
+#	This file implements custom instrumenter extensions
+#	for the tcltest package.
+#
+# Copyright (c) 1998-2000 Ajuba Solutions
+# Copyright (c) 2001-2006 ActiveState Software Inc.
+#
+# All rights reserved.
+#
+# RCS: @(#) $Id: tcltest.pdx,v 1.4 2000/05/30 22:54:53 hershey Exp $
+
+# Register the tcltest extension
+
+instrument::addExtension 2.0 {parseTest}
+
+namespace eval parseTest {
+    proc parseTestCmd {tokens index} {
+	# This instrumenter actually accepts a union of v1 and v2
+	# syntax, and both v1 and v2 are correctly recognized.
+	#
+	# v2 = Name, description, then all options, no leftover arguments.
+	# v1 = Name, description, then no options, two or three other arguments.
+
+	set index [instrument::parseWord $tokens $index] ;# Name
+	set index [instrument::parseWord $tokens $index] ;# Description
+
+	# Process all allowed switches (v2).
+
+	set index [instrument::parseSwitches 1 {
+	    {-body        parseBody}
+	    {-cleanup     parseBody}
+	    {-constraints parseWord}
+	    {-errorOutput parseWord}
+	    {-match       parseWord}
+	    {-output      parseWord}
+	    {-result      parseWord}
+	    {-returnCodes parseWord}
+	    {-setup       parseBody}
+	} {} $tokens $index]
+
+	set argc [llength $tokens]
+	set count [expr {$argc - $index}]
+
+	# Leftover arguments are handled as v1.
+
+	if {$count > 0} {
+	    while {$count > 2} {
+		set index [instrument::parseWord $tokens $index] ;# Constraints, whatever.
+		incr count -1
+	    }
+	    if {$count > 1} {
+		set index [instrument::parseBody $tokens $index] ;# Body
+	    }
+	    set index [instrument::parseWord $tokens $index] ;# Result
+	}
+
+	return $index
+    }
+}
+
+# Register handlers for each of the tcltest commands
+
+instrument::addCommand test		parseTest::parseTestCmd
+instrument::addCommand tcltest::test	parseTest::parseTestCmd

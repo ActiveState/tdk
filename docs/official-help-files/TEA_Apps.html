@@ -1,0 +1,91 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<HTML>
+<HEAD>
+<LINK REL="STYLESHEET" HREF="aspn.css" CHARSET="ISO-8859-1" TYPE="text/css">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<TITLE>Tcl Dev Kit - TEA Package Management</TITLE>
+</HEAD>
+
+<body marginheight="5" topmargin="5" marginwidth="10" leftmargin="10">
+
+@header@
+
+<hr size="1" noshade width="100%">
+
+<a name="top"></a>
+
+<h1>TEA Package Management</H1>
+
+<h2 name="intro">Introduction</h2>
+
+<p>The <acronym title="Tcl Extension Architecture">TEA</acronym> package
+management applications provide you with the ability to create, manage,
+export, and use TEApot package repositories.</p>
+
+<p><a href="TclApp.html">TclApp</a> has been extended to directly access
+TEApot repositories as a source of packages for wrapping. It makes use
+of extended meta data in TEA packages to pull down not only the packages
+directly needed by the wrapped application, but their dependencies as
+well.</p>
+
+<a class="topText" href="#top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+<h2 name="apps">General information</h2>
+
+<ul>
+  <li><strong><a
+  href="tpm/tpm/files/CTP_introduction.html">Introduction</a></strong>:
+  A quick introduction to the most important pieces of the TEApot
+  system and their relationships. </li>
+  <li><strong><a
+  href="tpm/tpm/files/CTP_glossary.html">Glossary</a></strong>: The
+  glossary of all terms relevant to TEApot.</li>
+  <li><strong><a
+  href="tpm/tpm/files/CTP_metadata.html">Meta data
+  specification</a></strong>: The specification of the meta data
+  format, its embedding into various forms of package archives, and
+  the keywords ActiveState has laid claim to and given meaning.</li>
+  <li><strong><a
+  href="tpm/tpm/files/CTP_trepo.html">Transparent Repository
+  Structure</a></strong>: The specification of the structure of
+  transparent repositories.</li>
+  <li><strong><a
+  href="tpm/tpm/files/CTP_activetcl.html">ActiveTcl</a></strong>: How
+  TEApot and ActiveTcl interact with each other.</li>
+</ul>
+
+<a class="topText" href="#top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+<h2 name="apps">Tools</h2>
+
+<p>The TEApot system provides four command line tools. They are:</p>
+
+<ul>
+  <li><strong><a
+  href="tpm/tpm/files/CTP_teacup.html">TEAcup</a></strong>: A package
+  management client for fetching, installing, updating and removing Tcl
+  packages (part of <a target="_blank"
+  href="http://activestate.com/Products/ActiveTcl/">ActiveTcl</a>).
+  TEAcup can also provide meta data on installed and available packages
+  and can be used to search multiple repositories using complex queries.</li>
+  <li><strong><a
+  href="tpm/tpm/files/CTP_teapot.html">TEApot</a></strong>: A server
+  application for exposing a TEA repository on a network via TCP/IP.
+  The server uses port 832768 by default.</li>
+  <li><strong><a
+  href="tpm/tpm/files/CTP_teastir.html">TEApot-Admin</a></strong>: An
+  administrative client for managing "opaque" repositories on the local
+  filesystem. It allows you to create new repositories, add and remove
+  packages, list the repository contents, and retrieve packages.</li>
+  <li><strong><a
+  href="tpm/tpm/files/CTP_teazip.html">TEApot-Pkg</a></strong>: A tool
+  for creating TEA package archives from package sources and
+  binaries.</li>
+</ul>
+
+<a class="topText" href="#top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+ 
+</BODY>
+</HTML>
+

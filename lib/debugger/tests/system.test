@@ -1,0 +1,103 @@
+# This file contains tests for the system.tcl file.
+#
+# Copyright (c) 1999-2000 by Ajuba Solutions.
+# All rights reserved.
+#
+# RCS: @(#) $Id: system.test,v 1.7 2001/10/17 19:04:06 andreas_kupries Exp $
+
+if {[string compare test [info procs test]] == 1} {
+    lappend auto_path [file join [file dirname [info script]] ..]
+    package require protest
+    namespace import ::protest::*
+}
+
+catch {parse} parseMsg
+if {[regexp "invalid command" $parseMsg]} {
+    package require parser
+}
+
+namespace eval debugger {
+    variable libdir [file dirname [file dirname [info script]]]
+}
+
+# Windows files need .exe extensions
+namespace eval system {
+    variable exeString
+    if {$tcl_platform(platform) == "windows"} {
+	set exeString   ".exe"
+    } else {
+	set exeString   ""
+    }
+}
+
+package require projectInfo
+
+# Some tests in this file cannot run with a Debug exedir
+
+set tclTail $::projectInfo::executable(tclsh)
+set tkTail  $::projectInfo::executable(wish)
+
+set tclExe [file exists [file join $::protest::executableDirectory \
+	"$tclTail$::system::exeString"]]
+set tkExe [file exists [file join $::protest::executableDirectory \
+	"$tkTail$::system::exeString"]]
+
+set ::tcltest::testConstraints(skipIfBuild) \
+    [expr {[file exists $tclExe]}]
+
+source [file join $::protest::sourceDirectory system.tcl]
+source [file join $::protest::sourceDirectory block.tcl]
+source [file join $::protest::sourceDirectory instrument.tcl]
+source [file join $::protest::sourceDirectory location.tcl]
+source [file join $::protest::sourceDirectory util.tcl]
+source [file join $::protest::sourceDirectory image.tcl]
+
+test system-1.1 {system::getInterps returns correct tclsh} {skipIfBuild} {
+    set interpList [system::getInterps]
+    set result $interpList
+    foreach interp $interpList {
+	if {[file tail $interp] == $tclTail} {
+	    set result $interp
+	    break
+	}
+    }
+    set result
+} [file join [file dirname [info nameofexecutable]] $tclTail]
+
+test system-1.2 {system::getInterps returns correct wish} {skipIfBuild} {
+    set interpList [system::getInterps]
+    set result $interpList
+    foreach interp $interpList {
+	if {[file tail $interp] == $tkTail} {
+	    set result $interp
+	    break
+	}
+    }
+    set result
+} [file join [file dirname [info nameofexecutable]] $tkTail]
+
+test system-1.3 {system::setWidgetAttributes sets all colors as 12 digit hex}\
+	{unix skipIfBuild} { 
+    # save current color info
+    set origColor [. cget -bg]
+    # change the color of . to something whose rgb is small numbers
+    . configure -bg "#1B005D006C00"
+    system::setWidgetAttributes
+    # now make sure each color is 12 digits long, plus the # sign
+    set result ""
+    foreach c [array names system::color] {
+	if {[string length $system::color($c)]!=13} {
+	    lappend result "color($c)=$system::color($c), which is invalid"
+	}
+    }
+    # restore color to original
+    . configure -bg $origColor
+    system::setWidgetAttributes
+    set result
+} {}
+
+# cleanup
+cleanupTests
+if {[info exists tk_version] && !$tcl_interactive} {
+    exit
+}

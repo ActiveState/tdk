@@ -1,0 +1,293 @@
+Package debugger 1.5
+Meta entrysource     debugger.tcl
+Meta included        bindings.tcl debugger.tcl font.tcl guiUtil.tcl
+Meta included        image.tcl menu.tcl options.tcl prefWin.tcl
+Meta included        result.tcl selection.tcl toolbar.tcl
+Meta platform        tcl
+Meta recommend       Tk
+Meta require         cmdline
+Meta require         engine
+Meta require         fmttext
+Meta require         gui
+Meta require         help
+Meta require         img::png
+Meta require         instrument
+Meta require         loc
+Meta require         pdx
+Meta require         pref
+Meta require         projectInfo
+Meta require         {registry -platform windows}
+Meta require         splash
+Meta require         style::as
+Meta require         system
+Meta require         tile
+Meta require         tooltip
+Meta require         treectrl
+Meta require         util
+Meta require         widget::dialog
+
+Package system 1.0
+Meta entrysource     system.tcl
+Meta included        system.tcl
+Meta platform        tcl
+Meta recommend       Tclx
+Meta require         BWidget
+Meta require         fmttext
+Meta require         pref
+Meta require         pref::stdsr
+Meta require         {registry -platform windows}
+Meta require         Tclx
+Meta require         tile
+
+Package fmttext 1.0
+Meta entrysource     fmttext.tcl
+Meta included        fmttext.tcl
+Meta platform        tcl
+
+Package gui 1.0
+Meta entrysource     gui.tcl
+Meta included        gui.tcl
+Meta platform        tcl
+Meta require         BWidget
+Meta require         comm
+Meta require         fmttext
+Meta require         parser
+Meta require         tile
+Meta require         tooltip
+Meta require         ui_engine
+
+Package ui_engine 0.1
+Meta entrysource     ui_engine.tcl
+Meta included        ui_engine.tcl
+Meta platform        tcl
+Meta require         bp
+Meta require         checker_bridge
+Meta require         checkWin
+Meta require         codeWin
+Meta require         connstatus
+Meta require         coverage
+Meta require         deferror
+Meta require         evalWin
+Meta require         find
+Meta require         goto
+Meta require         icon
+Meta require         inspector
+Meta require         parseerror
+Meta require         procWin
+Meta require         proj
+Meta require         projWin
+Meta require         rterror
+Meta require         snit
+Meta require         stack
+Meta require         var
+Meta require         varCache
+Meta require         watch
+
+Package stack 1.0
+Meta entrysource     stackWin.tcl
+Meta included        stackWin.tcl
+Meta platform        tcl
+Meta require         icolist
+Meta require         snit
+
+Package connstatus 1.0
+Meta entrysource     connstatus.tcl
+Meta included        connstatus.tcl
+Meta platform        tcl
+Meta require         snit
+
+Package deferror 1.0
+Meta entrysource     deferror.tcl
+Meta included        deferror.tcl
+Meta platform        tcl
+Meta require         snit
+
+Package parseerror 1.0
+Meta entrysource     parseerror.tcl
+Meta included        parseerror.tcl
+Meta platform        tcl
+Meta require         snit
+
+Package rterror 1.0
+Meta entrysource     rterror.tcl
+Meta included        rterror.tcl
+Meta platform        tcl
+Meta require         snit
+
+Package codeWin 1.0
+Meta entrysource     codeWin.tcl
+Meta included        codeWin.tcl
+Meta platform        tcl
+Meta require         fmttext
+Meta require         parser
+
+Package icon 1.0
+Meta entrysource     icon.tcl
+Meta included        icon.tcl
+Meta platform        tcl
+Meta require         snit
+
+Package bp 1.0
+Meta entrysource     breakWin.tcl
+Meta included        breakWin.tcl
+Meta platform        tcl
+Meta require         icolist
+Meta require         snit
+
+Package checker_bridge 1.0
+Meta entrysource     checker.tcl
+Meta included        checker.tcl
+Meta platform        tcl
+Meta require         fileutil
+Meta require         parser
+Meta require         snit
+Meta require         tlocate
+
+Package checkWin 1.0
+Meta entrysource     checkWin.tcl
+Meta included        checkWin.tcl
+Meta platform        tcl
+Meta require         icolist
+Meta require         snit
+
+Package coverage 1.0
+Meta entrysource     coverage.tcl
+Meta included        coverage.tcl
+Meta platform        tcl
+Meta require         BWidget
+Meta require         csv
+Meta require         snit
+Meta require         Tktable
+
+Package tkCon 1.0
+Meta entrysource     tkcon.tcl
+Meta included        tkcon.tcl
+Meta platform        tcl
+Meta require         snit
+
+Package evalWin 1.0
+Meta entrysource     evalWin.tcl
+Meta included        evalWin.tcl
+Meta platform        tcl
+Meta require         snit
+Meta require         tile
+Meta require         tkCon
+
+Package inspector 1.0
+Meta entrysource     inspectorWin.tcl
+Meta included        inspectorWin.tcl
+Meta platform        tcl
+Meta require         fmttext
+Meta require         snit
+Meta require         transform
+Meta require         widget::scrolledwindow
+
+Package procWin 1.0
+Meta entrysource     procWin.tcl
+Meta included        procWin.tcl
+Meta platform        tcl
+Meta require         icolist
+Meta require         snit
+
+Package portWin 1.0
+Meta entrysource     portWin.tcl
+Meta included        portWin.tcl
+Meta platform        tcl
+Meta require         snit
+
+Package proj 1.0
+Meta entrysource     proj.tcl
+Meta included        proj.tcl
+Meta platform        tcl
+Meta recommend       projectInfo
+Meta recommend       tcldevkit::config
+Meta require         portWin
+Meta require         snit
+Meta require         transform
+Meta require         widget::dialog
+
+Package projWin 1.0
+Meta entrysource     projWin.tcl
+Meta included        projWin.tcl
+Meta platform        tcl
+Meta require         BWidget
+Meta require         image
+Meta require         img::png
+Meta require         instrument
+Meta require         listentryb
+Meta require         snit
+
+Package goto 1.0
+Meta entrysource     goto.tcl
+Meta included        goto.tcl
+Meta platform        tcl
+Meta require         snit
+Meta require         tile
+
+Package find 1.0
+Meta entrysource     find.tcl
+Meta included        find.tcl
+Meta platform        tcl
+Meta require         snit
+Meta require         tile
+
+Package var 1.0
+Meta entrysource     varWin.tcl
+Meta included        varWin.tcl
+Meta platform        tcl
+Meta require         snit
+Meta require         transform
+Meta require         transMenu
+Meta require         varDisplay
+
+Package watch 1.0
+Meta entrysource     watchWin.tcl
+Meta included        watchWin.tcl
+Meta platform        tcl
+Meta require         snit
+Meta require         transform
+
+Package transform 0.1
+Meta entrysource     transform.tcl
+Meta included        transform.tcl
+Meta platform        tcl
+Meta require         fmttext
+
+Package varCache 0.1
+Meta entrysource varCache.tcl
+Meta included    varCache.tcl
+Meta platform    tcl
+Meta require     snit
+
+Package varAttr 0.1
+Meta entrysource varAttr.tcl
+Meta included    varAttr.tcl
+Meta platform    tcl
+Meta require     snit
+
+Package transMenu 0.1
+Meta entrysource transMenu.tcl
+Meta included    transMenu.tcl
+Meta platform    tcl
+Meta require     snit
+Meta require     transform
+
+Package varDisplay 0.1
+Meta entrysource varDisplay.tcl
+Meta included    varDisplay.tcl
+Meta platform    tcl
+Meta require     BWidget
+Meta require     snit
+Meta require     struct::set
+Meta require     syscolor
+Meta require     transform
+Meta require     varAttr
+
+Package icolist 0.1
+Meta entrysource icolist.tcl
+Meta included    icolist.tcl
+Meta platform    tcl
+Meta require     BWidget
+Meta require     snit
+Meta require     syscolor
+Meta require     system

@@ -1,0 +1,19 @@
+Package ashelp 0.1
+Meta entrysource ashelp.tcl
+Meta included    ashelp.tcl
+Meta summary Helpfile access
+Meta category Helpfile access
+Meta subject helpfile access
+Meta description Provides the basic functions to access an AS help file, i.e.
+Meta description reading table of contents and file contents, adding files,
+Meta description adding table of contents, generating table of contents from
+Meta description toc.xml or directory structure.
+Meta platform    tcl
+Meta require     fileutil
+Meta require     fileutil::traverse
+Meta require     htmlparse
+Meta require     snit
+Meta require     sqlite3
+Meta require     struct::list
+Meta require     tdom
+

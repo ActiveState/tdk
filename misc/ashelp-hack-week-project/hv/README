@@ -1,0 +1,103 @@
+
+Widget Wrappers
+---------------
+
+    ::hv3::scrolledwidget
+
+OBJECTS
+-------
+
+Hv3 Mega-Widget Object Types:
+
+  Widgets:
+
+    ::hv3::hv3                   (hv3.tcl)
+        Reusable mega-widget built on top of Tkhtml. There is no man-page
+        yet, but the widget interface is described at the top of the
+        file hv3.tcl.
+
+    
+    ::hv3::tclet                 (hv3_object.tcl)
+        A widget containing a Tcl applet running in a safe interpreter.
+        Widget's of this type are used as replacement objects for Tkhtml
+        nodes whenever a Tclet specified as an <object> or <embed> tag
+        is encountered.
+    
+    ::hv3::control               (hv3_form.tcl)
+        A widget class for form controls. This is used as the replacement
+        object for <input>, <select>, <textarea>, <isindex> and <button>
+        element nodes.
+
+    ::hv3::fileselect            (hv3_form.tcl)
+        Used (and encapsulated) by ::hv3::control to implement
+        <input type=file> controls.
+ 
+    ::hv3::filedownloader        (hv3_http.tcl)
+        This widget implements the file-downloading dialog (i.e. the thing
+        with the progress bar and Ok/Cancel button).
+
+    ::hv3::findwidget            (hv3_widgets.tcl)
+        This widget implements logic and gui for the "find text" function. It
+        currently uses Tkhtml3 interfaces only (no hv3 interfaces).  
+        NOTE: This will have to change to support frameset documents.
+
+  Other Types:
+
+    ::hv3::hv3::selectionmanager (hv3.tcl)
+    ::hv3::hv3::dynamicmanager   (hv3.tcl)
+    ::hv3::hv3::hyperlinkmanager (hv3.tcl)
+        Internal components to manage the selection, dynamic (i.e. :hover)
+        effects and hyperlinks, respectively. These are really just used
+        to break up the hv3::hv3 a bit. Eventually, each of these (and the
+        formmanager) will be optional functions that may be enabled or 
+        disabled by hv3 users. TODO: Images too? Should there be an 
+        ::hv3::hv3::imagemanager?
+
+    ::hv3::formmanager           (hv3_form.tcl)
+    ::hv3::form                  (hv3_form.tcl)
+
+    ::hv3::download              (hv3.tcl)
+
+    ::hv3::uri                   (hv3.tcl)
+        Type to extract components from and perform other operations on URIs.
+
+Hv3 Protocol Object Types:
+
+  Other Types:
+
+    ::hv3::protocol              (hv3_http.tcl)
+    ::hv3::cookiemanager         (hv3_http.tcl)
+
+Hv3 Application Object Types:
+
+  Widgets:
+
+    ::hv3::frameset              (hv3_frameset.tcl)
+
+    ::hv3::browser_frame         (hv3_main.tcl)
+
+    ::hv3::browser_toplevel      (hv3_main.tcl)
+         Instances of this widget are managed directly by the notebook.
+         Each instance of this widget creates it's own ::hv3::protocol
+         and ::hv3::history objects. It also creates and destroys
+         ::hv3::findwidget widgets as requested by the user.
+
+    ::hv3::finddialog            (hv3_widgets.tcl)
+        This widget implements the find-text dialog.
+
+  Other Types:
+
+    ::hv3::history               (hv3_main.tcl)
+
+Tree browser:
+
+    HtmlDebug
+
+
+
+NOTES ON FRAMES AND TABS
+------------------------
+
+  Both frames and tabs are implemented as part of the demo application, not
+  Tkhtml or the hv3 mega-widget.
+

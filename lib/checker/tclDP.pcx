@@ -1,0 +1,67 @@
+# -*- tcl -*- tclDP.tcl --
+#
+#	This file contains type and command checkers for the TclDP
+#	commands.
+#
+# Copyright (c) 1998-2000 Ajuba Solutions
+# Copyright (c) 2003-2006 ActiveState Software Inc.
+#
+
+# 
+# RCS: @(#) $Id: tclDP.tcl,v 1.3 2000/10/31 23:30:54 welch Exp $
+
+# ### ######### ###########################
+## Requisites
+
+package require pcx          ; # PCX API
+
+# ### ######### ###########################
+## Tcl core version dependencies of the package this checker is for.
+
+pcx::register tclDP
+pcx::tcldep   4.0 needs tcl 7.3
+
+# ### ######### ###########################
+
+# ### ######### ###########################
+## Package specific message types and their human-readable
+## translations.
+
+# ### ######### ###########################
+# scanCmdsX.X --
+# Define the set of commands that need to be recuresed into when 
+# generating a list of user defiend procs, namespace and Class 
+# contexts and procedure name resolutions info.
+
+# ### ######### ###########################
+# checkersX.X --
+# Define the set of command-specific checkers used by this package.
+
+# ### ######### ###########################
+## Initialization
+
+## This package relies on the standard initialization sequence of
+## 'pcx::init'. This is automatically called if no 'init' command
+## is found in the namespace of the checker package.
+
+# ### ######### ###########################
+
+# ### ######### ###########################
+# Checkers for specific commands --
+#
+#	Each checker is passed the tokens for the arguments to 
+#	the command.  The name of each checker should be of the
+#	form tclDP::check<Name>Cmd, where <name> is the command
+# 	being checked.
+#
+# Arguments:
+#	tokens		The list of word tokens after the initial
+#			command and subcommand names
+#	index		The index into the token tree where the 
+#			checkers should start checking.
+#
+# Results:
+#	Return the next index, in the tokens tree, to check.
+
+# ### ######### ###########################
+pcx::complete

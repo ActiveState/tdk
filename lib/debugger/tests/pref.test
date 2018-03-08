@@ -1,0 +1,684 @@
+# This file contains tests for the block.tcl file.
+#
+# Copyright (c) 1998-2000 by Ajuba Solutions
+#
+
+
+#
+# RCS: @(#) $Id: pref.test,v 1.2 2000/05/31 02:27:37 wart Exp $
+
+if {[string compare test [info procs test]] == 1} {
+    lappend auto_path [file join [file dirname [info script]] ..]
+    package require protest
+    namespace import ::protest::*
+}
+
+source [file join $::protest::sourceDirectory pref.tcl]
+
+set ::restoreReturnValue 0
+set ::saveReturnValue    0
+set ::updateThrowErrors  0
+
+# cleanPrefs --
+#
+#	Remove all of the groups and the prefs and restore the pref state to
+#	its original state.
+#
+# Arguments:
+#	None.
+#
+# Results:
+#	None.
+
+proc cleanPrefs {} {
+    set   ::result {}
+    set   ::pref::groupOrder {}
+    if {[info exists ::pref::groups]} {
+	unset ::pref::groups
+    }
+    if {[info exists ::pref::dirty]} {
+	unset ::pref::dirty
+    }
+    foreach v [info vars ::pref::value*] {
+	unset $v
+    }
+    foreach v [info vars ::pref::update*] {
+	unset $v
+    }
+    return
+}
+
+# saveCmd --
+#
+#	Stub save command that sets a global result variable when called.
+#
+# Arguments:
+#	args	Whatever args the save command takes.
+#
+# Results:
+#	Return 0 indicating the save command passed.
+
+proc saveCmd {args} {
+    lappend ::result SAVE
+    return $::saveReturnValue
+}
+
+# restoreCmd --
+#
+#	Stub restore command that sets a global result variable when called.
+#
+# Arguments:
+#	args	Whatever args the restore command takes.
+#
+# Results:
+#	Return 0 indicating the restore command passed.
+
+proc restoreCmd {args} {
+    lappend ::result RESTORE
+    return $::restoreReturnValue
+}
+
+# updateCmd --
+#
+#	Stub update command that sets a global result variable when called.
+#
+# Arguments:
+#	None.
+#
+# Results:
+#	None.
+
+proc updateCmd {} {
+    lappend ::result UPDATE
+    if {$::updateThrowErrors} {
+	error "ERROR UPDATE"
+    }
+    return
+}
+
+test pref-1.1 {pref::groupNew, make sure groups are deleted first} {
+    cleanPrefs
+    pref::groupNew FOO saveCmd restoreCmd
+    pref::prefNew  FOO BAR 1 {}
+    pref::groupNew FOO saveCmd restoreCmd
+    pref::prefExists BAR FOO
+} {0}
+test pref-1.2 {pref::groupNew, check the save and restore commands} {
+    cleanPrefs
+    pref::groupNew FOO saveCmd restoreCmd
+    pref::groupSave FOO
+    pref::groupRestore FOO
+    set ::result
+} {SAVE RESTORE}
+test pref-1.3 {pref::groupNew, make sure the dirty bit is unset} {
+    cleanPrefs
+    pref::groupNew FOO saveCmd restoreCmd
+    pref::prefNew  FOO BAR 1 {}
+    pref::prefSet  FOO BAR 1
+    pref::groupNew FOO saveCmd restoreCmd
+    pref::groupIsDirty FOO
+} {0}
+test pref-1.4 {pref::groupNew, make sure the value and update arrays are set} {
+    cleanPrefs
+    pref::groupNew FOO saveCmd restoreCmd
+    list [info exists ::pref::valueFOO] [info exists ::pref::updateFOO]
+} {1 1}
+
+test pref-2.1 {pref::groupSave, save a group that doesn't exist} {
+    cleanPrefs
+    pref::groupSave FOO
+} {1}
+test pref-2.2 {pref::groupSave, save a group with a null save cmd} {
+    cleanPrefs
+    pref::groupNew FOO {} {}
+    pref::groupSave FOO
+} {1}
+test pref-2.3 {pref::groupSave, save a group that fails} {
+    cleanPrefs
+    set ::saveReturnValue 1
+    pref::groupNew FOO saveCmd restoreCmd
+    lappend ::result [pref::groupSave FOO]
+    set ::saveReturnValue 0
+    set ::result
+} {SAVE 1}
+test pref-2.4 {pref::groupSave, save a group that passes} {
+    cleanPrefs
+    pref::groupNew FOO saveCmd restoreCmd
+    lappend ::result [pref::groupSave FOO]
+    set ::result
+} {SAVE 0}
+test pref-2.5 {pref::groupSave, test the dirty bit} {
+    cleanPrefs
+    pref::groupNew FOO saveCmd restoreCmd
+    pref::prefNew  FOO BAR 1 {}
+    pref::prefSet  FOO BAR 1
+    pref::groupSave FOO
+    pref::groupIsDirty FOO
+} {0}
+
+test pref-3.1 {pref::groupRestore, restore a group that doesn't exist} {
+    cleanPrefs
+    pref::groupRestore FOO
+} {1}
+test pref-3.2 {pref::groupRestore, restore a group with a null restore cmd} {
+    cleanPrefs
+    pref::groupNew FOO {} {}
+    pref::groupRestore FOO
+} {1}
+test pref-3.3 {pref::groupRestore, restore a group that fails} {
+    cleanPrefs
+    set ::restoreReturnValue 1
+    pref::groupNew FOO restoreCmd restoreCmd
+    lappend ::result [pref::groupRestore FOO]
+    set ::restoreReturnValue 0
+    set ::result
+} {RESTORE 1}
+test pref-3.4 {pref::groupRestore, restore a group that passes} {
+    cleanPrefs
+    pref::groupNew FOO restoreCmd restoreCmd
+    lappend ::result [pref::groupRestore FOO]
+    set ::result
+} {RESTORE 0}
+
+test pref-4.1 {pref::groupUpdate, update a group that doesn't exist} {
+    cleanPrefs
+    set result [catch {pref::groupUpdate FOO} err]
+    lappend result $err
+} {1 {"FOO" does not exist.}}
+test pref-4.2 {pref::groupUpdate, update a group w/ no prefs} {
+    cleanPrefs
+    pref::groupNew FOO {} {}
+    pref::groupUpdate FOO
+} {1}
+test pref-4.3 {pref::groupUpdate, update a group w/ prefs w/o update cmds} {
+    cleanPrefs
+    pref::groupNew FOO {} {}
+    pref::prefNew  FOO BAR 1 {}
+    pref::groupUpdate FOO
+} {1}
+test pref-4.4 {pref::groupUpdate, update a group w/ prefs w/ update cmds} {
+    cleanPrefs
+    pref::groupNew FOO {} {}
+    pref::prefNew  FOO BAR 1 updateCmd
+    lappend ::result [pref::groupUpdate FOO]
+} {UPDATE 1}
+test pref-4.5 {pref::groupUpdate, update a group w/ prefs w/ update cmds} {
+    cleanPrefs
+    pref::groupNew FOO {} {}
+    pref::prefNew  FOO BAR 1 updateCmd
+    pref::prefNew  FOO DOG 1 updateCmd
+    pref::prefNew  FOO CAT 1 updateCmd
+    lappend ::result [pref::groupUpdate FOO]
+} {UPDATE 1}
+test pref-4.6 {pref::groupUpdate, update a group w/ prefs w/ update cmds} {
+    cleanPrefs
+    pref::groupNew FOO {} {}
+    set ::updateThrowErrors 1
+    pref::prefNew  FOO BAR 1 updateCmd
+    lappend ::result [pref::groupUpdate FOO]
+    set ::updateThrowErrors 0
+    set ::result
+} {UPDATE 0}
+
+test pref-5.1 {pref::groupInit, init a new group} {
+    cleanPrefs
+    pref::groupInit FOO {BAR 1 {}}
+    pref::PrefLocateGroup BAR FOO
+} {FOO}
+test pref-5.2 {pref::groupInit, init an existing group} {
+    cleanPrefs
+    pref::groupInit FOO {BAR 1 {}}
+    pref::groupInit FOO {CAT 1 {}}
+    lappend result [pref::PrefLocateGroup BAR FOO]
+    lappend result [pref::PrefLocateGroup CAT FOO]
+} {{} FOO}
+test pref-5.3 {pref::groupInit, init an existing group} {
+    cleanPrefs
+    pref::groupInit FOO {BAR 1 {}}
+    pref::prefSet FOO BAR 2
+    pref::groupInit FOO {BAR 1 {}}
+    pref::groupIsDirty FOO
+} {0}
+test pref-5.4 {pref::groupInit, init an existing group} {
+    cleanPrefs
+    pref::groupInit FOO {BAR 1 {}}
+    pref::groupInit FOO {CAT 1 {}}
+    list [array names ::pref::valueFOO] [array names ::pref::updateFOO]
+} {CAT CAT}
+
+test pref-6.1 {pref::groupCopy, group1 does not exist} {
+    cleanPrefs
+    pref::groupInit FOO2 {BAR 1 {} CAT 2 {} DOG 3 {}}
+    set result [catch {pref::groupCopy FOO1 FOO2} err]
+    lappend result $err
+} {1 {cannot copy groups, "FOO1" does not exist.}}
+test pref-6.2 {pref::groupCopy, group2 does not exist} {
+    cleanPrefs
+    pref::groupInit FOO1 {BAR 1 {} CAT 2 {} DOG 3 {}}
+    set result [catch {pref::groupCopy FOO1 FOO2} err]
+    lappend result $err
+} {1 {cannot copy groups, "FOO2" does not exist.}}
+test pref-6.3 {pref::groupCopy, straight legit copy} {
+    cleanPrefs
+    pref::groupInit FOO1 {BAR 1 {} CAT 2 {} DOG 3 {}}
+    pref::groupInit FOO2 {}
+    pref::groupCopy FOO1 FOO2
+    list [lsort [array names ::pref::valueFOO2]] \
+	    [lsort [array names ::pref::updateFOO2]]
+} {{BAR CAT DOG} {BAR CAT DOG}}
+
+test pref-6.1 {pref::groupApply, group1 does not exist} {
+    cleanPrefs
+    pref::groupInit FOO2 {BAR 1 {} CAT 2 {} DOG 3 {}}
+    set result [catch {pref::groupApply FOO1 FOO2} err]
+    lappend result $err
+} {1 {cannot apply groups, "FOO1" does not exist.}}
+test pref-6.2 {pref::groupApply, group2 does not exist} {
+    cleanPrefs
+    pref::groupInit FOO1 {BAR 1 {} CAT 2 {} DOG 3 {}}
+    set result [catch {pref::groupApply FOO1 FOO2} err]
+    lappend result $err
+} {1 {cannot apply groups, "FOO2" does not exist.}}
+test pref-6.3 {pref::groupApply, apply groups w/o update cmds} {
+    cleanPrefs
+    pref::groupInit FOO1 {BAR 1 {} CAT 2 {} DOG 3 {}}
+    pref::groupInit FOO2 {BAR 2 {} CAT 2 {} DOG 3 {}}
+    pref::groupApply FOO1 FOO2
+} {1}
+test pref-6.4 {pref::groupApply, apply groups w/ update cmds w/o errors} {
+    cleanPrefs
+    pref::groupInit FOO1 {BAR 1 updateCmd CAT 2 {} DOG 3 {}}
+    pref::groupInit FOO2 {BAR a updateCmd CAT b {} DOG c {}}
+    lappend ::result [pref::groupApply FOO1 FOO2]
+    lappend ::result [pref::prefGet BAR FOO2]
+    lappend ::result [pref::prefGet CAT FOO2]
+    lappend ::result [pref::prefGet DOG FOO2]
+} {UPDATE 1 1 2 3}
+test pref-6.5 {pref::groupApply, apply groups w/ update cmds w/o errors} {
+    cleanPrefs
+    pref::groupInit FOO1 {BAR 1 updateCmd CAT 2 updateCmd DOG 3 {}}
+    pref::groupInit FOO2 {BAR a updateCmd CAT b updateCmd DOG c {}}
+    lappend ::result [pref::groupApply FOO1 FOO2]
+    lappend ::result [pref::prefGet BAR FOO2]
+    lappend ::result [pref::prefGet CAT FOO2]
+    lappend ::result [pref::prefGet DOG FOO2]
+} {UPDATE 1 1 2 3}
+test pref-6.6 {pref::groupApply, apply groups w/ update cmds w/ errors} {
+    cleanPrefs
+    set ::updateThrowErrors 1
+    pref::groupInit FOO1 {BAR 1 updateCmd CAT 2 updateCmd DOG 3 {}}
+    pref::groupInit FOO2 {BAR a updateCmd CAT b updateCmd DOG c {}}
+    lappend ::result [pref::groupApply FOO1 FOO2]
+    lappend ::result [pref::prefGet BAR FOO2]
+    lappend ::result [pref::prefGet CAT FOO2]
+    lappend ::result [pref::prefGet DOG FOO2]
+    set ::updateThrowErrors 0
+    set ::result
+} {UPDATE 0 1 2 3}
+test pref-6.7 {pref::groupApply, apply groups w/o update cmds w/o errors} {
+    cleanPrefs
+    set ::updateThrowErrors 1
+    pref::groupInit FOO1 {BAR 1 updateCmd CAT 2 updateCmd DOG 3 {}}
+    pref::groupInit FOO2 {BAR 1 updateCmd CAT 2 updateCmd DOG 3 {}}
+    lappend ::result [pref::groupApply FOO1 FOO2]
+    lappend ::result [pref::prefGet BAR FOO2]
+    lappend ::result [pref::prefGet CAT FOO2]
+    lappend ::result [pref::prefGet DOG FOO2]
+    set ::updateThrowErrors 0
+    set ::result
+} {1 1 2 3}
+
+test pref-7.1 {pref::groupDelete} {
+    cleanPrefs
+    pref::groupNew FOO {} {}
+    pref::prefNew  FOO BAR 1 updateCmd
+    pref::prefNew  FOO DOG 1 updateCmd
+    pref::prefNew  FOO CAT 1 updateCmd
+    
+    pref::groupDelete FOO
+    list [info exists ::pref::groups(FOO,saveCmd)] \
+	    [info exists ::pref::groups(FOO,restoreCmd)] \
+	    [info exists ::pref::valueFOO] \
+	    [info exists ::pref::updateFOO] \
+} {0 0 0 0}
+
+test pref-8.1 {pref::groupIsDirty & pref::groupSetDirty} {
+    cleanPrefs
+    set result [catch {pref::groupIsDirty FOO} err]
+    lappend result $err
+} {1 {group "FOO" does not exist.}}
+test pref-8.2 {pref::groupIsDirty & pref::groupSetDirty} {
+    cleanPrefs
+    pref::groupNew FOO {} {}
+    pref::prefNew  FOO BAR 1 {}
+    pref::groupIsDirty FOO
+} {0}
+test pref-8.3 {pref::groupIsDirty & pref::groupSetDirty} {
+    cleanPrefs
+    pref::groupNew FOO {} {}
+    pref::prefNew  FOO BAR 1 {}
+    pref::groupSetDirty FOO 1
+    pref::groupIsDirty FOO
+} {1}
+test pref-8.4 {pref::groupIsDirty & pref::groupSetDirty} {
+    cleanPrefs
+    pref::groupNew FOO {} {}
+    pref::prefNew  FOO BAR 1 {}
+    pref::groupSetDirty FOO 0
+    pref::groupIsDirty FOO
+} {0}
+
+test pref-9.1 {pref::groupExists, group doesnt exist} {
+    cleanPrefs
+    pref::groupExists FOO
+} {0}
+test pref-9.2 {pref::groupExists, group has been deleted} {
+    cleanPrefs
+    pref::groupNew FOO {} {}
+    pref::groupDelete FOO
+    pref::groupExists FOO
+} {0}
+test pref-9.3 {pref::groupExists, group created by new} {
+    cleanPrefs
+    pref::groupNew FOO {} {}
+    pref::groupExists FOO
+} {1}
+test pref-9.4 {pref::groupExists, group created by init w/ prefs} {
+    cleanPrefs
+    pref::groupInit FOO {BAR 1 {}}
+    pref::groupExists FOO
+} {1}
+test pref-9.5 {pref::groupExists, group created by init w/o prefs} {
+    cleanPrefs
+    pref::groupInit FOO {}
+    pref::groupExists FOO
+} {1}
+test pref-9.6 {pref::groupExists, group re-created by init w/o prefs} {
+    cleanPrefs
+    pref::groupInit FOO {BAR 1 {}}
+    pref::groupInit FOO {}
+    pref::groupExists FOO
+} {1}
+
+test pref-10.1 {pref::prefNew, group doesnt exist} {
+    cleanPrefs
+    set result [catch {pref::prefNew FOO BAR 1 {}} err]
+    lappend result $err
+} {1 {group "FOO" does not exist.}}
+test pref-10.2 {pref::prefNew, group does exist} {
+    cleanPrefs
+    pref::groupNew FOO {} {}
+    pref::prefNew FOO BAR 1 {}
+    list [info exists ::pref::valueFOO(BAR)] \
+	    [info exists ::pref::updateFOO(BAR)]
+} {1 1}
+
+
+test pref-11.1 {pref::prefGet, pref doesnt exist} {
+    cleanPrefs
+    set result [catch {pref::prefGet BAR} err]
+    lappend result $err
+} {1 {pref "BAR" does not exist.}}
+test pref-11.2 {pref::prefGet, pref exists but group is not registered} {
+    cleanPrefs
+    pref::groupNew FOO {} {}
+    pref::prefNew  FOO BAR 1 {}
+    set result [catch {pref::prefGet BAR} err]
+    lappend result $err
+} {1 {pref "BAR" does not exist.}}
+test pref-11.3 {pref::prefGet, pref exists and group is specified} {
+    cleanPrefs
+    pref::groupNew FOO {} {}
+    pref::prefNew  FOO BAR 1 {}
+    pref::prefGet BAR FOO
+} {1}
+test pref-11.4 {pref::prefGet, pref exists and group is registered} {
+    cleanPrefs
+    pref::groupNew FOO {} {}
+    pref::setGroupOrder FOO
+    pref::prefNew  FOO BAR 1 {}
+    pref::prefGet BAR
+} {1}
+test pref-11.5 {pref::prefGet, pref exists and group is shadowed} {
+    cleanPrefs
+    pref::groupNew FOO1 {} {}
+    pref::groupNew FOO2 {} {}
+    pref::setGroupOrder FOO1
+    pref::prefNew  FOO1 BAR 1 {}
+    pref::prefNew  FOO2 BAR a {}
+    pref::prefGet BAR
+} {1}
+test pref-11.6 {pref::prefGet, pref exists and group is shadowed} {
+    cleanPrefs
+    pref::groupNew FOO1 {} {}
+    pref::groupNew FOO2 {} {}
+    pref::setGroupOrder FOO1
+    pref::prefNew  FOO1 BAR 1 {}
+    pref::prefNew  FOO2 BAR a {}
+    pref::prefGet BAR FOO2
+} {a}
+
+test pref-12.1 {pref::prefSet, group doesnt exist} {
+    cleanPrefs
+    set result [catch {pref::prefSet FOO BAR 1} err]
+    lappend result $err
+} {1 {group "FOO" does not exist.}}
+test pref-12.2 {pref::prefSet, pref doesnt exist} {
+    cleanPrefs
+    pref::groupNew FOO {} {}
+    set result [catch {pref::prefSet FOO BAR 1} err]
+    lappend result $err
+} {1 {pref "BAR" does not exist.}}
+test pref-12.3 {pref::prefSet, check the value} {
+    cleanPrefs
+    pref::groupNew FOO {} {}
+    pref::prefNew FOO BAR 1 {} 
+    pref::prefSet FOO BAR 1
+    pref::prefGet BAR FOO
+} {1}
+test pref-12.4 {pref::prefSet, check the value} {
+    cleanPrefs
+    pref::groupNew FOO {} {}
+    pref::prefNew FOO BAR 1 {} 
+    pref::prefSet FOO BAR 1
+    pref::prefSet FOO BAR a
+    pref::prefGet BAR FOO
+} {a}
+test pref-12.5 {pref::prefSet, check the dirty bit} {
+    cleanPrefs
+    pref::groupNew FOO {} {}
+    pref::prefNew FOO BAR 1 {} 
+    lappend result [pref::groupIsDirty FOO]
+    pref::prefSet FOO BAR 1
+    lappend result [pref::groupIsDirty FOO]
+} {0 1}
+
+test pref-13.1 {pref::prefExists, pref doesnt exist} {
+    cleanPrefs
+    pref::prefExists BAR
+} {0}
+test pref-13.2 {pref::prefExists, pref exist, group is shadowed} {
+    cleanPrefs
+    pref::groupNew FOO {} {}
+    pref::prefNew  FOO BAR 1 {} 
+    pref::prefExists BAR DOG 
+} {0}
+test pref-13.3 {pref::prefExists, pref exist, group is shadowed} {
+    cleanPrefs
+    pref::setGroupOrder FOO
+    pref::groupNew FOO {} {}
+    pref::prefNew  FOO BAR 1 {} 
+    pref::prefExists BAR DOG
+} {0}
+test pref-13.4 {pref::prefExists, pref exist, group is specified} {
+    cleanPrefs
+    pref::groupNew FOO {} {}
+    pref::prefNew  FOO BAR 1 {} 
+    pref::prefExists BAR FOO
+} {1}
+test pref-13.5 {pref::prefExists, pref exist, group is registered} {
+    cleanPrefs
+    pref::setGroupOrder FOO
+    pref::groupNew FOO {} {}
+    pref::prefNew  FOO BAR 1 {} 
+    pref::prefExists BAR
+} {1}
+
+test pref-14.1 {pref::prefVar, pref doesnt exist} {
+    cleanPrefs
+    set result [catch {pref::prefVar BAR} err]
+    lappend result $err
+} {1 {pref "BAR" does not exist.}}
+test pref-14.2 {pref::prefVar, pref exist, group is shadowed} {
+    cleanPrefs
+    pref::groupNew FOO {} {}
+    pref::prefNew  FOO BAR 1 {} 
+    set result [catch {pref::prefVar BAR DOG} err]
+    lappend result $err
+} {1 {pref "BAR" does not exist.}}
+test pref-14.3 {pref::prefVar, pref exist, group is registered} {
+    cleanPrefs
+    pref::setGroupOrder FOO
+    pref::groupNew FOO {} {}
+    pref::prefNew  FOO BAR 1 {} 
+    set result [catch {pref::prefVar BAR DOG} err]
+    lappend result $err
+} {1 {pref "BAR" does not exist.}}
+test pref-14.4 {pref::prefVar, pref exist, group is specified} {
+    cleanPrefs
+    pref::groupNew FOO {} {}
+    pref::prefNew  FOO BAR 1 {} 
+    pref::prefVar BAR FOO
+} {::pref::valueFOO(BAR)}
+test pref-14.5 {pref::prefVar, pref exist, group is registered} {
+    cleanPrefs
+    pref::setGroupOrder FOO
+    pref::groupNew FOO {} {}
+    pref::prefNew  FOO BAR 1 {} 
+    pref::prefVar BAR
+} {::pref::valueFOO(BAR)}
+
+test pref-15.1 {pref::setGroupOrder & pref::getGroupOrder} {
+    cleanPrefs
+    pref::getGroupOrder
+} {}
+test pref-15.2 {pref::setGroupOrder & pref::getGroupOrder} {
+    cleanPrefs
+    pref::setGroupOrder {FOO CAT DOG}
+    pref::getGroupOrder
+} {FOO CAT DOG}
+test pref-15.3 {pref::setGroupOrder & pref::getGroupOrder} {
+    cleanPrefs
+    pref::setGroupOrder {FOO CAT DOG}
+    pref::setGroupOrder {A B C}
+    pref::getGroupOrder
+} {A B C}
+
+test pref-16.1 {pref::GroupSetPrefs & pref::GroupGetPrefs} {
+    cleanPrefs
+    pref::groupNew FOO {} {}
+    pref::GroupGetPrefs FOO
+} {}
+test pref-16.2 {pref::GroupSetPrefs & pref::GroupGetPrefs} {
+    cleanPrefs
+    pref::groupNew FOO {} {}
+    pref::prefNew  FOO BAR 1 updateCmd
+    pref::prefNew  FOO DOG 1 updateCmd
+    pref::prefNew  FOO CAT 1 updateCmd
+    lsort [pref::GroupGetPrefs FOO]
+} {BAR CAT DOG}
+test pref-16.3 {pref::GroupSetPrefs & pref::GroupGetPrefs} {
+    cleanPrefs
+    pref::groupNew FOO {} {}
+    pref::GroupSetPrefs FOO {A 1 B 1 C 1}
+    lsort [pref::GroupGetPrefs FOO]
+} {A B C}
+test pref-16.4 {pref::GroupSetPrefs & pref::GroupGetPrefs} {
+    cleanPrefs
+    pref::groupNew FOO {} {}
+    pref::prefNew  FOO BAR 1 updateCmd
+    pref::prefNew  FOO DOG 1 updateCmd
+    pref::prefNew  FOO CAT 1 updateCmd
+    pref::GroupSetPrefs FOO {A 1 B 1 C 1}
+    lsort [pref::GroupGetPrefs FOO]
+} {A B BAR C CAT DOG}
+
+test pref-17.1 {pref::PrefLocateGroup, pref doesnt exist, group specified} {
+    cleanPrefs
+    pref::groupNew FOO {} {}
+    pref::PrefLocateGroup BAR FOO
+} {}
+test pref-17.2 {pref::PrefLocateGroup, pref does exist, group specified} {
+    cleanPrefs
+    pref::groupNew FOO {} {}
+    pref::prefNew  FOO BAR 1 {}
+    pref::PrefLocateGroup BAR FOO
+} {FOO}
+test pref-17.3 {pref::PrefLocateGroup, pref does exist, group registered} {
+    cleanPrefs
+    pref::setGroupOrder FOO
+    pref::groupNew FOO {} {}
+    pref::prefNew  FOO BAR 1 {}
+    pref::PrefLocateGroup BAR
+} {FOO}
+test pref-17.4 {pref::PrefLocateGroup, pref does exist, group shadowed} {
+    cleanPrefs
+    pref::setGroupOrder FOO1
+    pref::groupNew FOO1 {} {}
+    pref::groupNew FOO2 {} {}
+    pref::prefNew  FOO1 BAR 1 {}
+    pref::prefNew  FOO2 BAR 1 {}
+    pref::PrefLocateGroup BAR FOO2
+} {FOO2}
+test pref-17.5 {pref::PrefLocateGroup, pref does exist, group shadowed} {
+    cleanPrefs
+    pref::setGroupOrder {FOO1 FOO2}
+    pref::groupNew FOO1 {} {}
+    pref::groupNew FOO2 {} {}
+    pref::prefNew  FOO1 BAR 1 {}
+    pref::prefNew  FOO2 BAR 1 {}
+    pref::PrefLocateGroup BAR
+} {FOO1}
+
+test pref-18.1 {pref::PrefGetUpdateCmd, pref exists} {
+    cleanPrefs
+    pref::groupNew FOO {} {}
+    pref::prefNew  FOO BAR 1 {}
+    pref::PrefGetUpdateCmd FOO BAR
+} {}
+test pref-18.2 {pref::PrefGetUpdateCmd, pref exists} {
+    cleanPrefs
+    pref::groupNew FOO {} {}
+    pref::prefNew  FOO BAR 1 updateCmd
+    pref::PrefGetUpdateCmd FOO BAR
+} {updateCmd}
+test pref-18.3 {pref::PrefGetUpdateCmd, pref exists} {
+    cleanPrefs
+    pref::groupInit FOO {BAR 1 {}}
+    pref::PrefGetUpdateCmd FOO BAR
+} {}
+test pref-18.4 {pref::PrefGetUpdateCmd, pref exists} {
+    cleanPrefs
+    pref::groupInit FOO {BAR 1 {}}
+    pref::groupInit FOO {BAR 1 updateCmd}
+    pref::PrefGetUpdateCmd FOO BAR
+} {updateCmd}
+
+cleanPrefs
+cleanupTests
+if {[info exists tk_version] && !$tcl_interactive} {
+    exit
+}
+
+exit
+
+
+test pref-1.1 {pref::PrefGetUpdateCmd} {
+    cleanPrefs
+} {}
+test pref-1.1 {pref::} {
+    cleanPrefs
+} {}
+test pref-1.1 {pref::} {
+    cleanPrefs
+} {}

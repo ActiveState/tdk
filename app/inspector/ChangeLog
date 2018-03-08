@@ -1,0 +1,448 @@
+2003-01-16  Jeff Hobbs  <jeffh@ActiveState.com>
+
+	* */*: revamp of the sources to use Tk 8.4, reduce dependence on
+	older code, spiff up appearance and clean things up in general.
+
+Mon Oct 21 22:42:34 2002  Pat Thoyts <patthoyts@users.sourceforge.net>
+
+	* afters_list.tcl:
+	* classes_list.tcl:
+	* globals_list.tcl:
+	* images_list.tcl:
+	* names.tcl:
+	* objects_list.tcl:
+	* procs_list.tcl:
+	* windows_list.tcl: bug # 624268 - always namespace qualify commands
+	sent to the inspectee to avoid name clashes.
+	* help.tcl: Fixed bug #624634 - formatting of ChangeLog view.
+	
+Wed Oct 09 01:27:43 2002  Pat Thoyts <patthoyts@users.sourceforge.net>
+
+	* tkinspect.tcl:
+	* globals_list.tcl: Implemented trace for all the supported 'send'
+	varieties. This fixes bug #533493.
+	
+Sat Apr 20 01:27:46 2002  Pat Thoyts <patthoyts@users.sourceforge.net>
+
+	* windows_list.tcl: Fixed bug #546259: erroneous use of 'config'
+
+Thu Apr 04 22:38:44 2002  Pat Thoyts <patthoyts@users.sourceforge.net>
+
+	* globals_list.tcl: 
+	* names.tcl: fix array checking (use array exists).
+	* tkinspect.tcl: merged in support for scripted documents (patch
+	by Steve Landers). Use the winsend package if available.
+	
+Mon Mar 25 12:05:22 2002  Pat Thoyts <patthoyts@users.sourceforge.net>
+
+	* Bug #533899: Found and merged Paul Healy's 1997 p4 patch which adds
+	a 'namespaces' and an 'after' viewer. Comments from the patch:
+	  - fix the `Value:' history menu so that it respects changes to target
+	    interpreters. The `clear' method is broken?
+	  - snapshot afters so that you (nearly would) always to get to see the
+	    scripts associated with an after id at a particular time. Also make
+	    the afters menu more meaningful.
+	* classes_list.tcl:
+	* objects_list.tcl: Improved the incr Tcl support.
+	* README: modernised the README file.
+
+Sun Mar 24 23:50:29 2002  Pat Thoyts <patthoyts@users.sourceforge.net>
+	
+	* Bug #533899: gracefully handle unavailable 'comm' package
+	* Bug #532905: fix the installer.
+
+Fri Mar 22 15:53:54 2002  Pat Thoyts <patthoyts@users.sourceforge.net>
+	
+	* names.tcl: Bug #533642: send ::info in case info is redefined.
+	* help.tcl: Get the html help viewer to accept non-html filenames.
+	* windows_info.tcl: handle interps without Tk commands
+	* images_list.tcl: handle interps without Tk commands
+
+Fri Mar 22 01:04:59 2002  Pat Thoyts <patthoyts@users.sourceforge.net>
+
+	* version.tcl: Released version 5.1.6p7
+	* globals_list.tcl: 
+	* value.tcl: Bug #533367: use default Tk file selection dialogs.
+
+Thu Mar 21 15:27:53 2002  Pat Thoyts <patthoyts@users.sourceforge.net>
+
+	* tkinspect.tcl: Improved the dde send implementation and fixed
+	the window title to show the application name.
+	* globals_list.tcl: Bug #533164: Fixed the retrieve for empty
+	arrays.
+	* windows_info.tcl: Bug #532909: Fixed 'winfo' error handling for
+	non-Tk applications when using 'comm'
+
+Thu Mar 21 00:32:17 2002  Pat Thoyts <patthoyts@users.sourceforge.net>
+
+	* tkinspect.tcl: Fixed problem with application not closing
+	properly if not closed via the menu item.
+	* tkinspect.tcl: Added OK and Cancel buttons to improve the
+	handling of the comm connection dialog.
+
+Tue Mar 19 09:12:54 2002  Pat Thoyts <patthoyts@users.sourceforge.net>
+
+	* tkinspect.tcl: Added a dde implementation of 'send' for use on
+	Windows.
+
+Thu Mar 14 12:09:24 2002  Pat Thoyts <patthoyts@users.sourceforge.net>
+	
+	* classes_list.tcl: Updated to support itcl 3.2 info syntax
+	* objects_list.tcl: Updated to support itcl 3.2 info syntax
+	* Classes.html: new page to describe the classes list window.
+	* tkinspect.tcl: fixed the About help menu item.
+	* version.tcl: incremented version to p6.
+
+Fri Mar  2 00:13:08 2002  Pat Thoyts <patthoyts@users.sourceforge.net>
+	
+	* tkinspect: applied T. Schotanus incr Tcl support patch. This
+	provides itcl support for older (pre 3.x?) itcl versions.
+
+Fri Mar  1 23:37:21 2002  Pat Thoyts <patthoyts@users.sourceforge.net>
+	
+	* tkinspect: applied John LoVerso's 1996 comm patch to support
+ 	systems without the Tk send command.
+
+Sun Dec 14 19:46:05 1997  Paul Healy <ei9gl@indigo.ie>
+	
+	* tkinspect: describe patch procedure to get around diff/patch/RCS
+	interaction. Released p3.
+	
+Sun Nov 23 22:14:36 1997  Paul Healy <ei9gl@indigo.ie>
+	
+	* tkinspect: handle procedures and variables inside namespaces
+	
+Sun Oct  5 20:09:10 1997  Paul Healy <ei9gl@indigo.ie>
+
+	* tkinspect: handle the disappearance of the tkerror proc in tk8.0
+	Released p2.
+
+Fri Jun 23 00:20:15 1995  Sam Shen  <sls@aconcagua.lbl.gov>
+
+	* version.tcl: Bump to 5.1.6.
+
+	* README: Update to 5.1.6.
+
+	* WhatsNew.html: Note changes in 5.1.6.
+
+	* Miscellany.html: Fix typo (wrote .tkinspect_opts instead of
+        .tkinspect_init).
+
+	* version.tcl: Whoops, forgot to bump to release date.
+
+	* version.tcl: Bump to 5.1.5.
+
+	* lists.tcl (run_command): preserve special characters in command
+        invocation.
+
+	* windows_info.tcl: Handle windows with special characters in
+        them.
+
+	* windows_list.tcl: Handle windows with special characters in
+        them.
+
+Wed Jun 21 01:57:59 1995  Sam Shen  <sls@aconcagua.lbl.gov>
+
+	* lists.tcl: Mark update_needed after a clear.
+
+	* globals_list.tcl (update_scalar): silly bug fix.
+
+	* README: Whoops, fix install instruction.
+
+	* README: Update for 5.1.4.
+
+	* version.tcl: Bump version to 5.1.4.
+
+	* Value.html: Note new list types.
+
+	* install.tcl: Add new help files.  Search for both wish and
+        wish4.0.
+
+	* WhatsNew.html: Note additional interface functions.
+
+	* tkinspect.tcl: Add new help files.
+
+	* Notes.html: Small changes.
+
+	* Intro.html: Add images, canvases, and menus list documentation.
+
+	* Miscellany.html: Note that tkinspect_select can select menus,
+        images, and canvases.
+
+	* WhatsNew.html: Document 5.1.4 changes.
+
+	* Miscellany.html: Document changes to interface.tcl.
+
+	* Images.html: Say what selecting an image does.
+
+	* Lists.html: Document recent changes, add image, menus, and
+        canvases lists.
+
+	* Menus.html: Change "item" to "entry".
+
+	* install.tcl: Grab pointer and keyboard during install.  Write
+	messages about searching for wish4.0 in log window.  Add
+	canvas_list.tcl.
+
+	* lists.tcl (create): Add "Remove This List" menu item.
+	(update_needed): check to make sure window still exists before
+	do_update.
+
+	* interface.tcl: Add tkinspect_{show,remove}_list.  Rename
+	tkinspect_value_text_window to tkinspect_value_window.  Add
+	tkinspect_value_text_widget.  Add tkinspect_display_image.
+
+	* help.tcl: Add up/down bindings, page up/page down bindings.
+
+	* tkinspect.tcl (toplevel): Add canvas_list.
+        (add_list/remove_list): set list_class_is_on.
+
+	* windows_info.tcl (get_class): check to make sure window still
+        exists.
+
+	* windows_info.tcl: Fix bug in windows_info:clear.
+
+	* images_list.tcl: Rename "Show Image" to "Display Image".  Add
+        update_self method.
+
+	* windows_list.tcl: Add update_self.
+
+	* menus_list.tcl: Add update_self method.
+
+	* lists.tcl: Reduce width to 15.  Add "Update This List" menu item
+	and required functionality.
+
+	* version.tcl: Check patchlevel and warn about betas prior to
+	4.0b4.  Bump version to 5.1.3.
+
+	* install.tcl: Add menus_list.tcl and windows_info.tcl.
+
+	* tkinspect.tcl: Use just plain "wish .." instead of "wish -f
+	...".  Add menus_list.  Add windows_info.tcl and appropriate
+	hooks.
+
+	* windows_list.tcl: Move maintenance of the list of windows to
+        windows_info.
+
+	* images_list.tcl: Add Show Image menu item and functionality.
+
+	* Value.html, Lists.html: Document use of button 3.
+
+	* value.tcl, lists.tcl: Bring menu up on button 3.
+
+Tue Jun 20 15:28:39 1995  Sam Shen  <sls@aconcagua.lbl.gov>
+
+	* install.tcl: Search path for a wish4.0, otherwise use
+        /usr/local/bin/wish4.0.
+
+Fri Jun 16 01:18:26 1995  Sam Shen  <sls@aconcagua.lbl.gov>
+
+	* install.tcl: For some reason "update idletasks" isn't good
+	enough to get the windows redrawn.  Using "update".
+
+	* version.tcl: Bump to 5.1.2.
+
+	* install.tcl: Install sls.ppm instead of sls.xbm.
+
+	* sls.ppm: initial revision.
+
+	* about.tcl: Use a color photo.
+
+	* help.tcl: Add netscape-like alt-left arrow/right arrow and
+	space/backspace/delete bindings.
+
+	* cmdline.tcl: Fix packing on text window so it resizes properly.
+
+	* tkinspect.tcl: Add image_list, change tkinspect(list_classes) so
+	that lists have readable names.
+
+        * images_list.tcl: initial revision (contributed by Gero Kohnert).
+
+	* install.tcl: Add images_list.
+
+Sun Jun 11 02:11:52 1995  Sam Shen  <sls@aconcagua.lbl.gov>
+
+	* Windows.html: Fix typo in ref to Lists.html.
+
+Mon Jun  5 01:46:41 1995  Sam Shen  <sls@aconcagua.lbl.gov>
+
+	* README: update for 5.1.1.
+
+	* Intro.html: Remove ref to command line page.
+
+	* version.tcl: Bump to 5.1.1.
+
+	* Notes.html: Add note about copyright status.
+
+	* install.tcl: Add new help files, new source files.
+
+	* windows_list.tcl: Group "get window info..." & "use feedback.."
+	options together.  Reorder window options.
+
+	* lists.tcl: Get rid of remove list menu item (now using
+        checkboxes on file menu.)
+
+	* Lists.html: Fix note about removing lists.  Add note about
+        updating lists.
+
+	* Intro.html: Rewrite some of it, fold table of contents into
+        here.
+
+	* tkinspect.tcl: Add new help topics, get rid of old ones.  Add
+        label to command entry.
+
+	* WhatsNew.html: Note the interface.
+
+Sun Jun  4 01:05:37 1995  Sam Shen  <sls@aconcagua.lbl.gov>
+
+	* Windows.html: Document remaining window options.
+
+	* windows_list.tcl: Use .feedback grab to handle grab.
+
+	* help.tcl: Disable forward & back during rendering.
+
+	* tkinspect.tcl: Change New xxx_list menu items to checkbuttons.
+	Raise help window.  Add hack to get lists frame to collapse when
+	there are no more lists.
+
+	* help.tcl: Implement forward, back, and go.
+
+	* windows_list.tcl: Add optional feedback when getting windows.
+
+	* stl.tcl: Add tkhtml.tcl.
+
+	* lists.tcl: Add trigger method and binding for space so keyboard
+        usage works.
+
+	* tkinspect.tcl: Get rid of options menu.  Move "New x Window"
+        stuff to file menu.
+
+Thu Jun  1 21:24:21 1995  Sam Shen  <sls@aconcagua.lbl.gov>
+
+	* version.tcl: Bump to 5.1.0.
+
+	* install.tcl: Add cmdline.tcl, stl-lite/tkhtml.tcl, and the html
+        help files.
+
+	* install.tcl: Remove tk 4.0b2 focus work-arounds.
+
+	* defaults.tcl: Add defs for command line.
+
+	* cmdline.tcl: initial revision.
+
+	* tkinspect.tcl: Add command line interface.  Source
+        .tkinspect_init in current directory (if it exists.)
+
+	* tkinspect.tcl: Fix invocation of interpreter menu so things work
+        with Tk 4.0b3.
+
+Wed Mar 22 22:55:51 1995  Sam Shen  <sls@aconcagua.lbl.gov>
+
+	* stl.tcl: Add feedback.tcl.
+
+	* lists.tcl: Clean up behavoir of filter_editor buttons.
+
+	* install.tcl: Install help.tcl.
+
+	* tkinspect.tcl: Add help.
+
+Wed Feb 15 16:09:10 1995  Sam Shen  (sls@gainful.lbl.gov)
+
+	* version.tcl: Add a Tk version check.  Bump version to 5.0.5.
+
+	* sls.xbm: initial revision.
+
+	* install.tcl: Add version_init call, add title.  Pack buttons
+	with some padding.
+
+Tue Feb 14 18:55:40 1995  Sam Shen  (sls@gainful.lbl.gov)
+
+	* install.tcl: Add version.tcl.
+
+	* version.tcl: initial revision, version number 5.0.4.
+
+	* lists.tcl: Make return in filter_editor add a pattern.  Add
+	list_show dialog.  Add underlines.
+
+	* stl.tcl: Source files at global level.
+
+	* value.tcl: Add underlines.
+
+	* tkinspect.tcl: Move version info to version.tcl.  Add
+	underlines.
+
+	* windows_list.tcl: Add underlines.
+
+	* globals_list.tcl: Add underlines.  Add a menu to variable trace
+	dialog, add saving.
+
+	* defaults.tcl: Set all menubutton borderwidth's to 0.
+
+Mon Feb 13 18:52:49 1995  Sam Shen  <sls@aconcagua>
+
+	* install.tcl: Change close button name to Exit.
+
+	* windows_list.tcl: Change bindtags to bindtagsplus, add bindtags.
+
+	* tkinspect.tcl: Fix send command button.
+
+Fri Feb 10 02:59:10 1995  Sam Shen  <sls@aconcagua>
+
+        * First public release: version 5.0.2
+
+	* README, stl.tcl: initial revision.
+
+	* tkinspect.tcl: Use stl-lite instead of the real thing.  Update
+        for install.tcl.
+
+	* tkinspect.tcl: Use uniform add_foo/delete_foo names.  Add
+	delete_list.  Pack lists with -fill both.  Bump version to 5.0.2.
+
+	* value.tcl: Add save & load.
+
+	* lists.tcl: Remove now tells the main window that it's gone.
+	Also, fix small typo in click.
+
+	* defaults.tcl: Remove font defs.
+
+	* windows_list.tcl: Get rid of "all" hacks, add bindtags
+        retrieval.
+
+	* value.tcl: Get rid of unimplemented search options.
+
+	* lists.tcl: Add searching.
+
+	* globals_list.tcl: Delete scrolled off lines correctly.  Make
+	sure we use the right name in array variable trace.
+
+Tue Feb  7 00:26:12 1995  Sam Shen  <sls@aconcagua>
+
+	* windows_list.tcl: Add classbindings "all" hack.
+
+	* tkinspect.tcl: Change to 5.x.y version numbering (5.0.1 now.)
+	Check to make sure a target has been selected when clicking.
+
+	* value.tcl: Add searching (partially stolen from
+        demos/mkTextWind.tcl).
+
+	* value.tcl: Add menu entries.  Allow detaching of value.
+
+	* tkinspect.tcl: Allow lists and other widgets to add their own
+	menus.  Add tkinspect_failure.  Check to see if there is a target.
+
+	* lists.tcl: Move implementation of various lists to separate
+	files.  Implement filter editing.  Add menus.  Move menu defs that
+	were in tkinspect.tcl to here.
+
+	* defaults.tcl: Add more options.
+
+Mon Feb  6 02:45:44 1995  Sam Shen  <sls@aconcagua>
+
+	* lists.tcl: Flash windows for all retreive types.  Format packing
+	results nicely.  Add filtering of pack -in.
+
+	* value.tcl: Add history.
+
+	* tkinspect.tcl: Change value when window option changes.  Add
+	filtering of pack -in options.  Add buttons, command entry.
+

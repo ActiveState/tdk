@@ -1,0 +1,4320 @@
+# -*- tcl -*- coreTk.tcl --
+#
+#	This file contains checks for Tk specific commands and types.
+#
+# Copyright (c) 2003-2008 ActiveState Software Inc.
+# Copyright (c) 1998-2000 Ajuba Solutions
+#
+
+
+#
+# SCCS: @(#) coreTk.tcl 1.44 98/08/26 15:39:57
+
+# ### ######### ###########################
+## Requisites
+
+package require pcx          ; # PCX API
+
+# ### ######### ###########################
+## Tcl core version dependencies of the package this checker is for.
+
+pcx::register Tk Tk
+pcx::tcldep   3.6 needs tcl 7.3
+pcx::tcldep   4.0 needs tcl 7.4
+pcx::tcldep   4.1 needs tcl 7.5
+pcx::tcldep   4.2 needs tcl 7.6
+pcx::tcldep   8.0 needs tcl 8.0
+pcx::tcldep   8.1 needs tcl 8.1
+pcx::tcldep   8.2 needs tcl 8.2
+pcx::tcldep   8.3 needs tcl 8.3
+pcx::tcldep   8.4 needs tcl 8.4
+pcx::tcldep   8.5 needs tcl 8.5
+pcx::tcldep   8.6 needs tcl 8.5
+
+# ### ######### ###########################
+## Package specific message types and their human-readable
+## translations.
+
+pcx::message badAlpha		{invalid transparency level} err
+pcx::message badColormap	{invalid colormap "%1$s": must be "new" or a window name} err
+pcx::message badEvent		{invalid event type or keysym} err
+pcx::message badGeometry	{invalid geometry specifier} err
+pcx::message badGridRel		{must specify window before shortcut} err
+pcx::message badGridMaster	{cannot determine master window} err
+pcx::message badPalette		{invalid palette spec} err
+pcx::message badPriority	{invalid priority keyword or value} err
+pcx::message badScreen		{invalid screen value} err
+pcx::message badSticky		{invalid stickyness value: should be zero or more of nswe} err
+pcx::message badTab		{invalid tab list} err
+pcx::message badTabJust		{invalid tab justification "%1$s": must be left right center or numeric} err
+pcx::message badVirtual		{virtual event is badly formed} err
+pcx::message badVisual		{invalid visual} err
+pcx::message badVisualDepth	{invalid visual depth} err
+pcx::message nonPortBitmap	{use of non-portable bitmap} {nonPortable}
+pcx::message nonPortKeysym	{use of non-portable keysym} {nonPortable}
+pcx::message noVirtual		{virtual event not allowed in definition of another virtual event} err
+pcx::message noEvent		{no events specified in binding} err
+pcx::message warnConsoleCmd	{usage of internal console command, may change without notice} warn
+pcx::message warnTkCmd		{usage of internal tk command, may change without notice} warn
+pcx::message badBindSubst	{bind script contains unknown %%-placeholders} err
+pcx::message warnTtkStateOption {Usage of the "state" method is recommended over configuring the "-state" compatibility option} warn
+pcx::message warnTtkPadding     {The ttk::*button widgets do not officially support "-padding"} warn
+
+# ### ######### ###########################
+## Tcl variables declared by this package
+
+pcx::var 3.6 ::tk_library
+pcx::var 3.6 ::tk_patchLevel
+pcx::var 3.6 ::tk_strictMotif
+pcx::var 3.6 ::tk_version
+
+# ### ######### ###########################
+## Define the set of commands that need to be recursed into when
+## generating a list of user defined procs, namespace and Class
+## contexts and procedure name resolutions info.
+
+# The following lists contain checkers that apply for the specified
+# version of Tk.  Later versions are assumed to include previous
+# versions, with the understanding that later values override earlier
+# values.
+
+pcx::check 3.6 std bell		{::analyzer::warn warnReserved "Tk 4.0" checkCommand}
+pcx::check 3.6 std bind		{checkSimpleArgs 1  3 {coreTk::checkTag \
+	{coreTk::checkSequence 0} coreTk::checkBindBody}}
+pcx::check 3.6 std bindtags	{::analyzer::warn warnReserved "Tk 4.0" checkCommand}
+pcx::check 3.6 std button		{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-activebackground -activeforeground -anchor -background -bd -bg
+	-bitmap -borderwidth -command -cursor -disabledforeground -fg
+	-font -foreground -height -image -padx -pady -relief
+	-text -textvariable -variable -width
+    } {
+	{-state {checkKeyword 1 {normal active disabled}}}}}
+    }
+}
+pcx::check 3.6 std canvas		{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-background -bd -bg -bitmap -borderwidth -closeenough -confine
+	-cursor -height -insertbackground -insertborderwidth
+	-insertofftime -insertontime -insertwidth -relief -scrollregion
+	-selectbackground -selectborderwidth -selectforeground
+	-width -xscrollcommand -yscrollcommand
+    } {
+	{-scrollincrement checkPixels}}}
+    }
+}
+pcx::check 3.6 std checkbutton	{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-activebackground -activeforeground -anchor -background -bd -bg
+	-bitmap -borderwidth -command -cursor -disabledforeground -fg
+	-font -foreground -height -offvalue -onvalue -padx -pady
+	-relief -selectimage -text -textvariable -variable -width
+    } {
+	{-selector checkColor}
+	{-state {checkKeyword 1 {normal active disabled}}}}}
+    }
+}
+pcx::check 3.6 std clipboard	{::analyzer::warn warnReserved "Tk 4.0" checkCommand}
+pcx::check 3.6 std destroy 	{checkSimpleArgs 0 -1 {checkWinName}}
+pcx::check 3.6 std entry	{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-background -bd -bg -bitmap -borderwidth -cursor
+	-exportselection -fg -font -foreground -insertbackground
+	-insertborderwidth -insertofftime -insertontime -insertwidth
+	-relief -scrollcommand -selectbackground -selectborderwidth
+	-selectforeground -textvariable -width
+    } {
+	{-state {checkKeyword 1 {normal disabled}}}}}
+    }
+}
+pcx::check 3.6 std event	{::analyzer::warn warnReserved "Tk 4.2" checkCommand}
+pcx::check 3.6 std focus		{checkSimpleArgs 0 2 {{checkSwitches 0 {
+    -displayof -force -lastfor} {
+	checkSimpleArgs 1 1 checkWinName}}}
+    }
+    pcx::check 3.6 std font	{::analyzer::warn warnReserved "Tk 8.0" checkCommand}
+    pcx::check 3.6 std frame	{checkSimpleArgs 1 -1 {
+	checkWinName
+	{checkWidgetOptions 0 {
+	    -background -bd -bg -borderwidth -class -cursor -height -relief
+	    -width
+	} {
+	    {-geometry {coreTk::checkGeometry}}}}
+	}
+    }
+    pcx::check 3.6 std grab		{
+	checkOption {
+	    {current	{checkSimpleArgs 0 1 checkWinName}}
+	    {release	{checkSimpleArgs 1 1 checkWinName}}
+	    {set		{checkSwitches 0 {-global} {
+		checkSimpleArgs 1 1 checkWinName}}
+	    }
+	    {status		{checkSimpleArgs 1 1 checkWinName}}
+	} {checkSwitches 0 {-global} {
+	    checkSimpleArgs 1 1 checkWinName}
+	}
+    }
+    pcx::check 3.6 std grid	{::analyzer::warn warnReserved "Tk 4.1" checkCommand}
+    pcx::check 3.6 std image	{::analyzer::warn warnReserved "Tk 4.0" checkCommand}
+    pcx::check 3.6 std label	{checkSimpleArgs 1 -1 {
+	checkWinName
+	{checkWidgetOptions 0 {
+	    -anchor -background -bd -bg -bitmap -borderwidth -cursor -fg
+	    -font -foreground -height -padx -pady -relief -text
+	    -textvariable -width
+	} {}}}
+    }
+    pcx::check 3.6 std labelframe	{::analyzer::warn warnReserved "Tk 8.4" checkCommand}
+    pcx::check 3.6 std listbox	{checkSimpleArgs 1 -1 {
+	checkWinName
+	{checkWidgetOptions 0 {
+	    -background -bd -bg -borderwidth -cursor -exportselection -fg
+	    -font -foreground -relief -selectbackground -selectborderwidth
+	    -selectforeground -setgrid -xscrollcommand -yscrollcommand
+	} {
+	    {-geometry {coreTk::checkGeometry}}}}
+	}
+    }
+    pcx::check 3.6 std lower		{checkSimpleArgs 1  2 {checkWinName}}
+    pcx::check 3.6 std menu		{checkSimpleArgs 1 -1 {
+	checkWinName
+	{checkWidgetOptions 0 {
+	    -activebackground -activeforeground -background  -bd -bg
+	    -borderwidth -cursor -disabledforeground -fg -font -foreground
+	} {
+	    {-activeborderwidth {checkPixels}}
+	    {-postcommand {checkCommand}}
+}   }   }
+}
+pcx::check 3.6 std menubutton	{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-activebackground -activeforeground -anchor -background  -bd
+	-bg -bitmap -borderwidth -cursor -disabledforeground -fg
+	-font -foreground -height  -highlightbackground -highlightcolor
+	-highlightthickness -image -justify -padx -pady -relief
+	-takefocus -text -textvariable -underline -width -wraplength
+    } {
+	{-direction {checkKeyword 1 {above below left right flush}}}
+	{-indicatoron {checkBoolean}}
+	{-menu {checkWinName}}
+	{-state {checkKeyword 1 {normal active disabled}}}
+}   }   }
+}
+pcx::check 3.6 std message		{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-anchor -background -bd -bg -borderwidth -cursor -fg
+	-font -foreground -highlightbackground -highlightcolor
+	-highlightthickness -justify -padx -pady -relief
+	-takefocus -text -textvariable -width
+    } {
+	{-aspect {checkWholeNum}}
+}   }   }
+}
+pcx::check 3.6 std option		{::analyzer::warn warnReserved "Tk 4.2" checkCommand}
+
+# pack append parent window ... window ...
+# => pack configure window ... -before|-after sibling-in-parent
+# No easy translation for auto-correction, don't try yet.
+pcx::check 3.6 std pack		{checkOption {
+    {append	{::analyzer::warn warnDeprecated \
+	    "-before or -after configure option" \
+	    {checkSimpleArgs 1 -1 {checkWord}}}}
+    {configure 	{coreTk::checkWinThenOptions {
+	{-after 	{checkWinName}}
+	{-anchor 	{checkKeyword 0 {n ne e se s sw w nw center}}}
+	{-before 	{checkWinName}}
+	{-expand 	{checkBoolean}}
+	{-fill 	{checkKeyword 0 {none x y both}}}
+	{-in 	{checkWinName}}
+	{-ipadx 	{checkPixels}}
+	{-ipady 	{checkPixels}}
+	{-padx 	{checkPixels}}
+	{-pady 	{checkPixels}}
+	{-side 	{checkKeyword 0 {left right top bottom}}}
+}   }
+}
+{forget 	{checkSimpleArgs 1 -1 {checkWinName}}}
+{newinfo 	{checkSimpleArgs 1  1 {checkWinName}}}
+{propagate 	{checkSimpleArgs 1  2 {checkWinName
+    checkBoolean}}}
+    {slaves 	{checkSimpleArgs 1  1 {checkWinName}}}
+} {coreTk::checkWinThenOptions {
+    {-after 	{checkWinName}}
+    {-anchor 	{checkKeyword 0 {n ne e se s sw w nw center}}}
+    {-before 	{checkWinName}}
+    {-expand 	{checkBoolean}}
+    {-fill 	{checkKeyword 0 {none x y both}}}
+    {-in 	{checkWinName}}
+    {-ipadx 	{checkPixels}}
+    {-ipady 	{checkPixels}}
+    {-padx 	{checkPixels}}
+    {-pady 	{checkPixels}}
+    {-side 	{checkKeyword 0 {left right top bottom}}}
+}   }   }
+pcx::check 3.6 std panedwindow	{::analyzer::warn warnReserved "Tk 8.4" checkCommand}
+pcx::check 3.6 std place		{checkOption {
+    {configure {checkSimpleArgs 1 -1 {
+	checkWinName
+	{checkConfigure 0 {
+	    {-in checkWinName}
+	    {-x checkPixels}
+	    {-relx checkPixels}
+	    {-y checkPixels}
+	    {-rely checkPixels}
+	    {-anchor {checkKeyword 0 {n ne e se s sw w nw center}}}
+	    {-width checkPixels}
+	    {-relwidth checkFloat}
+	    {-height checkPixels}
+	    {-relheight checkFloat}
+	    {-bordermode {checkKeyword 0 {inside outside ignore}}}}}
+	}
+    }
+}
+{forget {checkSimpleArgs 1 1 checkWinName}}
+{info {checkSimpleArgs 1 1 checkWinName}}
+{slaves {checkSimpleArgs 1 1 checkWinName}}
+} {coreTk::checkWinThenOptions {
+    {-in checkWinName}
+    {-x checkPixels}
+    {-relx checkPixels}
+    {-y checkPixels}
+    {-rely checkPixels}
+    {-anchor {checkKeyword 0 {n ne e se s sw w nw center}}}
+    {-width checkPixels}
+    {-relwidth checkFloat}
+    {-height checkPixels}
+    {-relheight checkFloat}
+    {-bordermode {checkKeyword 0 {inside outside ignore}}}
+}
+}
+}
+pcx::check 3.6 std radiobutton	{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-activebackground -activeforeground -anchor -background -bd -bg
+	-bitmap -borderwidth -command -cursor -disabledforeground -fg
+	-font -foreground -height -padx -pady -relief -text
+	-textvariable -value -variable -width
+    } {
+	{-selector checkColor}
+	{-state {checkKeyword 1 {normal active disabled}}}}}
+    }
+}
+pcx::check 3.6 std raise		{checkSimpleArgs 1  2 {checkWinName}}
+pcx::check 3.6 std scale		{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-activebackground -activeforeground -background -bd -bg
+	-borderwidth -command -cursor -fg -font -foreground -from
+	-label -length -orient -relief -showvalue -sliderlength
+	-tickinterval -to -width
+    } {
+	{-command {checkProcCall 1}}
+	{-sliderforeground checkColor}
+	{-state {checkKeyword 1 {normal active disabled}}}}}
+    }
+}
+pcx::check 3.6 std scrollbar	{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-activebackground -bd -bg -borderwidth -command -cursor -orient
+	-relief -repeatdelay -repeatinterval -width
+    } {
+	{-background {::analyzer::warn upgrade "-troughcolor" \
+		checkColor}}
+	{-foreground {::analyzer::warn upgrade "-background" \
+		checkColor}}
+	{-activeforeground {::analyzer::warn upgrade "-activebackground" \
+		checkColor}}}}
+    }
+}
+pcx::check 3.6 std selection	{
+    checkOption {
+	{clear {checkSwitches 0 {
+	    {-displayof checkWinName}
+	    {-selection checkWord}
+	} {checkSimpleArgs 0  1 {{
+	    WarnDeprecated -1 {} "-displayof" {
+		{clear {insert 2 -displayof}}
+	    } checkWinName}}}}
+	}
+	{get {checkSwitches 0 {
+	    {-displayof checkWinName}
+	    {-selection checkWord}
+	    {-type checkWord}
+	} {checkSimpleArgs 0  1 {{
+	    WarnDeprecated -1 {} "-type" {
+		{get {insert 2 -type}}
+	    } checkWord}}}}
+	}
+	{handle {checkSwitches 0 {
+	    {-selection checkWord}
+	    {-type checkWord}
+	    {-format checkWord}} {
+		checkSimpleArgs 2 2 {checkWinName checkWord}}
+	    }
+	}
+	{own {checkNumArgs {
+	    {0 {checkSimpleArgs 0 0 {}}}
+	    {1 {checkWinName}}
+	    {2 {checkSwitches 0 {
+		{-displayof checkWinName}
+		{-selection checkWord}} {}}
+	    }
+	    {3  {checkSwitches 0 {
+		{-command {checkAsStyle body/single-line checkBody}}
+		{-selection checkWord}} {
+		    checkWinName}
+		}
+	    }
+	    {4 {checkSwitches 0 {
+		{-displayof checkWinName}
+		{-selection checkWord}} {}}
+	    }
+	    {5  {checkSwitches 0 {
+		{-command {checkAsStyle body/single-line checkBody}}
+		{-selection checkWord}} {
+		    checkWinName}}}
+		}
+	    }
+	}
+    } {}
+}
+pcx::check 3.6 std send		{
+    checkSwitches 1 {
+	-async
+	{-displayof checkWinName}
+	--
+    } {checkSimpleArgs 2 -1 {
+	checkWord checkEvalArgs}
+    }
+}
+pcx::check 3.6 std spinbox		{::analyzer::warn warnReserved "Tk 8.4" checkCommand}
+pcx::check 3.6 std text {checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-background -bd -bg -borderwidth -cursor -exportselection -fg
+	-font -foreground -height -insertbackground -insertborderwidth
+	-insertofftime -insertontime -insertwidth -padx -pady -relief
+	-selectbackground -selectborderwidth -selectforeground -setgrid
+	-width -wrap -yscrollcommand
+    } {
+	{-state {checkKeyword 1 {normal disabled}}}}}
+    }
+}
+pcx::check 3.6 std tk		{checkOption {
+    {colormodel	{checkSimpleArgs 1 2 {
+	checkWinName {checkKeyword 0 {color monochrome}}}}}
+    } {}
+}
+pcx::check 3.6 std tk_bindForTraversal	{::analyzer::warn warnReserved "Tk 4.0" checkCommand}
+pcx::check 3.6 std tk_bisque	{::analyzer::warn warnReserved "Tk 4.0" checkCommand}
+pcx::check 3.6 std tk_chooseColor	{::analyzer::warn warnReserved "Tk 4.2" checkCommand}
+pcx::check 3.6 std tk_dialog	{checkSimpleArgs 6 -1 {
+    checkWinName checkWord checkWord coreTk::checkBitmap
+    {coreTk::checkNullOrType checkInt} checkWord}
+}
+pcx::check 3.6 std tk_focusFollowsMouse	{::analyzer::warn warnReserved "Tk 4.0" checkCommand}
+pcx::check 3.6 std tk_focusNext	{::analyzer::warn warnReserved "Tk 4.0" checkCommand}
+pcx::check 3.6 std tk_focusPrev	{::analyzer::warn warnReserved "Tk 4.0" checkCommand}
+pcx::check 3.6 std tk_getOpenFile	{::analyzer::warn warnReserved "Tk 4.2" checkCommand}
+pcx::check 3.6 std tk_getSaveFile	{::analyzer::warn warnReserved "Tk 4.2" checkCommand}
+pcx::check 3.6 std tk_menuBar	{checkSimpleArgs 1 -1 {checkWinName}}
+pcx::check 3.6 std tk_messageBox	{::analyzer::warn warnReserved "Tk 4.2" checkCommand}
+pcx::check 3.6 std tk_optionMenu	{::analyzer::warn warnReserved "Tk 4.0" checkCommand}
+pcx::check 3.6 std tk_setPalette	{::analyzer::warn warnReserved "Tk 4.0" checkCommand}
+pcx::check 3.6 std tk_popup	{::analyzer::warn warnReserved "Tk 4.0" checkCommand}
+pcx::check 3.6 std tkerror		{checkSimpleArgs 1  1 {checkWord}}
+pcx::check 3.6 std tkwait		{checkOption {
+    {variable	{checkSimpleArgs 1 1 checkVarName}}
+    {visibility	{checkSimpleArgs 1 1 checkWinName}}
+    {window	{checkSimpleArgs 1 1 checkWinName}}
+} {}}
+pcx::check 3.6 std toplevel {checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-background -bd -bg -borderwidth -class -cursor -height -relief
+	-screen -width
+    } {
+	{-geometry {coreTk::checkGeometry}}}}
+    }
+}
+pcx::check 3.6 std winfo		{checkOption {
+    {atom		{checkSimpleArgs 1 1 {checkWinName}}}
+    {atomname		{checkSimpleArgs 1 1 {checkInt}}}
+    {cells		{checkSimpleArgs 1 1 {checkWinName}}}
+    {children		{checkSimpleArgs 1 1 {checkWinName}}}
+    {class		{checkSimpleArgs 1 1 {checkWinName}}}
+    {containing		{checkSimpleArgs 2 2 {checkPixels}}}
+    {depth		{checkSimpleArgs 1 1 {checkWinName}}}
+    {exists		{checkSimpleArgs 1 1 {checkWinName}}}
+    {fpixels		{checkSimpleArgs 2 2 {
+	checkWinName checkPixels}}
+    }
+    {geometry		{checkSimpleArgs 1 1 {checkWinName}}}
+    {height		{checkSimpleArgs 1 1 {checkWinName}}}
+    {id			{checkSimpleArgs 1 1 {checkWinName}}}
+    {interps		{checkSimpleArgs 0 0 {}}}
+    {ismapped		{checkSimpleArgs 1 1 {checkWinName}}}
+    {manager		{checkSimpleArgs 1 1 {checkWinName}}}
+    {name		{checkSimpleArgs 1 1 {checkWinName}}}
+    {parent		{checkSimpleArgs 1 1 {checkWinName}}}
+    {pathname		{checkSimpleArgs 1 1 {checkInt}}}
+    {pixels		{checkSimpleArgs 2 2 {
+	checkWinName checkPixels}}
+    }
+    {reqheight		{checkSimpleArgs 1 1 {checkWinName}}}
+    {reqwidth		{checkSimpleArgs 1 1 {checkWinName}}}
+    {rgb			{checkSimpleArgs 2 2 {
+	checkWinName checkColor}}
+    }
+    {rootx		{checkSimpleArgs 1 1 {checkWinName}}}
+    {rooty		{checkSimpleArgs 1 1 {checkWinName}}}
+    {screen		{checkSimpleArgs 1 1 {checkWinName}}}
+    {screencell		{checkSimpleArgs 1 1 {checkWinName}}}
+    {screendepth	{checkSimpleArgs 1 1 {checkWinName}}}
+    {screenheight	{checkSimpleArgs 1 1 {checkWinName}}}
+    {screenmmheight	{checkSimpleArgs 1 1 {checkWinName}}}
+    {screenmmwidth	{checkSimpleArgs 1 1 {checkWinName}}}
+    {screenvisual	{checkSimpleArgs 1 1 {checkWinName}}}
+    {screenwidth	{checkSimpleArgs 1 1 {checkWinName}}}
+    {toplevel		{checkSimpleArgs 1 1 {checkWinName}}}
+    {viewable		{checkSimpleArgs 1 1 {checkWinName}}}
+    {visual		{checkSimpleArgs 1 1 {checkWinName}}}
+    {visualid		{checkSimpleArgs 1 1 {checkWinName}}}
+    {vrootheight	{checkSimpleArgs 1 1 {checkWinName}}}
+    {vrootwidth		{checkSimpleArgs 1 1 {checkWinName}}}
+    {vrootx		{checkSimpleArgs 1 1 {checkWinName}}}
+    {vrooty		{checkSimpleArgs 1 1 {checkWinName}}}
+    {width		{checkSimpleArgs 1 1 {checkWinName}}}
+    {x			{checkSimpleArgs 1 1 {checkWinName}}}
+    {y			{checkSimpleArgs 1 1 {checkWinName}}}
+} {}}
+
+## ### #### ##### ######
+
+namespace eval ::coreTk {
+    # The following list contains the common options for all versions of the wm
+    # command.  We'll add a few more in 4.0 but it's better to avoid
+    # duplicating all of this in the 4.0 table.
+
+    variable wmOptions {
+	{aspect		{::analyzer::warn nonPortOption {} {checkNumArgs {
+	    {1	checkWinName}
+	    {5	{checkSimpleArgs 5 5 {
+		checkWinName
+		{checkListValues 0 1 checkInt}}}}}}
+	    }
+	}
+	{client		{checkSimpleArgs 1 2 {
+	    checkWinName checkWord}}
+	}
+	{command		{checkSimpleArgs 1 2 {
+	    checkWinName checkWord}}
+	}
+	{deiconify	{checkSimpleArgs 1 1 {checkWinName}}}
+	{focusmodel	{::analyzer::warn nonPortOption {} {checkSimpleArgs 1 2 {
+	    checkWinName {checkKeyword 0 {passive active}}}}}
+	}
+	{frame		{checkSimpleArgs 1 1 {checkWinName}}}
+	{geometry	{checkSimpleArgs 1 2 {
+	    checkWinName coreTk::checkGeometry}}
+	}
+	{grid		{checkNumArgs {
+	    {1	checkWinName}
+	    {5	{checkSimpleArgs 5 5 {
+		checkWinName
+		{checkListValues 0 1 checkInt}}}}}
+	    }
+	}
+	{group		{checkSimpleArgs 1 2 {
+	    checkWinName
+	    {checkListValues 0 1 checkWinName}}}
+	}
+	{iconbitmap	{::analyzer::warn nonPortOption {} {checkSimpleArgs 1 2 {
+	    checkWinName coreTk::checkBitmap}}}
+	}
+	{iconify		{checkSimpleArgs 1 1 {checkWinName}}}
+	{iconmask	{::analyzer::warn nonPortOption {} {checkSimpleArgs 1 2 {
+	    checkWinName coreTk::checkBitmap}}}
+	}
+	{iconname	{::analyzer::warn nonPortOption {} {checkSimpleArgs 1 2 {
+	    checkWinName checkWord}}}
+	}
+	{iconposition	{::analyzer::warn nonPortOption {} {checkNumArgs {
+	    {1	checkWinName}
+	    {3	{checkSimpleArgs 3 3 {
+		checkWinName
+		{checkListValues 0 1 checkInt}}}}}}
+	    }
+	}
+	{iconwindow	{::analyzer::warn nonPortOption {} {checkSimpleArgs 1 2 {
+	    checkWinName
+	    {checkListValues 0 1 checkWinName}}}}
+	}
+	{maxsize		{checkNumArgs {
+	    {1	checkWinName}
+	    {3	{checkSimpleArgs 3 3 {
+		checkWinName checkInt}}}}
+	    }
+	}
+	{minsize		{checkNumArgs {
+	    {1	checkWinName}
+	    {3	{checkSimpleArgs 3 3 {
+		checkWinName checkInt}}}}
+	    }
+	}
+	{overrideredirect {checkSimpleArgs 1 2 {
+	    checkWinName checkBoolean}}
+	}
+	{positionfrom	{checkSimpleArgs 1 2 {
+	    checkWinName
+	    {checkKeyword 0 {program user}}}}
+	}
+	{protocol	{checkSimpleArgs 1 3 {
+	    checkWinName
+	    coreTk::checkWmProtocol
+	    checkBody}}
+	}
+	{sizefrom	{checkSimpleArgs 1 2 {
+	    checkWinName
+	    {checkKeyword 0 {"" program user}}}}
+	}
+	{state		{checkSimpleArgs 1 1 {checkWinName}}}
+	{title		{checkSimpleArgs 1 2 {
+	    checkWinName
+	    checkWord}}
+	}
+	{transient	{checkSimpleArgs 1 2 {
+	    checkWinName}}
+	}
+	{withdraw	{checkSimpleArgs 1 1 {checkWinName}}}
+    }
+}
+
+pcx::check 3.6 std wm "checkOption {$::coreTk::wmOptions} {}"
+
+## ### #### ##### ######
+
+pcx::check 4.0 std bell		{checkSimpleArgs 0 2 {
+    {checkSwitches 0 {{-displayof checkWinName}} {}}}
+}
+pcx::check 4.0 std bindtags	{checkSimpleArgs 1  2 {
+    checkWinName {checkListValues 0 -1 coreTk::checkTag}}
+}
+pcx::check 4.0 std button		{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-activebackground -activeforeground -anchor -background -bd -bg
+	-bitmap -borderwidth -command -cursor
+	-disabledforeground -fg -font -foreground -height
+	-highlightbackground -highlightcolor -highlightthickness -image
+	-justify -padx -pady -relief -takefocus -text -textvariable
+	-underline -variable -width -wraplength
+    } {
+	{-state {checkKeyword 1 {normal active disabled}}}}}
+    }
+}
+pcx::check 4.0 std canvas		{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-background -bd -bg -bitmap -borderwidth -closeenough -confine
+	-cursor -height -highlightbackground -highlightcolor
+	-highlightthickness -insertbackground -insertborderwidth
+	-insertofftime -insertontime -insertwidth -relief -scrollregion
+	-selectbackground -selectborderwidth -selectforeground
+	-takefocus -width -xscrollcommand -xscrollincrement
+	-yscrollcommand -yscrollincrement
+    } {
+	{-scrollincrement {
+	    WarnUnsupported -1 {} "-xscrollincrement or -yscrollincrement" {-xscrollincrement -yscrollincrement} checkPixels
+	}}}}
+    }
+}
+pcx::check 4.0 std checkbutton	{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-activebackground -activeforeground -anchor -background -bd -bg
+	-bitmap -borderwidth -command -cursor -disabledforeground -fg
+	-font -foreground -height -highlightbackground -highlightcolor
+	-highlightthickness -image -indicatoron -justify -offvalue
+	-onvalue -padx -pady -relief -selectcolor -selectimage
+	-takefocus -text -textvariable -underline -variable -width
+	-wraplength
+    } {
+	{-selector {
+	    WarnUnsupported -1 {} "-selectcolor" {} checkColor
+	}}
+	{-state {checkKeyword 1 {normal active disabled}}}}}
+    }
+}
+pcx::check 4.0 std clipboard	{checkOption {
+    {clear	    {checkSimpleArgs 0 2 {
+	{checkSwitches 0 {
+	    {-displayof checkWinName}
+	} {}}}}
+    }
+    {append	    {checkSwitches 0 {
+	{-displayof checkWinName}
+	{-format checkWord}
+	{-type checkWord}
+	--
+    } {checkSimpleArgs 1 1 checkWord}}
+}
+} {}}
+pcx::check 4.0 std entry	{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-background -bd -bg -bitmap -borderwidth -cursor
+	-exportselection -fg -font -foreground -highlightbackground
+	-highlightcolor -highlightthickness -insertbackground
+	-insertborderwidth -insertofftime -insertontime -insertwidth
+	-justify -relief -selectbackground -selectborderwidth
+	-selectforeground -show -takefocus -textvariable -width
+	-xscrollcommand
+    } {
+	{-scrollcommand {
+	    WarnUnsupported -1 {} "-xscrollcommand" {} {checkWord}
+	}}
+	{-state {checkKeyword 1 {normal disabled}}}}}
+    }
+}
+pcx::check 4.0 std frame	{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-background -bd -bg -borderwidth -class -colormap -cursor
+	-height -highlightbackground -highlightcolor
+	-highlightthickness -relief -takefocus -visual -width
+    } {
+	{-geometry {
+	    coreTk::WarnUnsupportedGeometry
+	}}
+    }}}}
+    pcx::check 4.0 std image		{checkOption {
+	{create {checkOption {
+	    {bitmap {coreTk::checkNameAndPairs {
+		{-background checkColor}
+		{-data checkWord}
+		{-file checkFileName}
+		{-foreground checkColor}
+		{-maskdata checkWord}
+		{-maskfile checkFileName}}}
+	    }
+	    {photo {coreTk::checkNameAndPairs {
+		{-data checkWord}
+		{-file checkFileName}
+		{-format checkWord}
+		{-gamma checkFloat}
+		{-height checkInt}
+		{-palette coreTk::checkPalette}
+		{-width checkInt}}}
+	    }
+	} {checkSimpleArgs 1 -1 checkWord}}
+    }
+    {delete {checkSimpleArgs 0 -1 checkWord}}
+    {height {checkSimpleArgs 1 1 checkWord}}
+    {names {checkSimpleArgs 0 0 {}}}
+    {type {checkSimpleArgs 1 1 checkWord}}
+    {types {checkSimpleArgs 0 0 {}}}
+    {width {checkSimpleArgs 1 1 checkWord}}
+} {}}
+pcx::check 4.0 std label	{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-anchor -background -bd -bg -bitmap -borderwidth -cursor -fg
+	-font -foreground -height -highlightbackground -highlightcolor
+	-highlightthickness -image -justify -padx -pady -relief
+	-takefocus -text -textvariable -underline -width -wraplength
+    } {}}}
+}
+pcx::check 4.0 std listbox	{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-background -bd -bg -borderwidth -cursor -exportselection -fg
+	-font -foreground -height -highlightbackground -highlightcolor
+	-highlightthickness -relief -selectbackground
+	-selectborderwidth -selectforeground -selectmode -setgrid
+	-takefocus -width -xscrollcommand -yscrollcommand
+    } {
+	{-geometry {
+	    coreTk::WarnUnsupportedGeometry
+	}}
+    }}}}
+    pcx::check 4.0 std menu		{checkSimpleArgs 1 -1 {
+	checkWinName
+	{checkWidgetOptions 0 {
+	    -activebackground -activeforeground -background  -bd -bg
+	    -borderwidth -cursor -disabledforeground -fg -font -foreground
+	    -relief -selectcolor -takefocus
+	} {
+	    {-activeborderwidth {checkPixels}}
+	    {-postcommand {checkCommand}}
+	    {-tearoff {checkBoolean}}
+}   }   }
+}
+
+# pack append parent window ... window ...
+# => pack configure window ... -before|-after sibling-in-parent
+# No easy translation for auto-correction, don't try yet.
+pcx::check 4.0 std pack		{checkOption {
+    {append	{::analyzer::warn warnDeprecated \
+	    "-before or -after configure option" \
+	    {checkSimpleArgs 1 -1 {checkWord}}}}
+    {configure 	{coreTk::checkWinThenOptions {
+	{-after 	{checkWinName}}
+	{-anchor 	{checkKeyword 0 {n ne e se s sw w nw center}}}
+	{-before 	{checkWinName}}
+	{-expand 	{checkBoolean}}
+	{-fill 	{checkKeyword 0 {none x y both}}}
+	{-in 	{checkWinName}}
+	{-ipadx 	{checkPixels}}
+	{-ipady 	{checkPixels}}
+	{-padx 	{checkPixels}}
+	{-pady 	{checkPixels}}
+	{-side 	{checkKeyword 0 {left right top bottom}}}
+}   }
+}
+{forget 	{checkSimpleArgs 1 -1 {checkWinName}}}
+{info 	{checkSimpleArgs 1  1 {checkWinName}}}
+{newinfo 	{
+    WarnUnsupported -1 {} "info" {} {checkSimpleArgs 1  1 {checkWinName}}
+}}
+{propagate 	{checkSimpleArgs 1  2 {checkWinName
+    checkBoolean}}}
+    {slaves 	{checkSimpleArgs 1  1 {checkWinName}}}
+} {coreTk::checkWinThenOptions {
+    {-after 	{checkWinName}}
+    {-anchor 	{checkKeyword 0 {n ne e se s sw w nw center}}}
+    {-before 	{checkWinName}}
+    {-expand 	{checkBoolean}}
+    {-fill 	{checkKeyword 0 {none x y both}}}
+    {-in 	{checkWinName}}
+    {-ipadx 	{checkPixels}}
+    {-ipady 	{checkPixels}}
+    {-padx 	{checkPixels}}
+    {-pady 	{checkPixels}}
+    {-side 	{checkKeyword 0 {left right top bottom}}}
+}   }   }
+pcx::check 4.0 std radiobutton	{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-activebackground -activeforeground -anchor -background -bd -bg
+	-bitmap -borderwidth -command -cursor -disabledforeground -fg
+	-font -foreground -height -highlightbackground -highlightcolor
+	-highlightthickness -image -indicatoron -justify -padx -pady
+	-relief -selectcolor -selectimage -takefocus -text
+	-textvariable -underline -value -variable -width -wraplength
+    } {
+	{-selector {
+	    WarnUnsupported -1 {} "-selectcolor" {} checkColor
+	}}
+	{-state {checkKeyword 1 {normal active disabled}}}}}
+    }
+}
+pcx::check 4.0 std scale		{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-activebackground -activeforeground -background -bd -bg
+	-bigincrement -borderwidth -command -cursor -digits -fg -font
+	-foreground -from -highlightbackground -highlightcolor
+	-highlightthickness -label -length -orient -relief -repeatdelay
+	-repeatinterval -resolution -showvalue -sliderlength
+	-sliderrelief -takefocus -tickinterval -to -troughcolor
+	-variable -width
+    } {
+	{-command {checkProcCall 1}}
+	{-sliderforeground {
+	    WarnUnsupported -1 {} "-background" {} checkColor
+	}}
+	{-state {checkKeyword 1 {normal active disabled}}}}}
+    }
+}
+pcx::check 4.0 std scrollbar	{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-activebackground -activerelief -background
+	-bd -bg -borderwidth -command -cursor -elementborderwidth
+	-highlightbackground -highlightcolor -highlightthickness -jump
+	-orient -relief -repeatdelay -repeatinterval -takefocus
+	-troughcolor -width
+    } {
+	{-activeforeground {
+	    WarnUnsupported -1 {} "-activebackground" {} checkColor
+	}}
+	{-foreground {
+	    WarnUnsupported -1 {} "-background" {} checkColor
+	}}
+    }}
+}}
+pcx::check 4.0 std text {checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-background -bd -bg -borderwidth -cursor -exportselection -fg
+	-font -foreground -height -highlightbackground -highlightcolor
+	-highlightthickness -insertbackground -insertborderwidth
+	-insertofftime -insertontime -insertwidth -padx -pady -relief
+	-selectbackground -selectborderwidth -selectforeground -setgrid
+	-spacing1 -spacing2 -spacing3 -tabs -takefocus -width -wrap
+	-xscrollcommand -yscrollcommand
+    } {
+	{-state {checkKeyword 1 {normal disabled}}}}}
+    }
+}
+pcx::check 4.0 std tk		{checkOption {
+    {appname	{checkSimpleArgs 0 1 checkWord}}
+} {}}
+pcx::check 4.0 std tk_bindForTraversal {::analyzer::warn warnUnsupported menu {}}
+pcx::check 4.0 std tk_bisque	{checkSimpleArgs 0  0 {}}
+pcx::check 4.0 std tk_focusFollowsMouse	{checkSimpleArgs 0  0 {}}
+pcx::check 4.0 std tk_focusNext	{checkSimpleArgs 1  1 {checkWinName}}
+pcx::check 4.0 std tk_focusPrev	{checkSimpleArgs 1  1 {checkWinName}}
+pcx::check 4.0 std tk_menuBar	{::analyzer::warn warnUnsupported menu {}}
+pcx::check 4.0 std tk_optionMenu	{checkSimpleArgs 3 -1 {
+    checkWinName checkVarNameWrite checkWord}
+}
+pcx::check 4.0 std tk_popup	{checkSimpleArgs 3  4 {
+    checkWinName checkInt checkInt checkWord}
+}
+pcx::check 4.0 std tk_setPalette	{checkNumArgs {
+    {1	 	{checkSimpleArgs 1  1 {checkColor}}}
+    {-1 	{coreTk::checkSetPalette}}
+}   }
+pcx::check 4.0 std toplevel {checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-background -bd -bg -borderwidth -class -colormap -container
+	-cursor -height -highlightbackground -highlightcolor
+	-highlightthickness -menu -relief -screen -takefocus -use
+	-visual -width
+    } {
+	{-geometry {
+	    coreTk::WarnUnsupportedGeometry
+	}}
+    }}}}
+    pcx::check 4.0 std winfo		{checkOption {
+	{atom		{checkSwitches 0 {
+	    {-displayof checkWinName}} {
+		checkSimpleArgs 1 1 {checkWinName}}
+	    }
+	}
+	{atomname		{checkSwitches 0 {
+	    {-displayof checkWinName}} {
+		checkSimpleArgs 1 1 {checkInt}}
+	    }
+	}
+	{cells		{checkSimpleArgs 1 1 {checkWinName}}}
+	{children		{checkSimpleArgs 1 1 {checkWinName}}}
+	{class		{checkSimpleArgs 1 1 {checkWinName}}}
+	{colormapfull	{checkSimpleArgs 1 1 {checkWinName}}}
+	{containing		{checkSwitches 0 {
+	    {-displayof checkWinName}} {
+		checkSimpleArgs 2 2 {checkPixels}}
+	    }
+	}
+	{depth		{checkSimpleArgs 1 1 {checkWinName}}}
+	{exists		{checkSimpleArgs 1 1 {checkWinName}}}
+	{fpixels		{checkSimpleArgs 2 2 {
+	    checkWinName checkPixels}}
+	}
+	{geometry		{checkSimpleArgs 1 1 {checkWinName}}}
+	{height		{checkSimpleArgs 1 1 {checkWinName}}}
+	{id			{checkSimpleArgs 1 1 {checkWinName}}}
+	{interps		{checkSimpleArgs 0 2 {{checkOption {
+	    {-displayof {checkWinName}}
+	} {}}}}}
+	{ismapped		{checkSimpleArgs 1 1 {checkWinName}}}
+	{manager		{checkSimpleArgs 1 1 {checkWinName}}}
+	{name		{checkSimpleArgs 1 1 {checkWinName}}}
+	{parent		{checkSimpleArgs 1 1 {checkWinName}}}
+	{pathname		{checkSwitches 0 {
+	    {-displayof checkWinName}
+	} {checkSimpleArgs 1 1 {checkInt}}}}
+	{pixels		{checkSimpleArgs 2 2 {
+	    checkWinName checkPixels}}
+	}
+	{pointerx		{checkSimpleArgs 1 1 {checkWinName}}}
+	{pointerxy		{checkSimpleArgs 1 1 {checkWinName}}}
+	{pointery		{checkSimpleArgs 1 1 {checkWinName}}}
+	{reqheight		{checkSimpleArgs 1 1 {checkWinName}}}
+	{reqwidth		{checkSimpleArgs 1 1 {checkWinName}}}
+	{rgb		{checkSimpleArgs 2 2 {
+	    checkWinName checkColor}}
+	}
+	{rootx		{checkSimpleArgs 1 1 {checkWinName}}}
+	{rooty		{checkSimpleArgs 1 1 {checkWinName}}}
+	{screen		{checkSimpleArgs 1 1 {checkWinName}}}
+	{screencells	{checkSimpleArgs 1 1 {checkWinName}}}
+	{screendepth	{checkSimpleArgs 1 1 {checkWinName}}}
+	{screenheight	{checkSimpleArgs 1 1 {checkWinName}}}
+	{screenmmheight	{checkSimpleArgs 1 1 {checkWinName}}}
+	{screenmmwidth	{checkSimpleArgs 1 1 {checkWinName}}}
+	{screenvisual	{checkSimpleArgs 1 1 {checkWinName}}}
+	{screenwidth	{checkSimpleArgs 1 1 {checkWinName}}}
+	{server		{checkSimpleArgs 1 1 {checkWinName}}}
+	{toplevel		{checkSimpleArgs 1 1 {checkWinName}}}
+	{viewable		{checkSimpleArgs 1 1 {checkWinName}}}
+	{visual		{checkSimpleArgs 1 1 {checkWinName}}}
+	{visualid		{checkSimpleArgs 1 1 {checkWinName}}}
+	{visualsavailable	{checkSimpleArgs 1 2 {
+	    checkWinName {checkKeyword 1 {includeids}}}}
+	}
+	{vrootheight	{checkSimpleArgs 1 1 {checkWinName}}}
+	{vrootwidth		{checkSimpleArgs 1 1 {checkWinName}}}
+	{vrootx		{checkSimpleArgs 1 1 {checkWinName}}}
+	{vrooty		{checkSimpleArgs 1 1 {checkWinName}}}
+	{width		{checkSimpleArgs 1 1 {checkWinName}}}
+	{x			{checkSimpleArgs 1 1 {checkWinName}}}
+	{y			{checkSimpleArgs 1 1 {checkWinName}}}
+    } {}
+}
+pcx::check 4.0 std wm "checkOption {
+    $::coreTk::wmOptions
+    {colormapwindows		{checkSimpleArgs 1 2 {
+	checkWinName
+	{checkListValues 0 -1 {checkWinName}}}}
+    }
+    {resizable		{checkNumArgs {
+	{1	checkWinName}
+	{3	{checkSimpleArgs 3 3 {
+	    checkWinName checkBoolean}}}}
+	}
+    }
+} {}"
+
+## ### #### ##### ######
+
+pcx::check 4.1 std grid			{checkOption {
+    {bbox		{checkNumArgs {
+	{1 checkWinName}
+	{3 {checkSimpleArgs 3 3 {checkWinName checkInt}}}
+	{5 {checkSimpleArgs 5 5 {checkWinName checkInt}}}}}
+    }
+    {columnconfigure	{checkSimpleArgs 2 -1 {
+	checkWinName
+	{checkListValues 1 -1 checkInt}
+	{checkConfigure 1 {
+	    {-minsize checkPixels}
+	    {-weight checkInt}
+	    {-pad checkInt}}}}
+	}
+    }
+    {configure		coreTk::checkGridOptions}
+    {forget 		{checkSimpleArgs 1 -1 checkWinName}}
+    {info 		{checkSimpleArgs 1 1 checkWinName}}
+    {location 		{checkSimpleArgs 3 3 {
+	checkWinName checkInt checkInt}}
+    }
+    {propagate 		{checkSimpleArgs 1 2 {
+	checkWinName checkBoolean}}
+    }
+    {rowconfigure 	{checkSimpleArgs 2 -1 {
+	checkWinName
+	{checkListValues 1 -1 checkInt}
+	{checkConfigure 1 {
+	    {-minsize checkPixels}
+	    {-weight checkInt}
+	    {-pad checkInt}}}}
+	}
+    }
+    {remove 		{checkSimpleArgs 1 -1 checkWinName}}
+    {size 		{checkSimpleArgs 1 1 checkWinName}}
+    {slaves 		{checkSimpleArgs 1 5 {
+	checkWinName
+	{checkSwitches 0 {{-row checkInt} {-column checkInt}} {}}}}
+    }
+} {coreTk::checkGridOptions}}
+pcx::check 4.1 std menu		{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-activebackground -activeforeground -background  -bd -bg
+	-borderwidth -cursor -disabledforeground -fg -font -foreground
+	-relief -selectcolor -takefocus
+    } {
+	{-activeborderwidth {checkPixels}}
+	{-postcommand {checkCommand}}
+	{-tearoff {checkBoolean}}
+	{-tearoffcommand {checkBoolean}}
+	{-transient {checkBoolean}}
+}   }   }
+}
+pcx::check 4.1 std tkerror		{WarnDeprecated -1 {} bgerror {} {
+    checkSimpleArgs 1  1 {checkWord}}
+}
+
+## ### #### ##### ######
+
+pcx::check 4.2 std event		{checkOption {
+    {add	{checkSimpleArgs 2 -1 {coreTk::checkVirtual
+    {coreTk::checkSequence 1}}}}
+    {delete	{checkSimpleArgs 1 -1 {coreTk::checkVirtual
+    {coreTk::checkSequence 1}}}}
+    {generate	{checkSimpleArgs 2 -1 {
+	checkWinName
+	coreTk::checkEvent
+	{checkWidgetOptions 0 {-borderwidth -height -width} {
+	    {-above checkWinName}
+	    {-button checkWholeNum}
+	    {-count checkInt}
+	    {-detail {checkKeyword 1 {\
+		    NotifyAncestor NotifyNonlinearVirtual \
+		    NotifyDetailNone NotifyPointer \
+		    NotifyInferior NotifyPointerRoot \
+		    NotifyNonlinear NotifyVirtual \
+	}   }   }
+{-focus checkBoolean}
+{-keycode checkInt}
+{-keysym coreTk::checkKeysym}
+{-mode {checkKeyword 1 {\
+	NotifyNormal NotifyGrab NotifyUngrab NotifyWhileGrabbed \
+}   }   }
+{-override checkBoolean}
+{-place {checkKeyword 1 {\
+	PlaceOnTop PlaceOnBottom \
+}   }   }
+{-root coreTk::checkRoot}
+{-rootx checkPixels}
+{-rooty checkPixels}
+{-sendevent checkBoolean}
+{-serial checkInt}
+{-state coreTk::checkState}
+{-subwindow  checkWinName}
+{-time checkInt}
+{-when {checkKeyword 1 {\
+	now tail head mark \
+}   }   }
+{-x checkPixels}
+{-y checkPixels}}}}}}
+{info	{checkSimpleArgs 0 1 coreTk::checkVirtual}}
+} {}}
+pcx::check 4.2 std option		{checkOption {
+    {add	{checkSimpleArgs 2  3 {checkWord checkWord
+    coreTk::checkPriority}}}
+    {clear	{checkSimpleArgs 0  0 {}}}
+    {get	{checkSimpleArgs 3  3 {checkWinName
+    checkWord}}}
+    {readfile	{checkSimpleArgs 1 2 {checkFileName
+    coreTk::checkPriority}}}
+} {}}
+pcx::check 4.2 std menu		{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-activebackground -activeforeground -background  -bd -bg
+	-borderwidth -cursor -disabledforeground -fg -font -foreground
+	-relief -selectcolor -takefocus
+    } {
+	{-activeborderwidth {checkPixels}}
+	{-postcommand {checkCommand}}
+	{-tearoff {checkBoolean}}
+	{-tearoffcommand {checkBoolean}}
+	{-title {checkWord}}
+	{-type {checkKeyword 1 {menubar tearoff normal}}}
+}   }   }
+}
+pcx::check 4.2 std tk_chooseColor	{checkSwitches 0 {
+    {-initialcolor checkColor}
+    {-parent checkWinName}
+    {-title checkWord}
+} {}}
+pcx::check 4.2 std tk_getOpenFile		{checkSwitches 0 {
+    {-defaultextension checkWord}
+    {-filetypes     {checkListValues 1 -1 {
+	{checkListValues 2 3 {
+	    checkWord
+	    {checkListValues 1 -1 checkWord}}}}
+	}
+    }
+    {-initialdir checkFileName}
+    {-initialfile checkFileName}
+    {-parent checkWinName}
+    {-title checkWord}
+} {}
+}
+pcx::check 4.2 std tk_getSaveFile		{checkSwitches 0 {
+    {-defaultextension checkWord}
+    {-filetypes {checkListValues 1 -1 {
+	{checkListValues 2 3 {
+	    checkWord
+	    {checkListValues 1 -1 checkWord}}}}
+	}
+    }
+    {-initialdir checkFileName}
+    {-initialfile checkFileName}
+    {-parent checkWinName}
+    {-title checkWord}
+} {}
+}
+pcx::check 4.2 std tk_messageBox	coreTk::checkMessageBox
+
+## ### #### ##### ######
+
+pcx::check 8.0 std button		{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-activebackground -activeforeground -anchor -background -bd -bg
+	-bitmap -borderwidth -command -cursor -default
+	-disabledforeground -fg -font -foreground -height
+	-highlightbackground -highlightcolor -highlightthickness -image
+	-justify -padx -pady -relief -takefocus -text -textvariable
+	-underline -variable -width -wraplength
+    } {
+	{-state {checkKeyword 1 {normal active disabled}}}}}
+    }
+}
+pcx::check 8.0 std font		{checkOption {
+    {actual	{checkSimpleArgs 1 -1 {checkWord {checkOption {
+	{-displayof {checkSimpleArgs 1 2 {checkWinName {
+	    checkKeyword 1 {-family -size -weight -slant \
+		    -underline -overstrike}}}}}
+	} {checkSimpleArgs 0 1 {{checkKeyword 1 {
+	    -family -size -weight -slant -underline -overstrike}}}}}}
+	}
+    }
+    {configure	{checkSimpleArgs 1 -1 {checkWord {checkConfigure 1 {
+	{-family checkWord}
+	{-size checkInt}
+	{-weight {checkKeyword 1 {normal bold}}}
+	{-slant {checkKeyword 1 {roman italic}}}
+	{-underline checkBoolean}
+	{-overstrike checkBoolean}}}}}
+    }
+    {create	coreTk::checkFontCreateCmd}
+    {delete	{checkSimpleArgs 1 -1 checkWord}}
+    {families	{checkSimpleArgs 0 2 {{checkConfigure 0 {
+	{-displayof checkWinName}}}}}
+    }
+    {measure	{checkSimpleArgs 2 4 {
+	checkWord
+	{checkOption {
+	    {-displayof {checkSimpleArgs 2 2 {
+		checkWinName checkWord}}
+	    }
+	} {checkSimpleArgs 1 1 checkWord}}}}
+    }
+    {metrics	{checkSimpleArgs 1 -1 {
+	checkWord
+	{checkOption {
+	    {-displayof {checkSimpleArgs 1 2 {
+		checkWinName
+		{checkKeyword 1 {-ascent -descent -linespace -fixed}}}}
+	    }
+	} {checkSimpleArgs 1 1 {
+	    {checkKeyword 1 {-ascent -descent -linespace -fixed}}}}}}
+	}
+    }
+    {names	{checkSimpleArgs 0  0 {}}}
+} {}}
+pcx::check 8.0 std frame	{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-background -bd -bg -borderwidth -class -colormap -container
+	-cursor -height -highlightbackground -highlightcolor
+	-highlightthickness -relief -takefocus -visual -width
+    } {
+	{-geometry {
+	    coreTk::WarnUnsupportedGeometry
+	}}
+    }}}}
+    pcx::check 8.0 std tk		{checkOption {
+	{appname	{checkSimpleArgs 0 1 checkWord}}
+	{scaling	{checkSimpleArgs 0 3 {{checkSwitches 0 {
+	    {-displayof checkWinName}} {checkSimpleArgs 0 1 checkFloat}}
+}   }   }
+} {}}
+pcx::check 8.0 std tkerror		{WarnObsoleteCmd -1 {} bgerror {} {
+    checkSimpleArgs 1  1 {checkWord}}
+}
+
+## ### #### ##### ######
+
+## Nothing for 8.1
+## Nothing for 8.2
+
+## ### #### ##### ######
+
+pcx::check 8.3 std entry	{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-background -bd -bg -bitmap -borderwidth -cursor
+	-exportselection -fg -font -foreground -highlightbackground
+	-highlightcolor -highlightthickness -insertbackground
+	-insertborderwidth -insertofftime -insertontime -insertwidth
+	-justify -relief -selectbackground -selectborderwidth
+	-selectforeground -show -takefocus -textvariable -width
+	-xscrollcommand
+    } {
+	{-invalidcommand checkBody}
+	{-invcmd checkBody}
+	{-scrollcommand {
+	    WarnUnsupported -1 {} "-xscrollcommand" {} {checkWord}
+	}}
+	{-state {checkKeyword 1 {normal disabled}}}
+	{-validatecommand checkBody}
+	{-vcmd checkBody}
+	{-validate {checkKeyword 1 \
+		{none focus focusin focusout key all}}}
+}   }   }   }
+
+# Bug 45704. Added the missing handling of the -delta option.
+pcx::check 8.3 std event		{checkOption {
+    {add	{checkSimpleArgs 2 -1 {coreTk::checkVirtual
+    {coreTk::checkSequence 1}}}}
+    {delete	{checkSimpleArgs 1 -1 {coreTk::checkVirtual
+    {coreTk::checkSequence 1}}}}
+    {generate	{checkSimpleArgs 2 -1 {
+	checkWinName
+	coreTk::checkEvent
+	{checkWidgetOptions 0 {-borderwidth -height -width} {
+	    {-above  checkWinName}
+	    {-button checkWholeNum}
+	    {-delta  checkWholeNum}
+	    {-count checkInt}
+	    {-detail {checkKeyword 1 {\
+		    NotifyAncestor NotifyNonlinearVirtual \
+		    NotifyDetailNone NotifyPointer \
+		    NotifyInferior NotifyPointerRoot \
+		    NotifyNonlinear NotifyVirtual}}}
+	    {-focus checkBoolean}
+	    {-keycode checkInt}
+	    {-keysym coreTk::checkKeysym}
+	    {-mode {checkKeyword 1 {NotifyNormal NotifyGrab NotifyUngrab NotifyWhileGrabbed}}}
+	    {-override checkBoolean}
+	    {-place {checkKeyword 1 {PlaceOnTop PlaceOnBottom}}}
+	    {-root coreTk::checkRoot}
+	    {-rootx checkPixels}
+	    {-rooty checkPixels}
+	    {-sendevent checkBoolean}
+	    {-serial checkInt}
+	    {-state coreTk::checkState}
+	    {-subwindow  checkWinName}
+	    {-time checkInt}
+	    {-warp checkBoolean}
+	    {-when {checkKeyword 1 {now tail head mark}}}
+	    {-x checkPixels}
+	    {-y checkPixels}}}}}}
+    {info	{checkSimpleArgs 0 1 coreTk::checkVirtual}}
+} {}}
+
+pcx::check 8.3 std label	{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-anchor -background -bd -bg -bitmap -borderwidth -cursor -fg
+	-font -foreground -height -highlightbackground -highlightcolor
+	-highlightthickness -image -justify -padx -pady -relief
+	-takefocus -text -textvariable -underline -width -wraplength
+	-disabledforeground -activeforeground -activebackground
+    } {
+	{-state {checkKeyword 1 {normal active disabled}}}}}
+    }
+}
+pcx::check 8.3 std listbox	{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-background -bd -bg -borderwidth -cursor -exportselection -fg
+	-font -foreground -height -highlightbackground -highlightcolor
+	-highlightthickness -relief -selectbackground
+	-selectborderwidth -selectforeground -selectmode -setgrid
+	-takefocus -width -xscrollcommand -yscrollcommand
+    } {
+	{-geometry {
+	    coreTk::WarnUnsupportedGeometry
+	}}
+	{-listvariable {checkVarNameWrite}}
+    }}
+}}
+pcx::check 8.3 std tk_chooseDirectory	{checkSwitches 1 {
+    {-initialdir checkFileName} {-parent checkWinName}
+    {-title checkWord} {-mustexist checkBoolean}
+} {}}
+pcx::check 8.3 std tk		{checkOption {
+    {appname	{checkSimpleArgs 0 1 checkWord}}
+    {useinputmethods {checkSimpleArgs 0 1 checkBoolean}}
+    {scaling	{checkSimpleArgs 0 3 {{checkSwitches 0 {
+	{-displayof checkWinName}} {checkSimpleArgs 0 1 checkFloat}}
+}   }   }
+} {}}
+pcx::check 8.3 std console {
+    checkOption {
+	{title {checkSimpleArgs 0 1 {checkWinName}}}
+	{hide  {checkSimpleArgs 0 0 {}}}
+	{show  {checkSimpleArgs 0 0 {}}}
+	{eval  {checkSimpleArgs 1 1 {checkBody}}}
+    } {}
+}
+pcx::check 8.3 std consoleinterp {
+    checkOption {
+	{eval   {checkSimpleArgs 1 1 checkBody}}
+	{record {checkSimpleArgs 1 1 checkBody}}
+    } {}
+}
+pcx::check 8.3 std tkConsoleOutput {
+    ::analyzer::warn Tk::warnConsoleCmd {} {
+	checkSimpleArgs 2 2 {checkChannelID checkWord}
+    }
+}
+pcx::check 8.3 std tkConsoleExit {
+    ::analyzer::warn Tk::warnConsoleCmd {} {
+	checkSimpleArgs 0 0 {}
+    }
+}
+
+pcx::check 8.3 std wm "checkOption {
+    {state		        {checkSimpleArgs 1 2 {
+	checkWinName {
+	    checkKeyword 1 {normal iconic withdrawn icon zoomed}}}}
+        }
+	{iconbitmap	{::analyzer::warn nonPortOption {} {checkSimpleArgs 1 3 {
+	    checkWinName {checkSwitches 1 {-default} coreTk::checkBitmap}}}}
+	}
+	$::coreTk::wmOptions
+	{colormapwindows	{checkSimpleArgs 1 2 {
+	    checkWinName
+	    {checkListValues 0 -1 {checkWinName}}}}
+	}
+	{resizable		{checkNumArgs {
+	    {1	checkWinName}
+	    {3	{checkSimpleArgs 3 3 {
+		checkWinName checkBoolean}}}}
+	    }
+	}
+    } {}" ; # {}
+
+## ### #### ##### ######
+
+    pcx::check 8.4 std bell		{
+	checkSimpleArgs 0 3 {
+	    {
+		checkSwitches 0 {
+		    {-displayof checkWinName}
+		    -nice
+		} {}
+	    }
+	}
+    }
+    pcx::check 8.4 std button		{
+	checkSimpleArgs 1 -1 {
+	    checkWinName
+	    {
+		checkWidgetOptions 0 {
+		    -activebackground -activeforeground -anchor -background -bd -bg
+		    -bitmap -borderwidth -command -cursor -default
+		    -disabledforeground -fg -font -foreground -height
+		    -highlightbackground -highlightcolor -highlightthickness -image
+		    -justify -padx -pady -relief -takefocus -text -textvariable
+		    -underline -variable -width -wraplength -state -overrelief
+		    -compound
+		} {}
+	    }
+	}
+    }
+    pcx::check 8.4 std checkbutton	{
+	checkSimpleArgs 1 -1 {
+	    checkWinName
+	    {
+		checkWidgetOptions 0 {
+		    -activebackground -activeforeground -anchor -background -bd -bg
+		    -bitmap -borderwidth -command -cursor -disabledforeground -fg
+		    -font -foreground -height -highlightbackground -highlightcolor
+		    -highlightthickness -image -indicatoron -justify -offvalue
+		    -onvalue -padx -pady -relief -selectcolor -selectimage
+		    -takefocus -text -textvariable -underline -variable -width
+		    -wraplength -state -overrelief -offrelief -compound
+		} {
+		    {-selector {
+			WarnUnsupported -1 {} "-selectcolor" {} checkColor
+		    }}
+		}
+	    }
+	}
+    }
+    pcx::check 8.4 std clipboard	{checkOption {
+	{clear	    {checkSimpleArgs 0 2 {
+	    {checkSwitches 0 {
+		{-displayof checkWinName}
+	    } {}}}}
+	}
+	{append	    {checkSwitches 0 {
+	    {-displayof checkWinName}
+	    {-format checkWord}
+	    {-type checkWord}
+	    --
+	} {checkSimpleArgs 1 1 checkWord}}
+    }
+    {get {checkSimpleArgs 0 0 {}}}
+} {}}
+pcx::check 8.4 std entry	{
+    checkSimpleArgs 1 -1 {
+	checkWinName
+	{
+	    checkWidgetOptions 0 {
+		-background -bd -bg -bitmap -borderwidth -cursor
+		-exportselection -fg -font -foreground -highlightbackground
+		-highlightcolor -highlightthickness -insertbackground
+		-insertborderwidth -insertofftime -insertontime -insertwidth
+		-justify -relief -selectbackground -selectborderwidth
+		-selectforeground -show -takefocus -textvariable -width
+		-xscrollcommand -overrelief
+		-readonlybackground -disabledbackground -disabledforeground
+	    } {
+		{-invalidcommand checkBody}
+		{-invcmd checkBody}
+		{-scrollcommand {
+		    WarnUnsupported -1 {} "-xscrollcommand" {} {checkWord}
+		}}
+		{-state {checkKeyword 1 {normal disabled readonly}}}
+		{-validatecommand checkBody}
+		{-vcmd checkBody}
+		{-validate {checkKeyword 1 \
+			{none focus focusin focusout key all}}}
+	    }
+	}
+    }
+}
+pcx::check 8.4 std frame	{
+    checkSimpleArgs 1 -1 {
+	checkWinName
+	{
+	    checkWidgetOptions 0 {
+		-background -bd -bg -borderwidth -class -colormap -container
+		-cursor -height -highlightbackground -highlightcolor -padx
+		-highlightthickness -relief -takefocus -visual -width -pady
+	    } {
+		{-geometry {
+		    coreTk::WarnUnsupportedGeometry
+		}}
+	    }
+	}
+    }
+}
+pcx::check 8.4 std grid {
+    checkOption {
+	{
+	    bbox {checkNumArgs {
+		{1 checkWinName}
+		{3 {checkSimpleArgs 3 3 {checkWinName checkInt}}}
+		{5 {checkSimpleArgs 5 5 {checkWinName checkInt}}}}
+	    }
+	} {
+	    columnconfigure	{checkSimpleArgs 2 -1 {
+		checkWinName
+		{checkListValues 1 -1 checkInt}
+		{checkConfigure 1 {
+		    {-uniform checkWord}
+		    {-minsize checkPixels}
+		    {-weight  checkInt}
+		    {-pad     checkInt}}}
+		}
+	    }
+	} {
+	    configure coreTk::checkGridOptions
+	} {
+	    forget {checkSimpleArgs 1 -1 checkWinName}
+	} {
+	    info {checkSimpleArgs 1 1 checkWinName}
+	} {
+	    location {checkSimpleArgs 3 3 {
+		checkWinName checkInt checkInt}
+	    }
+	} {
+	    propagate {checkSimpleArgs 1 2 {
+		checkWinName checkBoolean}
+	    }
+	} {
+	    rowconfigure {checkSimpleArgs 2 -1 {
+		checkWinName
+		{checkListValues 1 -1 checkInt}
+		{checkConfigure 1 {
+		    {-uniform checkWord}
+		    {-minsize checkPixels}
+		    {-weight  checkInt}
+		    {-pad     checkInt}}}
+		}
+	    }
+	} {
+	    remove {checkSimpleArgs 1 -1 checkWinName}
+	} {
+	    size {checkSimpleArgs 1 1 checkWinName}
+	} {
+	    slaves {checkSimpleArgs 1 5 {
+		checkWinName
+		{checkSwitches 0 {{-row checkInt} {-column checkInt}} {}}}
+	    }
+	}
+    } {coreTk::checkGridOptions}
+}
+pcx::check 8.4 std image		{checkOption {
+    {create {checkOption {
+	{bitmap {coreTk::checkNameAndPairs {
+	    {-background checkColor}
+	    {-data checkWord}
+	    {-file checkFileName}
+	    {-foreground checkColor}
+	    {-maskdata checkWord}
+	    {-maskfile checkFileName}}}
+	}
+	{photo {coreTk::checkNameAndPairs {
+	    {-data checkWord}
+	    {-file checkFileName}
+	    {-format checkWord}
+	    {-gamma checkFloat}
+	    {-height checkInt}
+	    {-palette coreTk::checkPalette}
+	    {-width checkInt}}}
+	}
+    } {checkSimpleArgs 1 -1 checkWord}}
+}
+{delete {checkSimpleArgs 0 -1 checkWord}}
+{inuse  {checkSimpleArgs 1 1 checkWord}}
+{height {checkSimpleArgs 1 1 checkWord}}
+{names {checkSimpleArgs 0 0 {}}}
+{type  {checkSimpleArgs 1 1 checkWord}}
+{types {checkSimpleArgs 0 0 {}}}
+{width {checkSimpleArgs 1 1 checkWord}}
+} {}}
+pcx::check 8.4 std labelframe {
+    checkSimpleArgs 1 -1 {
+	checkWinName
+	{
+	    checkWidgetOptions 0 {
+		-borderwidth   -highlightbackground   -pady
+		-cursor        -highlightcolor        -relief
+		-font  -highlightthickness    -takefocus
+		-foreground    -padx  -text
+	    } {
+		{-background checkColor}
+		{-class checkWord} {
+		    -colormap
+		    {
+			checkOption {
+			    {new {checkSimpleArgs 0 0 {}}}
+			} checkWinName
+		    }
+		}
+		{-container checkBoolean}
+		{-height checkPixels}
+		{-labelanchor {checkKeyword 0 {nw n ne en e es se ssw ws w wn}}}
+		{-labelwidget checkWinName}
+		{-visual coreTk::checkVisual}
+		{-width checkPixels}
+	    }
+	}
+    }
+}
+pcx::check 8.4 std label	{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-anchor -background -bd -bg -bitmap -borderwidth -cursor -fg
+	-font -foreground -height -highlightbackground -highlightcolor
+	-highlightthickness -image -justify -padx -pady -relief
+	-takefocus -text -textvariable -underline -width -wraplength
+	-disabledforeground -activeforeground -activebackground
+	-compound
+    } {
+	{-state {checkKeyword 1 {normal active disabled}}}}}
+    }
+}
+pcx::check 8.4 std listbox	{
+	checkSimpleArgs 1 -1 {
+	    checkWinName
+	    {
+		checkWidgetOptions 0 {
+		    -background -bd -bg -borderwidth -cursor -exportselection -fg
+		    -font -foreground -height -highlightbackground -highlightcolor
+		    -highlightthickness -relief -selectbackground -state
+		    -selectborderwidth -selectforeground -selectmode -setgrid
+		    -takefocus -width -xscrollcommand -yscrollcommand
+		    -disabledforeground
+		} {
+		    {-geometry {
+			coreTk::WarnUnsupportedGeometry
+		    }}
+		    {-listvariable {checkVarNameWrite}}
+		    {-activestyle {checkKeyword 0 {dotbox none underline}}}
+		}
+	    }
+	}
+    }
+pcx::check 8.4 std menu		{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-activebackground -activeforeground -background  -bd -bg
+	-borderwidth -cursor -disabledforeground -fg -font -foreground
+	-relief -selectcolor -takefocus -compound
+    } {
+	{-activeborderwidth {checkPixels}}
+	{-postcommand {checkCommand}}
+	{-tearoff {checkBoolean}}
+	{-tearoffcommand {checkBoolean}}
+	{-title {checkWord}}
+	{-type {checkKeyword 1 {menubar tearoff normal}}}
+}   }   }
+}
+pcx::check 8.4 std menubutton	{
+	checkSimpleArgs 1 -1 {
+	    checkWinName
+	    {
+		checkWidgetOptions 0 {
+		    -activebackground -activeforeground -anchor
+		    -background -bd -bg -bitmap -borderwidth
+		    -cursor -disabledforeground -fg -font
+		    -foreground -height -highlightbackground
+		    -highlightcolor -highlightthickness -image
+		    -justify -padx -pady -relief -takefocus -text
+		    -textvariable -underline -width -wraplength
+		    -state -compound
+		} {
+		    {-direction {checkKeyword 1 {above below left right flush}}}
+		    {-indicatoron {checkBoolean}}
+		    {-menu {checkWinName}}
+		}
+	    }
+	}
+    }
+# pack append parent window ... window ...
+# => pack configure window ... -before|-after sibling-in-parent
+# No easy translation for auto-correction, don't try yet.
+pcx::check 8.4 std pack		{checkOption {
+	{append	{::analyzer::warn warnDeprecated \
+		"-before or -after configure option" \
+		{checkSimpleArgs 1 -1 {checkWord}}}}
+	{configure 	{coreTk::checkWinThenOptions {
+	    {-after 	{checkWinName}}
+	    {-anchor 	{checkKeyword 0 {n ne e se s sw w nw center}}}
+	    {-before 	{checkWinName}}
+	    {-expand 	{checkBoolean}}
+	    {-fill 	{checkKeyword 0 {none x y both}}}
+	    {-in 	{checkWinName}}
+	    {-ipadx 	{checkPixels}}
+	    {-ipady 	{checkPixels}}
+	    {-padx 	{checkListValues 1 2 {checkPixels}}}
+	    {-pady 	{checkListValues 1 2 {checkPixels}}}
+	    {-side 	{checkKeyword 0 {left right top bottom}}}
+    }   }
+}
+{forget 	{checkSimpleArgs 1 -1 {checkWinName}}}
+{info 	{checkSimpleArgs 1  1 {checkWinName}}}
+{newinfo 	{
+    WarnUnsupported -1 {} "info" {} {checkSimpleArgs 1  1 {checkWinName}}
+}}
+{propagate 	{checkSimpleArgs 1  2 {checkWinName
+    checkBoolean}}}
+    {slaves 	{checkSimpleArgs 1  1 {checkWinName}}}
+} {coreTk::checkWinThenOptions {
+    {-after 	{checkWinName}}
+    {-anchor 	{checkKeyword 0 {n ne e se s sw w nw center}}}
+    {-before 	{checkWinName}}
+    {-expand 	{checkBoolean}}
+    {-fill 	{checkKeyword 0 {none x y both}}}
+    {-in 	{checkWinName}}
+    {-ipadx 	{checkPixels}}
+    {-ipady 	{checkPixels}}
+    {-padx 	{checkListValues 1 2 {checkPixels}}}
+    {-pady 	{checkListValues 1 2 {checkPixels}}}
+    {-side 	{checkKeyword 0 {left right top bottom}}}
+}   }   }
+pcx::check 8.4 std radiobutton	{
+    checkSimpleArgs 1 -1 {
+	checkWinName
+	{
+	    checkWidgetOptions 0 {
+		-activebackground -activeforeground -anchor -background -bd -bg
+		-bitmap -borderwidth -command -cursor -disabledforeground -fg
+		-font -foreground -height -highlightbackground -highlightcolor
+		-highlightthickness -image -indicatoron -justify -padx -pady
+		-relief -selectcolor -selectimage -takefocus -text -state
+		-textvariable -underline -value -variable -width -wraplength
+		-overrelief -offrelief -compound
+	    } {
+		{-selector {
+		    WarnUnsupported -1 {} "-selectcolor" {} checkColor
+		}}
+	    }
+	}
+    }
+}
+pcx::check 8.4 std spinbox {
+    checkSimpleArgs 1 -1 {
+	checkWinName
+	{
+	    checkWidgetOptions 0 {
+		-activebackground     -highlightthickness  -repeatinterval
+		-background           -insertbackground    -selectbackground
+		-borderwidth          -insertborderwidth   -selectborderwidth
+		-cursor               -insertontime        -selectforeground
+		-exportselection      -insertwidth         -takefocus
+		-font                 -insertofftime       -textvariable
+		-foreground           -justify             -xscrollcommand
+		-highlightbackground  -relief              -bd -bg -fg
+		-highlightcolor       -repeatdelay
+		-readonlybackground -disabledbackground -disabledforeground
+	    } {
+		{-buttonbackground checkColor}
+		{-buttoncursor checkCursor}
+		{-buttondownrelief checkRelief}
+		{-buttonuprelief checkRelief}
+		{-command checkWord}
+		{-format checkWord}
+		{-from checkFloat}
+		{-invalidcommand checkWord}
+		{-invcmd checkWord}
+		{-increment checkFloat}
+		{-state {checkKeyword 0 {normal disabled readonly}}}
+		{-to checkFloat}
+		{-validate {checkKeyword 0 {none focus focusin focusout key all}}}
+		{-validatecommand checkWord}
+		{-vcmd checkWord}
+		{-values checkList}
+		{-width checkInt}
+		{-wrap checkBoolean}
+	    }
+	}
+    }
+}
+pcx::check 8.4 std panedwindow {
+    checkSimpleArgs 1 -1 {
+	checkWinName
+	{
+	    checkWidgetOptions 0 {
+		-background    -height        -width
+		-borderwidth   -orient        -bg -bd
+		-cursor        -relief
+	    } {
+		{-handlepad checkPixels}
+		{-handlesize checkPixels}
+		{-opaqueresize checkBoolean}
+		{-sashcursor checkCursor}
+		{-sashpad checkPixels}
+		{-sashrelief checkRelief}
+		{-sashwidth checkPixels}
+		{-showhandle checkBoolean}
+	    }
+	}
+    }
+}
+pcx::check 8.4 std text {
+    checkSimpleArgs 1 -1 {
+	checkWinName
+	{
+	    checkWidgetOptions 0 {
+		-background -bd -bg -borderwidth -cursor -exportselection -fg
+		-font -foreground -height -highlightbackground -highlightcolor
+		-highlightthickness -insertbackground -insertborderwidth
+		-insertofftime -insertontime -insertwidth -padx -pady -relief
+		-selectbackground -selectborderwidth -selectforeground -setgrid
+		-spacing1 -spacing2 -spacing3 -tabs -takefocus -width -wrap
+		-xscrollcommand -yscrollcommand
+	    } {
+		{
+		    -state
+		    {checkKeyword 1 {normal disabled}}
+		} {
+		    -autoseparators
+		    checkBoolean
+		} {
+		    -undo
+		    checkBoolean
+		} {
+		    -maxundo checkInt
+		}
+	    }
+	}
+    }
+}
+pcx::check 8.4 std tk		{checkOption {
+    {appname	{checkSimpleArgs 0 1 checkWord}}
+    {caret {checkSimpleArgs 1 -1 {checkWinName {checkConfigure 1 {
+	{-x      {checkInt}}
+	{-y      {checkInt}}
+	{-height {checkInt}}
+    }}}}}
+    {useinputmethods {checkSimpleArgs 0 1 checkBoolean}}
+    {scaling	{checkSimpleArgs 0 3 {{checkSwitches 0 {
+	{-displayof checkWinName}
+    } {checkSimpleArgs 0 1 checkFloat}}}}}
+    {windowingsystem {checkSimpleArgs 0 0 checkWord}}
+} {}}
+pcx::check 8.4 std tk_getOpenFile {
+    ::analyzer::warn warnBehaviourCmd \
+	    "different in whether the returned filename includes the extension" \
+	    {
+	checkSwitchesArg 0 {
+	    {-defaultextension.arg checkWord}
+	    {-filetypes.arg     {checkListValues 1 -1 {
+		{checkListValues 2 3 {
+		    checkWord
+		    {checkListValues 1 -1 checkWord}}}}
+		}
+	    }
+	    {-initialdir.arg checkFileName}
+	    {-initialfile.arg checkFileName}
+	    {-parent.arg checkWinName}
+	    {-title.arg checkWord}
+	    {
+		-multiple
+		{::analyzer::warn nonPortOption {} {checkSimpleArgs 1 1 {checkBoolean}}}
+	    }
+	    {
+		-message.arg
+		{::analyzer::warn nonPortOption {} checkWord}
+	    }
+	} {}
+    }
+}
+pcx::check 8.4 std tk_getSaveFile {
+    ::analyzer::warn warnBehaviourCmd \
+	    "different in whether the returned filename includes the extension" \
+	    {
+	checkSwitchesArg 0 {
+	    {-defaultextension.arg checkWord}
+	    {-filetypes.arg {checkListValues 1 -1 {
+		{checkListValues 2 3 {
+		    checkWord
+		    {checkListValues 1 -1 checkWord}}}}
+		}
+	    }
+	    {-initialdir.arg checkFileName}
+	    {-initialfile.arg checkFileName}
+	    {-parent.arg checkWinName}
+	    {-title.arg checkWord}
+	    {
+		-multiple
+		{::analyzer::warn nonPortOption {} {checkSimpleArgs 0 0 {}}}
+	    }
+	    {
+		-message.arg
+		{::analyzer::warn nonPortOption {} checkWord}
+	    }
+	} {}
+    }
+}
+pcx::check 8.4 std tkConsoleOutput {
+    InvalidUsage {tk::ConsoleOutput} {
+	checkSimpleArgs 2 2 {checkChannelID checkWord}
+    }
+}
+pcx::check 8.4 std tkConsoleExit {
+    InvalidUsage {tk::ConsoleExit} {
+	checkSimpleArgs 0 0 {}
+    }
+}
+pcx::check 8.4 std tk::ConsoleOutput {
+    ::analyzer::warn Tk::warnConsoleCmd {} {
+	checkSimpleArgs 2 2 {checkChannelID checkWord}
+    }
+}
+pcx::check 8.4 std tk::ConsoleExit {
+    ::analyzer::warn Tk::warnConsoleCmd {} {
+	checkSimpleArgs 0 0 {}
+    }
+}
+pcx::check 8.4 std wm "checkOption {
+    {
+	attributes
+	{
+	    ::analyzer::warn nonPortOption {} {
+		checkSimpleArgs 1 -1 {
+		    checkWinName
+		    {
+			checkConfigure 1 {
+			    {-disabled    {checkBoolean}}
+			    {-toolwindow  {checkBoolean}}
+			    {-topmost     {checkBoolean}}
+			    {-minimizebox {checkBoolean}}
+			    {-maximizebox {checkBoolean}}
+			    {-sysmenu     {checkBoolean}}
+			    {-style       {{checkKeyword 0 {alert moveablealert modal moveablemodal floating document}}}}
+			}
+		    }
+		}
+	    }
+	}
+    } {
+	stackorder
+	{
+	    checkNumArgs {
+		{1 checkWinName}
+		{
+		    3
+		    {
+			checkSimpleArgs 3 3 {
+			    checkWinName
+			    {checkKeyword 0 {isabove isbelow}}
+			    checkWinName
+			}
+		    }
+		}
+	    }
+	}
+    } {state		        {checkSimpleArgs 1 2 {
+	checkWinName {
+	    checkKeyword 1 {normal iconic withdrawn icon zoomed}}}}
+        }
+	{iconbitmap	{::analyzer::warn nonPortOption {} {checkSimpleArgs 1 3 {
+	    checkWinName {checkSwitches 1 {-default} coreTk::checkBitmap}}}}
+	}
+        {iconphoto {checkSimpleArgs 1 -1 {checkWord}}}
+	$::coreTk::wmOptions
+	{colormapwindows	{checkSimpleArgs 1 2 {
+	    checkWinName
+	    {checkListValues 0 -1 {checkWinName}}}}
+	}
+	{resizable		{checkNumArgs {
+	    {1	checkWinName}
+	    {3	{checkSimpleArgs 3 3 {
+		checkWinName checkBoolean}}}}
+	    }
+	}
+    } {}" ; # {}
+
+## ### #### ##### ######
+
+
+pcx::check 8.5 std ttk::button	{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-class -cursor -image -style -takefocus -text
+	-textvariable -underline -width -command
+    } {
+	{-state coreTk::TtkStateOption}
+	{-default {checkKeyword 1 {normal active disabled}}}
+	{-compound {checkKeyword 1 {none center bottom top left right text image}}}
+	{-padding coreTk::TtkPadding}
+    }}
+}}
+
+pcx::check 8.5 std ttk::checkbutton	{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-class -cursor -image -style -takefocus -text
+	-textvariable -underline -width -command -variable
+	-offvalue -onvalue
+    } {
+	{-state coreTk::TtkStateOption}
+	{-compound {checkKeyword 1 {none center bottom top left right text image}}}
+	{-padding coreTk::TtkPadding}
+    }}
+}}
+
+pcx::check 8.5 std ttk::radiobutton	{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-class -cursor -image -style -takefocus -text
+	-textvariable -underline -width -command -variable
+	-value
+    } {
+	{-state coreTk::TtkStateOption}
+	{-compound {checkKeyword 1 {none center bottom top left right text image}}}
+	{-padding coreTk::TtkPadding}
+    }}
+}}
+
+pcx::check 8.5 std ttk::label	{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-class -cursor -image -style -takefocus -text
+	-textvariable -underline -width
+	-anchor -justify -background -font -foreground -padding
+	-relief -wraplength -borderwidth
+    } {
+	{-state coreTk::TtkStateOption}
+	{-compound {checkKeyword 1 {none center bottom top left right text image}}}
+    }}
+}}
+
+pcx::check 8.5 std ttk::combobox	{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-class -cursor -style -takefocus
+	-exportselection -justify -height -width
+	-textvariable -values -postcommand
+    } {
+	{-state coreTk::TtkStateOptionE}
+    }}
+}}
+
+pcx::check 8.5 std ttk::dialog	{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {} {
+	{-title   checkWord}
+	{-message checkWord}
+	{-detail  checkWord}
+	{-command checkWord}
+	{-parent  checkWinName}
+	{-type    checkWord}
+	{-icon    {checkKeyword 1 {info question warning error auth busy}}}
+	{-buttons checkList}
+	{-labels  checkDict}
+	{-default checkWord}
+	{-cancel  checkWord}
+    }}
+}}
+
+pcx::check 8.5 std ttk::dialog::clientframe	{checkSimpleArgs 1 1 {
+    checkWinName
+}}
+
+pcx::check 8.5 std ttk::dialog::define	{checkSimpleArgs 1 1 {
+    checkWord
+    {checkWidgetOptions 0 {} {
+	{-title   checkWord}
+	{-message checkWord}
+	{-detail  checkWord}
+	{-command checkWord}
+	{-parent  checkWinName}
+	{-icon    {checkKeyword 1 {info question warning error auth busy}}}
+	{-buttons checkList}
+	{-labels  checkDict}
+	{-default checkWord}
+	{-cancel  checkWord}
+    }}
+}}
+
+pcx::check 8.5 std ttk::entry	{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-class -cursor -style -takefocus -xscrollcommand -exportselection
+	-show -textvariable -width -justify -font -foreground -background
+    } {
+	{-state coreTk::TtkStateOptionE}
+	{-invalidcommand checkBody}
+	{-validate       {checkKeyword 1 {none focus focusin focusout key all}}}
+	{-validatecommand checkBody}
+    }}
+}}
+
+pcx::check 8.5 std ttk::frame	{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-class -cursor -style -takefocus
+	-borderwidth -relief -padding -width -height
+    } {}}
+}}
+
+pcx::check 8.5 std ttk::labelframe	{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-class -cursor -style -takefocus -relief
+	-text -underline -padding -width -height
+    } {
+	{-labelanchor {checkKeyword 0 {n ne e se s sw w nw center}}}
+	{-labelwidget checkWinName}
+    }}
+}}
+
+pcx::check 8.5 std ttk::menubutton	{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-class -cursor -image -style -takefocus -text
+	-textvariable -underline -width
+    } {
+	{-state coreTk::TtkStateOption}
+	{-direction {checkKeyword 0 {above below left right flush}}}
+	{-menu checkWinName}
+	{-compound {checkKeyword 1 {none center bottom top left right text image}}}
+	{-padding coreTk::TtkPadding}
+    }}
+}}
+
+pcx::check 8.5 std ttk::notebook	{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-class -cursor -style -takefocus
+	-height -width -padding
+    } {}}
+}}
+pcx::check 8.5 std ttk::notebook::enableTraversal {checkSimpleArgs 1 1 {
+    checkWinName
+}}
+pcx::check 8.5 std ttk::panedwindow	{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-class -cursor -style -takefocus
+	-orient -width -height
+    } {}}
+}}
+
+pcx::check 8.5 std ttk::progressbar	{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-class -cursor -style -takefocus
+	-orient -length -value -variable
+    } {
+	{-mode    {checkKeyword 0 {indeterminate determinate}}}
+	{-maximum checkFloat}
+	{-phase   {checkSimpleArgs 0 0 {}}}
+    }}
+}}
+
+pcx::check 8.5 std ttk::scale	{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-class -cursor -style -takefocus
+	-from -length -orient -to -value -variable
+    } {
+	{-command {checkProcCall 1}}
+    }}
+}}
+
+pcx::check 8.5 std ttk::scrollbar	{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-class -cursor -style -takefocus
+	-command -orient
+    } {}}
+}}
+
+pcx::check 8.5 std ttk::separator	{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-class -cursor -style -takefocus -orient
+    } {}}
+}}
+
+pcx::check 8.5 std ttk::sizegrip	{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-class -cursor -style -takefocus
+    } {}}
+}}
+
+pcx::check 8.5 std ttk::treeview	{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-class -cursor -style -takefocus -height
+	-xscrollcommand -yscrollcommand -padding
+    } {
+	{-columns        checkList}
+	{-displaycolumns checkList}
+	{ -selectmode    {checkKeyword 0 {extended browse none}}}
+	{-show           {checkListValues 0 -1 {
+	    {checkKeyword 0 {headings tree}}
+	}}}
+    }}
+}}
+
+pcx::check 8.5 std ttk::style	{checkSimpleArgs 1 -1 {
+    {checkOption {
+	{configure {checkSimpleArgs 1 -1 {
+	    checkWord
+	    checkWord
+	    {checkSimpleArgsModNk 0 -1 2 1 {checkWord}}
+	}}}
+	{map       {checkSimpleArgs 1 -1 {
+	    checkWord
+	    {checkNumArgs {
+		{1 {checkSimpleArgs 1 1 checkWord}}
+		{-1 {checkSimpleArgsModNk 0 -1 2 0 {
+		    {checkSequence {
+			checkWord
+			{checkListValues 2 2 {checkWord}}
+		    }}
+		}}}
+	    }}
+	}}}
+	{lookup    {checkSimpleArgs 2 4 {
+	    checkWord
+	    checkWord
+	    checkWord
+	    checkWord
+	}}}
+	{layout    {checkSimpleArgs 1 2 {
+	    checkWord
+	    checkWord
+	}}}
+	{element   {checkOption {
+	    {create  {checkSimpleArgs 2 -1 {
+		checkWord
+		{checkOption {
+		    {image {checkSimpleArgs 1 -1 {
+			{checkListValuesModNk 1 -1 2 1 {checkWord}}
+			{checkWidgetOptions 0 {
+			    -height -padding -width
+			} {
+			    {-border {checkListValues 1 4 checkPixels}}
+			    {-sticky ::coreTk::checkSticky}
+			}}
+		    }}}
+		} {checkSimpleArgs 0 -1 {checkWord}}}
+	    }}}
+	    {names   {checkSimpleArgs 0 0 {}}}
+	    {options {checkSimpleArgs 1 1 {checkWord}}}
+	} {}}}
+	{theme     {checkOption {
+	    {create   {checkSimpleArgsModNk 1 -1 2 1 {
+		checkWord
+		{checkConfigure 0 {
+		    {-parent   checkWord}
+		    {-settings checkBody}
+		}}
+	    }}}
+	    {settings {checkSimpleArgs 2 2 {checkWord checkBody}}}
+	    {names    {checkSimpleArgs 0 0 {}}}
+	    {use      {checkSimpleArgs 1 1 {checkWord}}}
+	} {}}}
+    } {}}
+}}
+# todo: layout layoutspec - do a checker for its format.
+# note: has 8.6 definition (ttk::style element create -> vsapi)
+
+
+pcx::check 8.5 std tk		{checkOption {
+    {appname	{checkSimpleArgs 0 1 checkWord}}
+    {caret {checkSimpleArgs 1 -1 {checkWinName {checkConfigure 1 {
+	{-x      {checkInt}}
+	{-y      {checkInt}}
+	{-height {checkInt}}
+    }}}}}
+    {useinputmethods {checkSimpleArgs 0 1 checkBoolean}}
+    {scaling	{checkSimpleArgs 0 3 {{checkSwitches 0 {
+	{-displayof checkWinName}
+    } {checkSimpleArgs 0 1 checkFloat}}}}}
+
+    {inactive {checkSimpleArgs 0 3 {{checkSwitches 0 {
+	{-displayof checkWinName}
+    } {
+	checkSimpleArgs 0 1 {
+	    {checkOption {
+		{reset checkNOP}
+	    } {}}
+	}
+    }}}}}
+
+    {windowingsystem {checkSimpleArgs 0 0 checkWord}}
+} {}}
+
+pcx::check 8.5 std event		{checkOption {
+    {add	{checkSimpleArgs 2 -1 {coreTk::checkVirtual
+    {coreTk::checkSequence 1}}}}
+    {delete	{checkSimpleArgs 1 -1 {coreTk::checkVirtual
+    {coreTk::checkSequence 1}}}}
+    {generate	{checkSimpleArgs 2 -1 {
+	checkWinName
+	coreTk::checkEvent
+	{checkWidgetOptions 0 {-borderwidth -height -width} {
+	    {-above  checkWinName}
+	    {-button checkWholeNum}
+	    {-delta  checkWholeNum}
+	    {-count checkInt}
+	    {-data  checkWord}
+	    {-detail {checkKeyword 1 {\
+		    NotifyAncestor NotifyNonlinearVirtual \
+		    NotifyDetailNone NotifyPointer \
+		    NotifyInferior NotifyPointerRoot \
+		    NotifyNonlinear NotifyVirtual}}}
+	    {-focus checkBoolean}
+	    {-keycode checkInt}
+	    {-keysym coreTk::checkKeysym}
+	    {-mode {checkKeyword 1 {NotifyNormal NotifyGrab NotifyUngrab NotifyWhileGrabbed}}}
+	    {-override checkBoolean}
+	    {-place {checkKeyword 1 {PlaceOnTop PlaceOnBottom}}}
+	    {-root coreTk::checkRoot}
+	    {-rootx checkPixels}
+	    {-rooty checkPixels}
+	    {-sendevent checkBoolean}
+	    {-serial checkInt}
+	    {-state coreTk::checkState}
+	    {-subwindow  checkWinName}
+	    {-time checkInt}
+	    {-warp checkBoolean}
+	    {-when {checkKeyword 1 {now tail head mark}}}
+	    {-x checkPixels}
+	    {-y checkPixels}}}}}}
+    {info	{checkSimpleArgs 0 1 coreTk::checkVirtual}}
+} {}}
+
+pcx::check 8.5 std wm "checkOption {
+    {
+	attributes
+	{
+		checkSimpleArgs 1 -1 {
+		    checkWinName
+		    {
+			checkConfigure 1 {
+                            {-alpha       {::analyzer::warn nonPortOption {} {coreTk::checkAlpha}}}
+                            {-fullscreen  {checkBoolean}}
+			    {-disabled    {::analyzer::warn nonPortOption {} {checkBoolean}}}
+			    {-toolwindow  {::analyzer::warn nonPortOption {} {checkBoolean}}}
+			    {-topmost     {checkBoolean}}
+			    {-minimizebox {::analyzer::warn nonPortOption {} {checkBoolean}}}
+			    {-maximizebox {::analyzer::warn nonPortOption {} {checkBoolean}}}
+			    {-sysmenu     {::analyzer::warn nonPortOption {} {checkBoolean}}}
+			    {-style       {::analyzer::warn nonPortOption {} {checkKeyword 0 {alert moveablealert modal moveablemodal floating document}}}}
+			    {-zoomed      {::analyzer::warn nonPortOption {} {checkBoolean}}}
+			}
+		    }
+		}
+	}
+    } {
+	stackorder
+	{
+	    checkNumArgs {
+		{1 checkWinName}
+		{
+		    3
+		    {
+			checkSimpleArgs 3 3 {
+			    checkWinName
+			    {checkKeyword 0 {isabove isbelow}}
+			    checkWinName
+			}
+		    }
+		}
+	    }
+	}
+    } {
+        state		        {checkSimpleArgs 1 2 {
+	checkWinName {
+	    checkKeyword 1 {normal iconic withdrawn icon zoomed}}}}
+    }
+	{iconbitmap	{::analyzer::warn nonPortOption {} {checkSimpleArgs 1 3 {
+	    checkWinName {checkSwitches 1 {-default} coreTk::checkBitmap}}}}
+	}
+        {iconphoto {checkSimpleArgs 1 -1 {checkWord}}}
+	$::coreTk::wmOptions
+	{colormapwindows	{checkSimpleArgs 1 2 {
+	    checkWinName
+	    {checkListValues 0 -1 {checkWinName}}}}
+	}
+	{resizable		{checkNumArgs {
+	    {1	checkWinName}
+	    {3	{checkSimpleArgs 3 3 {
+		checkWinName checkBoolean}}}}
+	    }
+	}
+} {}" ; # {}
+
+pcx::check 8.5 std tk_messageBox coreTk::checkMessageBox85
+
+pcx::check 8.5 std text {
+    checkSimpleArgs 1 -1 {
+	checkWinName
+	{
+	    checkWidgetOptions 0 {
+		-background -bd -bg -borderwidth -cursor -exportselection -fg
+		-font -foreground -height -highlightbackground -highlightcolor
+		-highlightthickness -insertbackground -insertborderwidth
+		-insertofftime -insertontime -insertwidth -padx -pady -relief
+		-selectbackground -selectborderwidth -selectforeground -setgrid
+		-spacing1 -spacing2 -spacing3 -tabs -takefocus -width -wrap
+		-xscrollcommand -yscrollcommand
+	    } {
+		{
+		    -state
+		    {checkKeyword 1 {normal disabled}}
+		} {
+		    -autoseparators
+		    checkBoolean
+		} {
+		    -undo
+		    checkBoolean
+		} {
+		    -maxundo checkInt
+		} {
+		    -tabstyle
+		    {checkKeyword 1 {wordprocessor tabular}}
+		} {
+		    -blockcursor
+		    checkBoolean
+		}
+	    }
+	}
+    }
+}
+
+pcx::check 8.5 std checkbutton	{
+    checkSimpleArgs 1 -1 {
+	checkWinName
+	{
+	    checkWidgetOptions 0 {
+		-activebackground -activeforeground -anchor -background -bd -bg
+		-bitmap -borderwidth -command -cursor -disabledforeground -fg
+		-font -foreground -height -highlightbackground -highlightcolor
+		-highlightthickness -image -indicatoron -justify -offvalue
+		-onvalue -padx -pady -relief -selectcolor -selectimage
+		-takefocus -text -textvariable -underline -variable -width
+		-wraplength -state -overrelief -offrelief -compound
+		-tristatevalue -tristateimage
+	    } {
+		{-selector {
+		    WarnUnsupported -1 {} "-selectcolor" {} checkColor
+		}}
+	    }
+	}
+    }
+}
+
+pcx::check 8.5 std radiobutton	{
+    checkSimpleArgs 1 -1 {
+	checkWinName
+	{
+	    checkWidgetOptions 0 {
+		-activebackground -activeforeground -anchor -background -bd -bg
+		-bitmap -borderwidth -command -cursor -disabledforeground -fg
+		-font -foreground -height -highlightbackground -highlightcolor
+		-highlightthickness -image -indicatoron -justify -padx -pady
+		-relief -selectcolor -selectimage -takefocus -text -state
+		-textvariable -underline -value -variable -width -wraplength
+		-overrelief -offrelief -compound
+		-tristatevalue -tristateimage
+	    } {
+		{-selector {
+		    WarnUnsupported -1 {} "-selectcolor" {} checkColor
+		}}
+	    }
+	}
+    }
+}
+
+pcx::check 8.5 std font		{checkOption {
+    {actual	{
+	checkSimpleArgs 1 -1 {
+	    checkWord
+	    {checkOption {
+		{-displayof {checkSimpleArgs 1 3 {
+		    checkWinName
+		    {checkOption {
+			{-family checkNOP}
+			{-size checkNOP}
+			{-weight checkNOP}
+			{-slant checkNOP}
+			{-underline checkNOP}
+			{-overstrike checkNOP}
+			{-- checkNOP}
+		    } {checkWord}}
+		}}}
+	    } {checkSimpleArgs 0 2 {
+		{checkOption {
+		    {-family checkNOP}
+		    {-size checkNOP}
+		    {-weight checkNOP}
+		    {-slant checkNOP}
+		    {-underline checkNOP}
+		    {-overstrike checkNOP}
+		    {-- checkNOP}
+		} {checkWord}}
+	    }}}}
+    }}
+    {configure	{checkSimpleArgs 1 -1 {checkWord {checkConfigure 1 {
+	{-family checkWord}
+	{-size checkInt}
+	{-weight {checkKeyword 1 {normal bold}}}
+	{-slant {checkKeyword 1 {roman italic}}}
+	{-underline checkBoolean}
+	{-overstrike checkBoolean}}}}}
+    }
+    {create	coreTk::checkFontCreateCmd}
+    {delete	{checkSimpleArgs 1 -1 checkWord}}
+    {families	{checkSimpleArgs 0 2 {{checkConfigure 0 {
+	{-displayof checkWinName}}}}}
+    }
+    {measure	{checkSimpleArgs 2 4 {
+	checkWord
+	{checkOption {
+	    {-displayof {checkSimpleArgs 2 2 {
+		checkWinName checkWord}}
+	    }
+	} {checkSimpleArgs 1 1 checkWord}}}}
+    }
+    {metrics	{checkSimpleArgs 1 -1 {
+	checkWord
+	{checkOption {
+	    {-displayof {checkSimpleArgs 1 2 {
+		checkWinName
+		{checkKeyword 1 {-ascent -descent -linespace -fixed}}}}
+	    }
+	} {checkSimpleArgs 1 1 {
+	    {checkKeyword 1 {-ascent -descent -linespace -fixed}}}}}}
+	}
+    }
+    {names	{checkSimpleArgs 0  0 {}}}
+} {}}
+
+pcx::check 8.5 std grid			{checkOption {
+    {anchor {checkSimpleArgs 1 2 {
+	checkWinName
+	{checkKeyword 0 {n ne e se s sw w nw center}}
+    }}}
+	{
+	    bbox {checkNumArgs {
+		{1 checkWinName}
+		{3 {checkSimpleArgs 3 3 {checkWinName checkInt}}}
+		{5 {checkSimpleArgs 5 5 {checkWinName checkInt}}}}
+	    }
+	} {
+	    columnconfigure	{checkSimpleArgs 2 -1 {
+		checkWinName
+		{checkListValues 1 -1 coreTk::checkGridIndex}
+		{checkConfigure 1 {
+		    {-uniform checkWord}
+		    {-minsize checkPixels}
+		    {-weight  checkInt}
+		    {-pad     checkInt}}}
+		}
+	    }
+	} {
+	    configure coreTk::checkGridOptions
+	} {
+	    forget {checkSimpleArgs 1 -1 checkWinName}
+	} {
+	    info {checkSimpleArgs 1 1 checkWinName}
+	} {
+	    location {checkSimpleArgs 3 3 {
+		checkWinName checkInt checkInt}
+	    }
+	} {
+	    propagate {checkSimpleArgs 1 2 {
+		checkWinName checkBoolean}
+	    }
+	} {
+	    rowconfigure {checkSimpleArgs 2 -1 {
+		checkWinName
+		{checkListValues 1 -1 coreTk::checkGridIndex}
+		{checkConfigure 1 {
+		    {-uniform checkWord}
+		    {-minsize checkPixels}
+		    {-weight  checkInt}
+		    {-pad     checkInt}}}
+		}
+	    }
+	} {
+	    remove {checkSimpleArgs 1 -1 checkWinName}
+	} {
+	    size {checkSimpleArgs 1 1 checkWinName}
+	} {
+	    slaves {checkSimpleArgs 1 5 {
+		checkWinName
+		{checkSwitches 0 {{-row checkInt} {-column checkInt}} {}}}
+	    }
+	}
+} {coreTk::checkGridOptions}}
+
+## ### #### ##### ######
+# fontchooser configure -visible - read-only, disallow set.
+
+pcx::check 8.6 std text {
+    checkSimpleArgs 1 -1 {
+	checkWinName
+	{
+	    checkWidgetOptions 0 {
+		-background -bd -bg -borderwidth -cursor -exportselection -fg
+		-font -foreground -height -highlightbackground -highlightcolor
+		-highlightthickness -insertbackground -insertborderwidth
+		-insertofftime -insertontime -insertwidth -padx -pady -relief
+		-selectbackground -selectborderwidth -selectforeground -setgrid
+		-spacing1 -spacing2 -spacing3 -tabs -takefocus -width -wrap
+		-xscrollcommand -yscrollcommand
+	    } {
+		{
+		    -state
+		    {checkKeyword 1 {normal disabled}}
+		} {
+		    -autoseparators
+		    checkBoolean
+		} {
+		    -undo
+		    checkBoolean
+		} {
+		    -maxundo checkInt
+		} {
+		    -tabstyle
+		    {checkKeyword 1 {wordprocessor tabular}}
+		} {
+		    -blockcursor
+		    checkBoolean
+		} {
+		    -insertunfocussed
+		    {checkKeyword 1 {none hollow solid}}
+		}
+	    }
+	}
+    }
+}
+
+pcx::check 8.6 std tk		{checkOption {
+    {appname	{checkSimpleArgs 0 1 checkWord}}
+    {busy {checkSimpleArgs 1 -1 {
+	{checkOption {
+	    {hold      {checkSimpleArgs 1 -1 {
+		checkWinName
+		{checkConfigure 0 {
+		    {-cursor checkCursor}
+		}}
+	    }}}
+	    {cget      {checkSimpleArgs 2 2 {
+		checkWinName
+		{checkKeyword 1 {-cursor}}
+	    }}}
+	    {configure {checkSimpleArgs 1 -1 {
+		checkWinName
+		{checkConfigure 1 {
+		    {-cursor checkCursor}
+		}}
+	    }}}
+	    {forget    {checkSimpleArgs 1 -1 {checkWinName}}}
+	    {current   {checkSimpleArgs 0 1  {checkPattern}}}
+	    {status    {checkSimpleArgs 1 1  {checkWinName}}}
+	} {checkSimpleArgs 1 -1 {
+	    checkWinName
+	    {checkConfigure 0 {
+		{-cursor checkCursor}
+	    }}
+	}}}
+    }}}
+    {caret {checkSimpleArgs 1 -1 {checkWinName {checkConfigure 1 {
+	{-x      {checkInt}}
+	{-y      {checkInt}}
+	{-height {checkInt}}
+    }}}}}
+    {fontchooser {checkSimpleArgs 1 -1 {
+	{checkOption {
+	    {configure {checkConfigure 1 {
+		{-parent  checkWinName}
+		{-title   checkWord}
+		{-font    checkWord}
+		{-command {checkProcCall 1}}
+		{-visible checkAtEnd}
+	    }}}
+	    {show      {checkAtEnd}}
+	    {hide      {checkAtEnd}}
+	} {}}
+    }}}
+    {useinputmethods {checkSimpleArgs 0 1 checkBoolean}}
+    {scaling	{checkSimpleArgs 0 3 {{checkSwitches 0 {
+	{-displayof checkWinName}
+    } {checkSimpleArgs 0 1 checkFloat}}}}}
+
+    {inactive {checkSimpleArgs 0 3 {{checkSwitches 0 {
+	{-displayof checkWinName}
+    } {
+	checkSimpleArgs 0 1 {
+	    {checkOption {
+		{reset checkNOP}
+	    } {}}
+	}
+    }}}}}
+
+    {windowingsystem {checkSimpleArgs 0 0 checkWord}}
+} {}}
+
+pcx::check 8.6 std ttk::spinbox	{checkSimpleArgs 1 -1 {
+    checkWinName
+    {checkWidgetOptions 0 {
+	-class -cursor -style -takefocus -from -to -xscrollcommand
+	-validate -validatecommand
+    } {
+	{-increment checkFloat}
+	{-values    checkList}
+	{-wrap      checkBoolean}
+	{-format    checkWord}
+	-command    {checkProcCall 0}
+    }}
+}}
+
+pcx::check 8.6 std ttk::style	{checkSimpleArgs 1 -1 {
+    {checkOption {
+	{configure {checkSimpleArgs 1 -1 {
+	    checkWord
+	    checkWord
+	    {checkSimpleArgsModNk 0 -1 2 1 {checkWord}}
+	}}}
+	{map       {checkSimpleArgs 1 -1 {
+	    checkWord
+	    {checkNumArgs {
+		{1 {checkSimpleArgs 1 1 checkWord}}
+		{-1 {checkSimpleArgsModNk 0 -1 2 0 {
+		    {checkSequence {
+			checkWord
+			{checkListValues 2 2 {checkWord}}
+		    }}
+		}}}
+	    }}
+	}}}
+	{lookup    {checkSimpleArgs 2 4 {
+	    checkWord
+	    checkWord
+	    checkWord
+	    checkWord
+	}}}
+	{layout    {checkSimpleArgs 1 2 {
+	    checkWord
+	    checkWord
+	}}}
+	{element   {checkOption {
+	    {create  {checkSimpleArgs 2 -1 {
+		checkWord
+		{checkOption {
+		    {image {checkSimpleArgs 1 -1 {
+			{checkListValuesModNk 1 -1 2 1 {checkWord}}
+			{checkWidgetOptions 0 {
+			    -height -padding -width
+			} {
+			    {-border {checkListValues 1 4 checkPixels}}
+			    {-sticky ::coreTk::checkSticky}
+			}}
+		    }}}
+		    {vsapi {checkSimpleArgsModNk 2 -1 2 0 {
+			checkWord
+			checkWord
+			{checkToSwitches {
+			    {checkSequence {
+				checkWord
+				{checkDictValues 0 {
+				    {checkSequence {
+					checkList
+					checkInt
+				    }}
+				}}
+			    }}
+			}}
+			{checkWidgetOptions 0 {
+			    -height -padding -width
+			} {
+			    {-margins {checkListValues 1 4 checkPixels}}
+			}}
+		    }}}
+		} {checkSimpleArgs 0 -1 {checkWord}}}
+	    }}}
+	    {names   {checkSimpleArgs 0 0 {}}}
+	    {options {checkSimpleArgs 1 1 {checkWord}}}
+	} {}}}
+	{theme     {checkOption {
+	    {create   {checkSimpleArgsModNk 1 -1 2 1 {
+		checkWord
+		{checkConfigure 0 {
+		    {-parent   checkWord}
+		    {-settings checkBody}
+		}}
+	    }}}
+	    {settings {checkSimpleArgs 2 2 {checkWord checkBody}}}
+	    {names    {checkSimpleArgs 0 0 {}}}
+	    {use      {checkSimpleArgs 1 1 {checkWord}}}
+	} {}}}
+    } {}}
+}}
+# todo: layout layoutspec - do a checker for its format.
+
+## ### #### ##### ######
+
+
+namespace eval ::coreTk {
+    # The functions which were hidden in transition from 8.3. to 8.4
+    # are added through loops. Simpler than trying to write the same
+    # code over and over again, no ?
+
+    variable tk_pcmd
+    set      tk_pcmd {
+	tkButtonAutoInvoke		::tk::ButtonAutoInvoke
+	tkButtonDown			::tk::ButtonDown
+	tkButtonEnter			::tk::ButtonEnter
+	tkButtonInvoke			::tk::ButtonInvoke
+	tkButtonLeave			::tk::ButtonLeave
+	tkButtonUp			::tk::ButtonUp
+	tkCancelRepeat			::tk::CancelRepeat
+	tkCheckRadioDown		::tk::CheckRadioDown
+	tkCheckRadioEnter		::tk::CheckRadioEnter
+	tkCheckRadioInvoke		::tk::CheckRadioInvoke
+	tkColorDialog			::tk::dialog::color::
+	tkColorDialog_BuildDialog	::tk::dialog::color::BuildDialog
+	tkColorDialog_CancelCmd		::tk::dialog::color::CancelCmd
+	tkColorDialog_Config		::tk::dialog::color::Config
+	tkColorDialog_CreateSelector	::tk::dialog::color::CreateSelector
+	tkColorDialog_DrawColorScale	::tk::dialog::color::DrawColorScale
+	tkColorDialog_EnterColorBar	::tk::dialog::color::EnterColorBar
+	tkColorDialog_InitValues	::tk::dialog::color::InitValues
+	tkColorDialog_HandleRGBEntry	::tk::dialog::color::HandleRGBEntry
+	tkColorDialog_HandleSelEntry	::tk::dialog::color::HandleSelEntry
+	tkColorDialog_LeaveColorBar	::tk::dialog::color::LeaveColorBar
+	tkColorDialog_MoveSelector	::tk::dialog::color::MoveSelector
+	tkColorDialog_OkCmd		::tk::dialog::color::OkCmd
+	tkColorDialog_RedrawColorBars	::tk::dialog::color::RedrawColorBars
+	tkColorDialog_RedrawFinalColor	::tk::dialog::color::RedrawFinalColor
+	tkColorDialog_ReleaseMouse	::tk::dialog::color::ReleaseMouse
+	tkColorDialog_ResizeColorBars	::tk::dialog::color::ResizeColorBars
+	tkColorDialog_RgbToX		::tk::dialog::color::RgbToX
+	tkColorDialog_SetRGBValue	::tk::dialog::color::SetRGBValue
+	tkColorDialog_StartMove		::tk::dialog::color::StartMove
+	tkColorDialog_XToRgb		::tk::dialog::color::XToRGB
+	tkConsoleAbout			::tk::ConsoleAbout
+	tkConsoleBind			::tk::ConsoleBind
+	tkConsoleExit			::tk::ConsoleExit
+	tkConsoleHistory		::tk::ConsoleHistory
+	tkConsoleInit			::tk::ConsoleInit
+	tkConsoleInsert			::tk::ConsoleInsert
+	tkConsoleInvoke			::tk::ConsoleInvoke
+	tkConsoleOutput			::tk::ConsoleOutput
+	tkConsolePrompt			::tk::ConsolePrompt
+	tkConsoleSource			::tk::ConsoleSource
+	tkDarken			::tk::Darken
+	tkEntryAutoScan			::tk::EntryAutoScan
+	tkEntryBackspace		::tk::EntryBackspace
+	tkEntryButton1			::tk::EntryButton1
+	tkEntryClosestGap		::tk::EntryClosestGap
+	tkEntryGetSelection		::tk::EntryGetSelection
+	tkEntryInsert			::tk::EntryInsert
+	tkEntryKeySelect		::tk::EntryKeySelect
+	tkEntryMouseSelect		::tk::EntryMouseSelect
+	tkEntryNextWord			::tk::EntryNextWord
+	tkEntryPaste			::tk::EntryPaste
+	tkEntryPreviousWord		::tk::EntryPreviousWord
+	tkEntrySeeInsert		::tk::EntrySeeInsert
+	tkEntrySetCursor		::tk::EntrySetCursor
+	tkEntryTranspose		::tk::EntryTranspose
+	tkEventMotifBindings		::tk::EventMotifBindings
+	tkFDGetFileTypes		::tk::FDGetFileTypes
+	tkFirstMenu			::tk::FirstMenu
+	tkFocusGroup_BindIn		::tk::FocusGroup_BindIn
+	tkFocusGroup_BindOut		::tk::FocusGroup_BindOut
+	tkFocusGroup_Create		::tk::FocusGroup_Create
+	tkFocusGroup_Destroy		::tk::FocusGroup_Destroy
+	tkFocusGroup_In			::tk::FocusGroup_In
+	tkFocusGroup_Out		::tk::FocusGroup_Out
+	tkFocusOK			::tk::FocusOK
+	tkGenerateMenuSelect		::tk::GenerateMenuSelect
+	tkIconList			::tk::IconList
+	tkIconList_Add			::tk::IconList_Add
+	tkIconList_Arrange		::tk::IconList_Arrange
+	tkIconList_AutoScan		::tk::IconList_AutoScan
+	tkIconList_Btn1			::tk::IconList_Btn1
+	tkIconList_Config		::tk::IconList_Config
+	tkIconList_Create		::tk::IconList_Create
+	tkIconList_CtrlBtn1		::tk::IconList_CtrlBtn1
+	tkIconList_Curselection		::tk::IconList_Curselection
+	tkIconList_DeleteAll		::tk::IconList_DeleteAll
+	tkIconList_Double1		::tk::IconList_Double1
+	tkIconList_DrawSelection	::tk::IconList_DrawSelection
+	tkIconList_FocusIn		::tk::IconList_FocusIn
+	tkIconList_FocusOut		::tk::IconList_FocusOut
+	tkIconList_Get			::tk::IconList_Get
+	tkIconList_Goto			::tk::IconList_Goto
+	tkIconList_Index		::tk::IconList_Index
+	tkIconList_Invoke		::tk::IconList_Invoke
+	tkIconList_KeyPress		::tk::IconList_KeyPress
+	tkIconList_Leave1		::tk::IconList_Leave1
+	tkIconList_LeftRight		::tk::IconList_LeftRight
+	tkIconList_Motion1		::tk::IconList_Motion1
+	tkIconList_Reset		::tk::IconList_Reset
+	tkIconList_ReturnKey		::tk::IconList_ReturnKey
+	tkIconList_See			::tk::IconList_See
+	tkIconList_Select		::tk::IconList_Select
+	tkIconList_Selection		::tk::IconList_Selection
+	tkIconList_ShiftBtn1		::tk::IconList_ShiftBtn1
+	tkIconList_UpDown		::tk::IconList_UpDown
+	tkListbox			::tk::Listbox
+	tkListboxAutoScan		::tk::ListboxAutoScan
+	tkListboxBeginExtend		::tk::ListboxBeginExtend
+	tkListboxBeginSelect		::tk::ListboxBeginSelect
+	tkListboxBeginToggle		::tk::ListboxBeginToggle
+	tkListboxCancel			::tk::ListboxCancel
+	tkListboxDataExtend		::tk::ListboxDataExtend
+	tkListboxExtendUpDown		::tk::ListboxExtendUpDown
+	tkListboxKeyAccel_Goto		::tk::ListboxKeyAccel_Goto
+	tkListboxKeyAccel_Key		::tk::ListboxKeyAccel_Key
+	tkListboxKeyAccel_Reset		::tk::ListboxKeyAccel_Reset
+	tkListboxKeyAccel_Set		::tk::ListboxKeyAccel_Set
+	tkListboxKeyAccel_Unset		::tk::ListboxKeyAccel_Unxet
+	tkListboxMotion			::tk::ListboxMotion
+	tkListboxSelectAll		::tk::ListboxSelectAll
+	tkListboxUpDown			::tk::ListboxUpDown
+	tkListboxBeginToggle		::tk::ListboxBeginToggle
+	tkMbButtonUp			::tk::MbButtonUp
+	tkMbEnter			::tk::MbEnter
+	tkMbLeave			::tk::MbLeave
+	tkMbMotion			::tk::MbMotion
+	tkMbPost			::tk::MbPost
+	tkMenuButtonDown		::tk::MenuButtonDown
+	tkMenuDownArrow			::tk::MenuDownArrow
+	tkMenuDup			::tk::MenuDup
+	tkMenuEscape			::tk::MenuEscape
+	tkMenuFind			::tk::MenuFind
+	tkMenuFindName			::tk::MenuFindName
+	tkMenuFirstEntry		::tk::MenuFirstEntry
+	tkMenuInvoke			::tk::MenuInvoke
+	tkMenuLeave			::tk::MenuLeave
+	tkMenuLeftArrow			::tk::MenuLeftArrow
+	tkMenuMotion			::tk::MenuMotion
+	tkMenuNextEntry			::tk::MenuNextEntry
+	tkMenuNextMenu			::tk::MenuNextMenu
+	tkMenuRightArrow		::tk::MenuRightArrow
+	tkMenuUnpost			::tk::MenuUnpost
+	tkMenuUpArrow			::tk::MenuUpArrow
+	tkMessageBox			::tk::MessageBox
+	tkMotifFDialog			::tk::MotifFDialog
+	tkMotifFDialog_ActivateDList	::tk::MotifFDialog_ActivateDList
+	tkMotifFDialog_ActivateFList	::tk::MotifFDialog_ActivateFList
+	tkMotifFDialog_ActivateFEnt	::tk::MotifFDialog_ActivateFEnt
+	tkMotifFDialog_ActivateSEnt	::tk::MotifFDialog_ActivateSEnt
+	tkMotifFDialog			::tk::MotifFDialog
+	tkMotifFDialog_BrowseDList	::tk::MotifFDialog_BrowseDList
+	tkMotifFDialog_BrowseFList	::tk::MotifFDialog_BrowseFList
+	tkMotifFDialog_BuildUI		::tk::MotifFDialog_BuildUI
+	tkMotifFDialog_CancelCmd	::tk::MotifFDialog_CancelCmd
+	tkMotifFDialog_Config		::tk::MotifFDialog_Config
+	tkMotifFDialog_Create		::tk::MotifFDialog_Create
+	tkMotifFDialog_FileTypes	::tk::MotifFDialog_FileTypes
+	tkMotifFDialog_FilterCmd	::tk::MotifFDialog_FilterCmd
+	tkMotifFDialog_InterpFilter	::tk::MotifFDialog_InterpFilter
+	tkMotifFDialog_LoadFiles	::tk::MotifFDialog_LoadFiles
+	tkMotifFDialog_MakeSList	::tk::MotifFDialog_MakeSList
+	tkMotifFDialog_OkCmd		::tk::MotifFDialog_OkCmd
+	tkMotifFDialog_SetFilter	::tk::MotifFDialog_SetFilter
+	tkMotifFDialog_SetListMode	::tk::MotifFDialog_SetListMode
+	tkMotifFDialog_Update		::tk::MotifFDialog_Update
+	tkPostOverPoint			::tk::PostOverPoint
+	tkRecolorTree			::tk::RecolorTree
+	tkRestoreOldGrab		::tk::RestoreOldGrab
+	tkSaveGrabInfo			::tk::SaveGrabInfo
+	tkScaleActivate			::tk::ScaleActivate
+	tkScaleButtonDown		::tk::ScaleButtonDown
+	tkScaleButton2Down		::tk::ScaleButton2Down
+	tkScaleControlPress		::tk::ScaleControlPress
+	tkScaleDrag			::tk::ScaleDrag
+	tkScaleEndDrag			::tk::ScaleEndDrag
+	tkScaleIncrement		::tk::ScaleIncrement
+	tkScreenChanged			::tk::ScreenChanged
+	tkScrollButtonDown		::tk::ScrollButtonDown
+	tkScrollButton2Down		::tk::ScrollButton2Down
+	tkScrollButtonDrag		::tk::ScrollButtonDrag
+	tkScrollButtonUp		::tk::ScrollButtonUp
+	tkScrollByPages			::tk::ScrollByPages
+	tkScrollByUnits			::tk::ScrollByUnits
+	tkScrollEndDrag			::tk::ScrollEndDrag
+	tkScrollSelect			::tk::ScrollSelect
+	tkScrollStartDrag		::tk::ScrollStartDrag
+	tkScrollTopBottom		::tk::ScrollTopBottom
+	tkScrollToPos			::tk::ScrollToPos
+	tkTabToWindow			::tk::TabToWindow
+	tkTearOffMenu			::tk::TearOffMenu
+	tkTextAutoScan			::tk::TextAutoScan
+	tkTextButton1			::tk::TextButton1
+	tkTextClosestGap		::tk::TextClosestGap
+	tkTextInsert			::tk::TextInsert
+	tkTextKeyExtend			::tk::TextKeyExtend
+	tkTextKeySelect			::tk::TextKeySelect
+	tkTextNextPara			::tk::TextNextPara
+	tkTextNextPos			::tk::TextNextPos
+	tkTextNextWord			::tk::TextNextWord
+	tkTextPaste			::tk::TextPaste
+	tkTextPrevPara			::tk::TextPrevPara
+	tkTextPrevPos			::tk::TextPrevPos
+	tkTextPrevWord			::tk::TextPrevWord
+	tkTextResetAnchor		::tk::TextResetAnchor
+	tkTextScrollPages		::tk::TextScrollPages
+	tkTextSelectTo			::tk::TextSelectTo
+	tkTextSetCursor			::tk::TextSetCursor
+	tkTextTranspose			::tk::TextTranspose
+	tkTextUpDownLine		::tk::TextUpDownLine
+	tkTraverseToMenu		::tk::TraverseToMenu
+	tkTraverseWithinMenu		::tk::TraverseWithinMenu
+	unsupported1			::tk::unsupported::MacWindowStyle
+    }
+
+    foreach {old new} $tk_pcmd {
+	regsub {^::}     $new {}   basenew
+
+	pcx::check 8.3 std $old [list \
+		::analyzer::warn warnInternalCmd {} \
+		{checkSimpleArgs 0 -1 {checkWord}} \
+		]
+
+	pcx::check 8.4 std $old [list \
+		InvalidUsage $basenew \
+		{::analyzer::warn warnInternalCmd {} {checkSimpleArgs 0 -1 {checkWord}}} \
+		]
+
+	pcx::check 8.4 std $new \
+	    {::analyzer::warn warnInternalCmd {} {
+		checkSimpleArgs 0 -1 {
+		    checkWord
+		}
+	    }}
+
+	pcx::check 8.4 std $basenew \
+	    {::analyzer::warn warnInternalCmd {} {
+		checkSimpleArgs 0 -1 {
+		    checkWord
+		}
+	    }}
+    }
+
+    unset tk_pcmd
+}
+
+# ### ######### ###########################
+## Initialization. Data for special checker commands.
+
+namespace eval ::coreTk {
+    # The following array contains the union of all of the standard widget
+    # options in all versions of Tk.
+
+    variable tkWidgetOptions {
+	-bitmap coreTk::checkBitmap
+	-screen coreTk::checkScreen
+	-tabs coreTk::checkTabs
+	-use {coreTk::checkNullOrType checkFloat}
+	-visual coreTk::checkVisual
+    }
+
+    variable validKeysyms [list \
+	"BackSpace" "Tab" "Linefeed" "Clear" "Return" "Pause" "Escape" "Delete" \
+	"Multi_key" "Kanji" "Home" "Left" "Up" "Right" "Down" "Prior" "Next" \
+	"End" "Begin" "Select" "Print" "Execute" "Insert" "Undo" "Redo" "Menu" \
+	"Find" "Cancel" "Help" "Break" "Mode_switch" "script_switch" "Num_Lock" \
+	"KP_Space" "KP_Tab" "KP_Enter" "KP_F1" "KP_F2" "KP_F3" "KP_F4" \
+	"KP_Equal" "KP_Multiply" "KP_Add" "KP_Separator" "KP_Subtract" \
+	"KP_Decimal" "KP_Divide" "KP_0" "KP_1" "KP_2" "KP_3" "KP_4" "KP_5" \
+	"KP_6" "KP_7" "KP_8" "KP_9" "F1" "F2" "F3" "F4" "F5" "F6" "F7" "F8" \
+	"F9" "F10" "F11" "L1" "F12" "L2" "F13" "L3" "F14" "L4" "F15" "L5" "F16" \
+	"L6" "F17" "L7" "F18" "L8" "F19" "L9" "F20" "L10" "F21" "R1" "F22" "R2" \
+	"F23" "R3" "F24" "R4" "F25" "R5" "F26" "R6" "F27" "R7" "F28" "R8" "F29" \
+	"R9" "F30" "R10" "F31" "R11" "F32" "R12" "R13" "F33" "F34" "R14" "F35" \
+	"R15" "Shift_L" "Shift_R" "Control_L" "Control_R" "Caps_Lock" \
+	"Shift_Lock" "Meta_L" "Meta_R" "Alt_L" "Alt_R" "Super_L" "Super_R" \
+	"Hyper_L" "Hyper_R" "space" "exclam" "quotedbl" "numbersign" "dollar" \
+	"percent" "ampersand" "quoteright" "parenleft" "parenright" "asterisk" \
+	"plus" "comma" "minus" "period" "slash" "0" "1" "2" "3" "4" "5" "6" "7" \
+	"8" "9" "colon" "semicolon" "less" "equal" "greater" "question" "at" \
+	"A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" "N" "O" "P" "Q" "R" \
+	"S" "T" "U" "V" "W" "X" "Y" "Z" "bracketleft" "backslash" \
+	"bracketright" "asciicircum" "underscore" "quoteleft" "a" "b" "c" "d" \
+	"e" "f" "g" "h" "i" "j" "k" "l" "m" "n" "o" "p" "q" "r" "s" "t" "u" "v" \
+	"w" "x" "y" "z" "braceleft" "bar" "braceright" "asciitilde" \
+	"nobreakspace" "exclamdown" "cent" "sterling" "currency" "yen" \
+	"brokenbar" "section" "diaeresis" "copyright" "ordfeminine" \
+	"guillemotleft" "notsign" "hyphen" "registered" "macron" "degree" \
+	"plusminus" "twosuperior" "threesuperior" "acute" "mu" "paragraph" \
+	"periodcentered" "cedilla" "onesuperior" "masculine" "guillemotright" \
+	"onequarter" "onehalf" "threequarters" "questiondown" "Agrave" "Aacute" \
+	"Acircumflex" "Atilde" "Adiaeresis" "Aring" "AE" "Ccedilla" "Egrave" \
+	"Eacute" "Ecircumflex" "Ediaeresis" "Igrave" "Iacute" "Icircumflex" \
+	"Idiaeresis" "Eth" "Ntilde" "Ograve" "Oacute" "Ocircumflex" "Otilde" \
+	"Odiaeresis" "multiply" "Ooblique" "Ugrave" "Uacute" "Ucircumflex" \
+	"Udiaeresis" "Yacute" "Thorn" "ssharp" "agrave" "aacute" "acircumflex" \
+	"atilde" "adiaeresis" "aring" "ae" "ccedilla" "egrave" "eacute" \
+	"ecircumflex" "ediaeresis" "igrave" "iacute" "icircumflex" "idiaeresis" \
+	"eth" "ntilde" "ograve" "oacute" "ocircumflex" "otilde" "odiaeresis" \
+	"division" "oslash" "ugrave" "uacute" "ucircumflex" "udiaeresis" \
+	"yacute" "thorn" "ydiaeresis" "Aogonek" "breve" "Lstroke" "Lcaron" \
+	"Sacute" "Scaron" "Scedilla" "Tcaron" "Zacute" "Zcaron" "Zabovedot" \
+	"aogonek" "ogonek" "lstroke" "lcaron" "sacute" "caron" "scaron" \
+	"scedilla" "tcaron" "zacute" "doubleacute" "zcaron" "zabovedot" \
+	"Racute" "Abreve" "Cacute" "Ccaron" "Eogonek" "Ecaron" "Dcaron" \
+	"Nacute" "Ncaron" "Odoubleacute" "Rcaron" "Uring" "Udoubleacute" \
+	"Tcedilla" "racute" "abreve" "cacute" "ccaron" "eogonek" "ecaron" \
+	"dcaron" "nacute" "ncaron" "odoubleacute" "udoubleacute" "rcaron" \
+	"uring" "tcedilla" "abovedot" "Hstroke" "Hcircumflex" "Iabovedot" \
+	"Gbreve" "Jcircumflex" "hstroke" "hcircumflex" "idotless" "gbreve" \
+	"jcircumflex" "Cabovedot" "Ccircumflex" "Gabovedot" "Gcircumflex" \
+	"Ubreve" "Scircumflex" "cabovedot" "ccircumflex" "gabovedot" \
+	"gcircumflex" "ubreve" "scircumflex" "kappa" "Rcedilla" "Itilde" \
+	"Lcedilla" "Emacron" "Gcedilla" "Tslash" "rcedilla" "itilde" "lcedilla" \
+	"emacron" "gacute" "tslash" "ENG" "eng" "Amacron" "Iogonek" "Eabovedot" \
+	"Imacron" "Ncedilla" "Omacron" "Kcedilla" "Uogonek" "Utilde" "Umacron" \
+	"amacron" "iogonek" "eabovedot" "imacron" "ncedilla" "omacron" \
+	"kcedilla" "uogonek" "utilde" "umacron" "overline" "kana_fullstop" \
+	"kana_openingbracket" "kana_closingbracket" "kana_comma" \
+	"kana_middledot" "kana_WO" "kana_a" "kana_i" "kana_u" "kana_e" "kana_o" \
+	"kana_ya" "kana_yu" "kana_yo" "kana_tu" "prolongedsound" "kana_A" \
+	"kana_I" "kana_U" "kana_E" "kana_O" "kana_KA" "kana_KI" "kana_KU" \
+	"kana_KE" "kana_KO" "kana_SA" "kana_SHI" "kana_SU" "kana_SE" "kana_SO" \
+	"kana_TA" "kana_TI" "kana_TU" "kana_TE" "kana_TO" "kana_NA" "kana_NI" \
+	"kana_NU" "kana_NE" "kana_NO" "kana_HA" "kana_HI" "kana_HU" "kana_HE" \
+	"kana_HO" "kana_MA" "kana_MI" "kana_MU" "kana_ME" "kana_MO" "kana_YA" \
+	"kana_YU" "kana_YO" "kana_RA" "kana_RI" "kana_RU" "kana_RE" "kana_RO" \
+	"kana_WA" "kana_N" "voicedsound" "semivoicedsound" "kana_switch" \
+	"Arabic_comma" "Arabic_semicolon" "Arabic_question_mark" "Arabic_hamza" \
+	"Arabic_maddaonalef" "Arabic_hamzaonalef" "Arabic_hamzaonwaw" \
+	"Arabic_hamzaunderalef" "Arabic_hamzaonyeh" "Arabic_alef" "Arabic_beh" \
+	"Arabic_tehmarbuta" "Arabic_teh" "Arabic_theh" "Arabic_jeem" \
+	"Arabic_hah" "Arabic_khah" "Arabic_dal" "Arabic_thal" "Arabic_ra" \
+	"Arabic_zain" "Arabic_seen" "Arabic_sheen" "Arabic_sad" "Arabic_dad" \
+	"Arabic_tah" "Arabic_zah" "Arabic_ain" "Arabic_ghain" "Arabic_tatweel" \
+	"Arabic_feh" "Arabic_qaf" "Arabic_kaf" "Arabic_lam" "Arabic_meem" \
+	"Arabic_noon" "Arabic_heh" "Arabic_waw" "Arabic_alefmaksura" \
+	"Arabic_yeh" "Arabic_fathatan" "Arabic_dammatan" "Arabic_kasratan" \
+	"Arabic_fatha" "Arabic_damma" "Arabic_kasra" "Arabic_shadda" \
+	"Arabic_sukun" "Arabic_switch" "Serbian_dje" "Macedonia_gje" \
+	"Cyrillic_io" "Ukranian_je" "Macedonia_dse" "Ukranian_i" "Ukranian_yi" \
+	"Serbian_je" "Serbian_lje" "Serbian_nje" "Serbian_tshe" "Macedonia_kje" \
+	"Byelorussian_shortu" "Serbian_dze" "numerosign" "Serbian_DJE" \
+	"Macedonia_GJE" "Cyrillic_IO" "Ukranian_JE" "Macedonia_DSE" \
+	"Ukranian_I" "Ukranian_YI" "Serbian_JE" "Serbian_LJE" "Serbian_NJE" \
+	"Serbian_TSHE" "Macedonia_KJE" "Byelorussian_SHORTU" "Serbian_DZE" \
+	"Cyrillic_yu" "Cyrillic_a" "Cyrillic_be" "Cyrillic_tse" "Cyrillic_de" \
+	"Cyrillic_ie" "Cyrillic_ef" "Cyrillic_ghe" "Cyrillic_ha" "Cyrillic_i" \
+	"Cyrillic_shorti" "Cyrillic_ka" "Cyrillic_el" "Cyrillic_em" \
+	"Cyrillic_en" "Cyrillic_o" "Cyrillic_pe" "Cyrillic_ya" "Cyrillic_er" \
+	"Cyrillic_es" "Cyrillic_te" "Cyrillic_u" "Cyrillic_zhe" "Cyrillic_ve" \
+	"Cyrillic_softsign" "Cyrillic_yeru" "Cyrillic_ze" "Cyrillic_sha" \
+	"Cyrillic_e" "Cyrillic_shcha" "Cyrillic_che" "Cyrillic_hardsign" \
+	"Cyrillic_YU" "Cyrillic_A" "Cyrillic_BE" "Cyrillic_TSE" "Cyrillic_DE" \
+	"Cyrillic_IE" "Cyrillic_EF" "Cyrillic_GHE" "Cyrillic_HA" "Cyrillic_I" \
+	"Cyrillic_SHORTI" "Cyrillic_KA" "Cyrillic_EL" "Cyrillic_EM" \
+	"Cyrillic_EN" "Cyrillic_O" "Cyrillic_PE" "Cyrillic_YA" "Cyrillic_ER" \
+	"Cyrillic_ES" "Cyrillic_TE" "Cyrillic_U" "Cyrillic_ZHE" "Cyrillic_VE" \
+	"Cyrillic_SOFTSIGN" "Cyrillic_YERU" "Cyrillic_ZE" "Cyrillic_SHA" \
+	"Cyrillic_E" "Cyrillic_SHCHA" "Cyrillic_CHE" "Cyrillic_HARDSIGN" \
+	"Greek_ALPHAaccent" "Greek_EPSILONaccent" "Greek_ETAaccent" \
+	"Greek_IOTAaccent" "Greek_IOTAdiaeresis" "Greek_IOTAaccentdiaeresis" \
+	"Greek_OMICRONaccent" "Greek_UPSILONaccent" "Greek_UPSILONdieresis" \
+	"Greek_UPSILONaccentdieresis" "Greek_OMEGAaccent" "Greek_alphaaccent" \
+	"Greek_epsilonaccent" "Greek_etaaccent" "Greek_iotaaccent" \
+	"Greek_iotadieresis" "Greek_iotaaccentdieresis" "Greek_omicronaccent" \
+	"Greek_upsilonaccent" "Greek_upsilondieresis" \
+	"Greek_upsilonaccentdieresis" "Greek_omegaaccent" "Greek_ALPHA" \
+	"Greek_BETA" "Greek_GAMMA" "Greek_DELTA" "Greek_EPSILON" "Greek_ZETA" \
+	"Greek_ETA" "Greek_THETA" "Greek_IOTA" "Greek_KAPPA" "Greek_LAMBDA" \
+	"Greek_MU" "Greek_NU" "Greek_XI" "Greek_OMICRON" "Greek_PI" "Greek_RHO" \
+	"Greek_SIGMA" "Greek_TAU" "Greek_UPSILON" "Greek_PHI" "Greek_CHI" \
+	"Greek_PSI" "Greek_OMEGA" "Greek_alpha" "Greek_beta" "Greek_gamma" \
+	"Greek_delta" "Greek_epsilon" "Greek_zeta" "Greek_eta" "Greek_theta" \
+	"Greek_iota" "Greek_kappa" "Greek_lambda" "Greek_mu" "Greek_nu" \
+	"Greek_xi" "Greek_omicron" "Greek_pi" "Greek_rho" "Greek_sigma" \
+	"Greek_finalsmallsigma" "Greek_tau" "Greek_upsilon" "Greek_phi" \
+	"Greek_chi" "Greek_psi" "Greek_omega" "Greek_switch" "leftradical" \
+	"topleftradical" "horizconnector" "topintegral" "botintegral" \
+	"vertconnector" "topleftsqbracket" "botleftsqbracket" \
+	"toprightsqbracket" "botrightsqbracket" "topleftparens" "botleftparens" \
+	"toprightparens" "botrightparens" "leftmiddlecurlybrace" \
+	"rightmiddlecurlybrace" "topleftsummation" "botleftsummation" \
+	"topvertsummationconnector" "botvertsummationconnector" \
+	"toprightsummation" "botrightsummation" "rightmiddlesummation" \
+	"lessthanequal" "notequal" "greaterthanequal" "integral" "therefore" \
+	"variation" "infinity" "nabla" "approximate" "similarequal" "ifonlyif" \
+	"implies" "identical" "radical" "includedin" "includes" "intersection" \
+	"union" "logicaland" "logicalor" "partialderivative" "function" \
+	"leftarrow" "uparrow" "rightarrow" "downarrow" "blank" "soliddiamond" \
+	"checkerboard" "ht" "ff" "cr" "lf" "nl" "vt" "lowrightcorner" \
+	"uprightcorner" "upleftcorner" "lowleftcorner" "crossinglines" \
+	"horizlinescan1" "horizlinescan3" "horizlinescan5" "horizlinescan7" \
+	"horizlinescan9" "leftt" "rightt" "bott" "topt" "vertbar" "emspace" \
+	"enspace" "em3space" "em4space" "digitspace" "punctspace" "thinspace" \
+	"hairspace" "emdash" "endash" "signifblank" "ellipsis" \
+	"doubbaselinedot" "onethird" "twothirds" "onefifth" "twofifths" \
+	"threefifths" "fourfifths" "onesixth" "fivesixths" "careof" "figdash" \
+	"leftanglebracket" "decimalpoint" "rightanglebracket" "marker" \
+	"oneeighth" "threeeighths" "fiveeighths" "seveneighths" "trademark" \
+	"signaturemark" "trademarkincircle" "leftopentriangle" \
+	"rightopentriangle" "emopencircle" "emopenrectangle" \
+	"leftsinglequotemark" "rightsinglequotemark" "leftdoublequotemark" \
+	"rightdoublequotemark" "prescription" "minutes" "seconds" "latincross" \
+	"hexagram" "filledrectbullet" "filledlefttribullet" \
+	"filledrighttribullet" "emfilledcircle" "emfilledrect" \
+	"enopencircbullet" "enopensquarebullet" "openrectbullet" \
+	"opentribulletup" "opentribulletdown" "openstar" "enfilledcircbullet" \
+	"enfilledsqbullet" "filledtribulletup" "filledtribulletdown" \
+	"leftpointer" "rightpointer" "club" "diamond" "heart" "maltesecross" \
+	"dagger" "doubledagger" "checkmark" "ballotcross" "musicalsharp" \
+	"musicalflat" "malesymbol" "femalesymbol" "telephone" \
+	"telephonerecorder" "phonographcopyright" "caret" "singlelowquotemark" \
+	"doublelowquotemark" "cursor" "leftcaret" "rightcaret" "downcaret" \
+	"upcaret" "overbar" "downtack" "upshoe" "downstile" "underbar" "jot" \
+	"quad" "uptack" "circle" "upstile" "downshoe" "rightshoe" "leftshoe" \
+	"lefttack" "righttack" "hebrew_aleph" "hebrew_beth" "hebrew_gimmel" \
+	"hebrew_daleth" "hebrew_he" "hebrew_waw" "hebrew_zayin" "hebrew_het" \
+	"hebrew_teth" "hebrew_yod" "hebrew_finalkaph" "hebrew_kaph" \
+	"hebrew_lamed" "hebrew_finalmem" "hebrew_mem" "hebrew_finalnun" \
+	"hebrew_nun" "hebrew_samekh" "hebrew_ayin" "hebrew_finalpe" "hebrew_pe" \
+	"hebrew_finalzadi" "hebrew_zadi" "hebrew_kuf" "hebrew_resh" \
+	"hebrew_shin" "hebrew_taf" "Hebrew_switch" \
+    ]
+
+    variable validModifiers [list \
+	"Control" "Shift" "Lock" "Meta" "Alt" "B1" "Button1" "B2" "Button2" \
+	"B3" "Button3" "B4" "Button4" "B5" "Button5" "Mod1" "M1" "Command" \
+	"Mod2" "M2" "Option" "Mod3" "M3" "Mod4" "M4" "Mod5" "M5" "Double" \
+	"Triple" "Any" \
+    ]
+
+    variable validEvents [list \
+	"Key" "KeyPress" "KeyRelease" "Button" "ButtonPress" "ButtonRelease" \
+	"Motion" "Enter" "Leave" "FocusIn" "FocusOut" "Expose" "Visibility" \
+	"Destroy" "Unmap" "Map" "Reparent" "Configure" "Gravity" "Circulate" \
+	"Property" "Colormap" "Activate" "Deactivate" "MouseWheel" \
+    ]
+    variable builtinBitmaps [list \
+	"error" "gray75" "gray50" "gray25" "gray12" "hourglass" "info" \
+	"questhead" "question" "warning" "document" "stationery" "edition" \
+	"application" "accessory" "folder" "pfolder" "trash" "floppy" "ramdisk" \
+	"cdrom" "preferences" "querydoc" "stop" "note" "caution" \
+    ]
+
+    variable builtinMasks [list \
+        "best" "directcolor" "grayscale" "greyscale" "pseudocolor" \
+	"staticcolor" "staticgray" "staticgrey" "truecolor" "default"
+    ]
+
+}
+
+# ### ######### ###########################
+## Initialization
+
+## This package provides its own initialization command to handle
+## special definitions. For the common parts it uses the standard
+## initialization.
+
+# coreTk::init --
+#
+#	Initialize this analyzer package by loading the corresponding
+#	checkers into the analyzer, and adding human-readable messages
+#	to the message database.
+#
+# Arguments:
+#	ver	The requested checker version to load.
+#
+# Results:
+#	None.
+
+proc ::coreTk::init {ver} {
+    ::pcx::init coreTk $ver
+
+    # Add the Tk specific set of widget options.
+    variable          tkWidgetOptions
+    addWidgetOptions $tkWidgetOptions
+    return
+}
+
+# ### ######### ###########################
+
+# Checkers for specific types --
+#
+#	Each type checker performs one or more checks on the type
+#	of a given word.  If the word is not a literal value, then
+#	it falls through to the generic checkWord procedure.
+#
+# Arguments:
+#	tokens		The list of word tokens for the current command.
+#	index		The index of the next word to be checked.
+#
+# Results:
+#	Returns the index of the next token to be checked.
+
+
+proc ::coreTk::checkTag {tokens index} {
+    # Bindtags - either a window or an arbitrary string
+
+    set word [lindex $tokens $index]
+    if {[getLiteral $word literal]} {
+	if {[string match ".*" $literal]} {
+	    return [checkWinName $tokens $index]
+	}
+    }
+    return [checkWord $tokens $index]
+}
+
+proc ::coreTk::checkFontCreateCmd {tokens index} {
+    set argc [llength $tokens]
+    if {$argc < 3} {
+	return 3
+    }
+
+    # If the first argument is not a switch, it is an arbitrary word.
+
+    set word [lindex $tokens $index]
+    if {[getLiteral $word literal]} {
+	if {![string match "-*" $literal]} {
+	    set index [checkWord $tokens $index]
+	}
+    } else {
+	return [checkCommand $tokens $index]
+    }
+    return [checkConfigure 0 {
+	{-family checkWord}
+	{-size checkInt}
+	{-weight {checkKeyword 1 {normal bold}}}
+	{-slant {checkKeyword 1 {roman italic}}}
+	{-underline checkBoolean}
+	{-overstrike checkBoolean}
+    } $tokens $index]
+}
+
+proc ::coreTk::checkWmProtocol {tokens index} {
+    # Everything but WM_DELETE_WINDOW is nonportable.
+    set word [lindex $tokens $index]
+    if {[getLiteral $word literal]} {
+	if {$literal ne "WM_DELETE_WINDOW"} {
+	    logError nonPortOption [getTokenRange $word] {}
+	}
+	return [incr index]
+    }
+    return [checkWord $tokens $index]
+}
+
+proc ::coreTk::checkMessageBox {tokens index} {
+    catch {unset ::coreTk::saved}
+    set index [checkConfigure 0 {
+	{-default {coreTk::SaveValue -default}}
+	{-icon {checkKeyword 1 {error info question warning}}}
+	{-message checkWord}
+	{-parent checkWinName}
+	{-title checkWord}
+	{-type {coreTk::SaveValue -type}}
+    } $tokens $index]
+
+    # Check for type and default consistency
+    if {![info exists ::coreTk::saved(-type)] \
+	    || ![getLiteral [lindex $tokens $::coreTk::saved(-type)] type]} {
+	return $index
+    }
+
+    if {[info exists ::coreTk::saved(-default)]} {
+	switch -- $type {
+	    abortretryignore {
+		checkKeyword 1 {abort retry ignore} $tokens \
+			$::coreTk::saved(-default)
+	    }
+	    ok {
+		checkKeyword 1 {ok} $tokens \
+			$::coreTk::saved(-default)
+	    }
+	    okcancel {
+		checkKeyword 1 {ok cancel} $tokens \
+			$::coreTk::saved(-default)
+	    }
+	    retrycancel {
+		checkKeyword 1 {retry cancel} $tokens \
+			$::coreTk::saved(-default)
+	    }
+	    yesno {
+		checkKeyword 1 {yes no} $tokens \
+			$::coreTk::saved(-default)
+	    }
+	    yesnocancel {
+		checkKeyword 1 {yes no cancel} $tokens \
+			$::coreTk::saved(-default)
+	    }
+	    default {
+		checkKeyword 1 {\
+		    abortretryignore ok okcancel retrycancel yesno yesnocancel\
+	        } $tokens $::coreTk::saved(-default)
+	    }
+	}
+    } else {
+	checkKeyword 1 {\
+	    abortretryignore ok okcancel retrycancel yesno yesnocancel\
+        } $tokens $::coreTk::saved(-type)
+    }
+    return $index
+}
+
+proc ::coreTk::checkMessageBox85 {tokens index} {
+    catch {unset ::coreTk::saved}
+    set index [checkConfigure 0 {
+	{-default {coreTk::SaveValue -default}}
+	{-icon {checkKeyword 1 {error info question warning}}}
+	{-message checkWord}
+	{-detail checkWord}
+	{-parent checkWinName}
+	{-title checkWord}
+	{-type {coreTk::SaveValue -type}}
+    } $tokens $index]
+
+    # Check for type and default consistency
+    if {![info exists ::coreTk::saved(-type)] \
+	    || ![getLiteral [lindex $tokens $::coreTk::saved(-type)] type]} {
+	return $index
+    }
+
+    if {[info exists ::coreTk::saved(-default)]} {
+	switch -- $type {
+	    abortretryignore {
+		checkKeyword 1 {abort retry ignore} $tokens \
+			$::coreTk::saved(-default)
+	    }
+	    ok {
+		checkKeyword 1 {ok} $tokens \
+			$::coreTk::saved(-default)
+	    }
+	    okcancel {
+		checkKeyword 1 {ok cancel} $tokens \
+			$::coreTk::saved(-default)
+	    }
+	    retrycancel {
+		checkKeyword 1 {retry cancel} $tokens \
+			$::coreTk::saved(-default)
+	    }
+	    yesno {
+		checkKeyword 1 {yes no} $tokens \
+			$::coreTk::saved(-default)
+	    }
+	    yesnocancel {
+		checkKeyword 1 {yes no cancel} $tokens \
+			$::coreTk::saved(-default)
+	    }
+	    default {
+		checkKeyword 1 {\
+		    abortretryignore ok okcancel retrycancel yesno yesnocancel\
+	        } $tokens $::coreTk::saved(-default)
+	    }
+	}
+    } else {
+	checkKeyword 1 {\
+	    abortretryignore ok okcancel retrycancel yesno yesnocancel\
+        } $tokens $::coreTk::saved(-type)
+    }
+    return $index
+}
+
+# Save the switch value in ::coreTk::saved if it is a literal
+
+proc ::coreTk::SaveValue {name tokens index} {
+    set word [lindex $tokens $index]
+    if {![getLiteral $word literal]} {
+	return [checkWord $tokens $index]
+    } else {
+	set ::coreTk::saved($name) $index
+	return [incr index]
+    }
+}
+
+proc ::coreTk::WarnUnsupportedGeometry {tokens index} {
+    return [WarnUnsupported -1 {} "-width or -height" {
+	{-width  {
+	    l++ @ 1 at @ get wsplit x dropafter 0 wjoin {} at @ replace
+	}}
+	{-height {
+	    l++ @ 1 at @ get wsplit x movetoend 0 dropafter 0 at @ replace
+	    comment {Do a third correction, using both width and height}
+	    save l++ @ -1
+	    at @ ldrop at @ insert -width  l++ @ 1 at @ get wsplit x dropafter 0 wjoin {}    at @ insert-w
+	    l++ @ 1    at @ insert -height l++ @ 1 at @ get wsplit x movetoend 0 dropafter 0 at @ replace
+	}}
+    } coreTk::checkGeometry $tokens $index]
+}
+
+proc ::coreTk::checkGeometry {tokens index} {
+    # Std. axa+a+a
+    set word [lindex $tokens $index]
+    if {![getLiteral $word literal]} {
+	return [checkWord $tokens $index]
+    }
+
+    if {($literal ne {}) && \
+	    (![regexp {^(([0-9])+x([0-9])+)?([-+](-?[0-9]+)[-+](-?[0-9]+))?$} \
+	    $literal geom size w h pos x y] \
+	    || ($geom eq "") \
+	    || (($size != "") && ([catch {incr w}] || [catch {incr h}])) \
+	    || (($pos != "") && ([catch {incr x}] || [catch {incr y}])))} {
+	logError Tk::badGeometry [getTokenRange $word]
+    }
+    return [incr index]
+}
+
+proc ::coreTk::checkBitmap {tokens index} {
+    # Verify the @foo.xbm works in Windows.
+    # Flag non-built-in bitmaps as non portable.
+
+    set word [lindex $tokens $index]
+    if {![getLiteral $word literal]} {
+	return [checkWord $tokens $index]
+    }
+
+    # Search for non-portable bitmaps if the literal does not begin
+    # with an @ (filename) or empty string.
+
+    if {($literal ne {}) && ![string match "@*" $literal]} {
+	if {$literal ni $coreTk::builtinBitmaps} {
+	    logError Tk::nonPortBitmap [getTokenRange $word]
+	}
+    }
+    return [incr index]
+}
+
+proc ::coreTk::checkVirtual {tokens index} {
+    # Verify the existence of chevrons.
+
+    set word [lindex $tokens $index]
+    if {![getLiteral $word literal]} {
+	return [checkWord $tokens $index]
+    }
+
+    # Make sure the literal matches the Virtual event format and
+    # the name of the event is not an empty string.
+
+    if {![regexp {^<<[^<>]+>>$} $literal]} {
+	logError Tk::badVirtual [getTokenRange $word]
+    }
+    return [incr index]
+}
+
+proc ::coreTk::checkEvent {tokens index} {
+    # Std. Event for bind. (Version Specific)
+
+    set word [lindex $tokens $index]
+    if {![getLiteral $word literal]} {
+	return [checkWord $tokens $index]
+    }
+
+    coreTk::CheckEventString $word 0 $literal
+    return [incr index]
+}
+
+proc ::coreTk::checkKeysym {tokens index} {
+    variable validKeysyms
+
+    set word [lindex $tokens $index]
+    if {![getLiteral $word literal]} {
+	return [checkWord $tokens $index]
+    }
+    if {$literal ni $validKeysyms} {
+	logError Tk::nonPortKeysym [getTokenRange $word]
+    }
+    return [incr index]
+}
+
+proc ::coreTk::checkSequence {noVirtual tokens index} {
+    # Check for a sequence of events.
+
+    set word [lindex $tokens $index]
+    if {![getLiteral $word literal]} {
+	return [checkWord $tokens $index]
+    }
+
+    # Skip over all chars until the first "<".  All prior
+    # chars are considered keysyms.
+
+    set end [string length $literal]
+    if {$end > 0} {
+	while {[set i [string first "<" $literal]] >= 0} {
+	    set startEvent   $i
+	    set virtualBegin 0
+	    set virtualEnd   0
+	    incr i
+	    if {[string index $literal $i] eq "<"} {
+		set virtualBegin 1
+	    }
+
+	    # Find the end of the event description.  Log errors
+	    # if an ending ">" is not found or a virtual event
+	    # was partially specified or completely specified.
+
+	    set i [string first ">" $literal]
+	    if {$i < 0} {
+		logError Tk::badEvent \
+			[list [getLiteralPos $word $startEvent] 1]
+		break
+	    }
+
+	    set endEvent $i
+	    incr i
+	    if {[string index $literal $i] eq ">"} {
+		set virtualEnd 1
+		incr endEvent
+	    }
+
+	    if {$virtualBegin && $virtualEnd && !$noVirtual} {
+		# No-op, this is just a valid virtual event.
+	    } elseif {$virtualBegin && $virtualEnd && $noVirtual} {
+		logError Tk::noVirtual [list [getLiteralPos $word $i] 1]
+	    } elseif {$virtualBegin || $virtualEnd} {
+		logError Tk::badEvent \
+			[list [getLiteralPos $word $endEvent] 1]
+	    } else {
+		coreTk::CheckEventString $word $startEvent \
+			[string range $literal $startEvent $endEvent]
+	    }
+	    set literal [string range $literal $i end]
+	}
+    } else {
+	logError Tk::noEvent [getTokenRange $word]
+    }
+    return [incr index]
+}
+
+proc ::coreTk::CheckEventString {word offset literal} {
+    variable validEvents
+    variable validKeysyms
+    variable validModifiers
+
+    # Loop over the event string, parsing the individual patterns.
+    # An error is logged for any of the following patterns:
+    #
+    # <word				(missing ">")
+    # <modifier>			(missing event)
+    # <... event-modifier>		(modifier after event)
+    # <... event-event ...>		(more then one event)
+    # <... button-badButtonInteger ...>	(invalid button)
+    # <... keypress-badKeysym ...>	(invalid keysym)
+
+    if {![string match "<*" $literal]} {
+	# Simple string
+	return
+    }
+
+    if {[regexp {^<<[^<>]+>>$} $literal]} {
+	# Valid virtual event
+	return
+    }
+
+    # Verify the "angle-bracket" event type is formed properly
+
+    set pos [expr {[string length $literal]-1}]
+    if {[string index $literal $pos] ne ">"} {
+	logError Tk::badEvent [list [getLiteralPos $word \
+		[expr {$pos + $offset}]] 1]
+	return
+    }
+
+    # Drop the <> from the event string.
+
+    incr pos -1
+    set literal [string range $literal 1 $pos]
+    incr offset
+
+    set prevType ""
+
+    # Pos will point to the end of each part, so to start we need
+    # to set pos to -2 to simulate jumping past the "-".
+
+    set pos -2
+
+    # Skip over any leading modifiers
+
+    while {1} {
+	set pat [GetNextEventPart pos offset literal]
+	if {$pos == [string length $literal]} {
+	    break
+	}
+	if {$pat ni $validModifiers} {
+	    break
+	}
+    }
+
+    # Skip the event specifier, if present
+
+    if {$pat in $validEvents} {
+	set eventType $pat
+	set pat [GetNextEventPart pos offset literal]
+    } else {
+	set eventType ""
+    }
+
+    if {$pat ne ""} {
+	if {[regexp {^[1-5]$} $pat]} {
+	    if {$eventType eq ""} {
+		# ButtonPress event
+	    } elseif {[regexp {^(Key|KeyPress|KeyRelease)$} $eventType]} {
+		# KeyPress
+		if {$pat ni $validKeysyms} {
+		    logError Tk::nonPortKeysym [list [getLiteralPos $word \
+			    $offset] 1]
+		    return
+		}
+	    } elseif {![regexp {^(Button|ButtonPress|ButtonRelease)$} $eventType]} {
+		# Button detail for non-button event
+		logError Tk::badEvent [list [getLiteralPos $word \
+			$offset] 1]
+		return
+	    }
+	} else {
+	    # Verify this is a valid keysym associated with a key event
+	    if {![regexp {^(|Key|KeyPress|KeyRelease)$} $eventType]} {
+		logError Tk::badEvent [list [getLiteralPos $word \
+			$offset] 1]
+		return
+	    } elseif {$pat ni $validKeysyms} {
+		logError Tk::nonPortKeysym [list [getLiteralPos $word \
+			$offset] 1]
+		return
+	    }
+	}
+    } elseif {$eventType eq ""} {
+	# No event type, button number, or keysym was found
+
+	logError Tk::badEvent [list [getLiteralPos $word \
+		$offset] 1]
+	return
+    }
+
+    set pat [GetNextEventPart pos offset literal]
+    if {$pat ne ""} {
+	# Extra characters at end
+
+	logError Tk::badEvent [list [getLiteralPos $word \
+		$offset] 1]
+    }
+    return
+}
+
+proc ::coreTk::GetNextEventPart {posVar offsetVar literalVar} {
+    upvar 1 $posVar pos
+    upvar 1 $offsetVar offset
+    upvar 1 $literalVar literal
+
+    incr pos 2
+    incr offset $pos
+    set literal [string range $literal $pos end]
+
+    if {[regexp -indices {.[- ]} $literal match]} {
+	set pos [lindex $match 0]
+    } else {
+	set pos [string length $literal]
+    }
+
+    return [string range $literal 0 $pos]
+}
+
+proc ::coreTk::checkGridOptions {tokens index} {
+    # Check the grid syntax for implicit row/col placement
+    # then check the grid options.
+
+    ##puts stderr "coreTk::checkGridOptions $index [getTokenRange [lindex $tokens 0]]"
+    ##foreach t $tokens {puts stderr "\t[getTokenString $t]"}
+
+    set argc [llength $tokens]
+    set windowFound  0
+    set gridRelFound 0
+    set prev ""
+
+    while {$index < $argc} {
+	# If it is not a literal, it is assumed to be a
+	# variable name.  Call the window name checker.
+
+	set word [lindex $tokens $index]
+	if {![getLiteral $word literal]} {
+	    set index [checkWinName $tokens $index]
+	    set prev ""
+	    set windowFound 1
+	    continue
+	}
+
+	# If the literal begins with a "-" and is not only
+	# a "-" then it is an option.  Break out of the loop.
+
+	if {[string match "-?*" $literal]} {
+	    break
+	}
+
+	# Check to see if the literal is an implicit placement
+	# marker, if not assume it is a window name.
+
+	if {$literal eq "-" || $literal eq "x" || $literal eq "^"} {
+	    # A - may not follow a ^ or a x.
+
+	    if {($literal eq "-") && (($prev eq "^") || ($prev eq "x"))} {
+		logError Tk::badGridRel [getTokenRange $word]
+	    }
+	    set prev $literal
+	    set gridRelFound 1
+	    incr index
+	} else {
+	    # Assumed to be a window name.
+
+	    set index [checkWinName $tokens $index]
+	    set windowFound 1
+	    set prev ""
+	}
+    }
+
+    if {(!$windowFound) && ($gridRelFound)} {
+	logError Tk::badGridMaster [getTokenRange $word]
+	return [checkCommand $tokens $index]
+    } elseif {!$windowFound} {
+	logError numArgs {}
+	return [checkCommand $tokens $index]
+    }
+
+    if {[pcx::getCheckVersion coreTk] > 8.3} {
+	# Extended -padx -pady options !
+
+	return [checkWidgetOptions 0 {} {
+	    {-padx {checkListValues 1 2 {checkPixels}}}
+	    {-pady {checkListValues 1 2 {checkPixels}}}
+	    {-column checkWholeNum}
+	    {-columnspan checkWholeNum}
+	    {-in checkWinName}
+	    {-ipadx checkPixels}
+	    {-ipady checkPixels}
+	    {-row checkWholeNum}
+	    {-rowspan checkWholeNum}
+	    {-sticky coreTk::checkSticky}
+	} $tokens $index] ; # {}
+
+    } else {
+	return [checkWidgetOptions 0 {
+	    -padx -pady
+	} {
+	    {-column checkWholeNum}
+	    {-columnspan checkWholeNum}
+	    {-in checkWinName}
+	    {-ipadx checkPixels}
+	    {-ipady checkPixels}
+	    {-row checkWholeNum}
+	    {-rowspan checkWholeNum}
+	    {-sticky coreTk::checkSticky}
+	} $tokens $index] ; # {}
+    }
+}
+
+proc ::coreTk::checkSticky {tokens index} {
+    # Verify the string is composed of one or more
+    # of the following chars: n,w,s, or e.
+
+    set word [lindex $tokens $index]
+    if {![getLiteral $word literal]} {
+	return [checkWord $tokens $index]
+    }
+    if {![regexp {^([news]*)$} $literal]} {
+	logError Tk::badSticky [getTokenRange $word]
+    }
+    return [incr index]
+}
+
+proc ::coreTk::checkTabs {tokens index} {
+    # Check the list of tab stops for valid screen distances followed by
+    # an optional position of the tab stop.
+
+    set word [lindex $tokens $index]
+    if {![getLiteral $word literal]} {
+	return [checkWord $tokens $index]
+    }
+    if {[catch {llength $literal}]} {
+	logError Tk::badTab [getTokenRange $word]
+	return [incr index]
+    }
+
+    set errIndex [lindex [getTokenRange $word] 0]
+    set errLen   [lindex [getTokenRange $word] 1]
+    set errPos   0
+    set position 0
+
+    foreach tab $literal {
+	# See if the next tab value is a screen distance first.  Strip
+	# off any of the screen distance chars first.  If the value is
+	# not a valid float, then (a) check position keywords if the
+	# next value can be a position, otherwise log an error.
+
+	set len  [string length $tab]
+	set last [expr {$len - 1}]
+	if {[regexp {^([0-9\.]+)([cmpi])?$} $tab dummy float]} {
+	    if {[catch {expr {abs($float)}}]} {
+		set errRange [list [expr {$errIndex + $errPos}] $errLen]
+		logError badPixel $errRange
+	    }
+	    set position 1
+	} elseif {$position} {
+	    if {![matchKeyword {left right center numeric} $tab 0 0  __ignore __ignore]} {
+		set errRange [list [expr {$errIndex + $errPos}] $errLen]
+		logError Tk::badTabJust $errRange $tab
+	    }
+	    set position 0
+	} else {
+	    set errRange [list [expr {$errIndex + $errPos}] $errLen]
+	    logError badPixel $errRange
+	}
+	incr errPos [expr {$len + 1}]
+    }
+    return [incr index]
+}
+
+proc checkColormap {tokens index} {
+    # Check to see if the literal is "new" or the name of a window.
+
+    set word [lindex $tokens $index]
+    if {![getLiteral $word literal]} {
+	return [checkWord $tokens $index]
+    }
+
+    if {$literal eq "new"} {
+	# No-op.
+    } elseif {[string match ".*" $literal]} {
+	analyzer::CheckWinNameInternal $literal $word $tokens $index
+    } else {
+	logError Tk::badColormap [getTokenRange $word] $literal
+    }
+    return [incr index]
+}
+
+proc ::coreTk::checkVisual {tokens index} {
+    # Check to see if the visual is composed of a valid mask component
+    # and optional depth value.  Valid mask components are: a window
+    # name, a visual ID, or one of the following strings in "builtinMasks"
+
+    set word [lindex $tokens $index]
+    if {![getLiteral $word literal]} {
+	return [checkWord $tokens $index]
+    }
+
+    if {[catch {llength $literal}]} {
+	logError Tk::badVisual [getTokenRange $word]
+	return [incr index]
+    }
+    set mask  [lindex $literal 0]
+    set depth [lindex $literal 1]
+
+    if {[string match ".*" $literal]} {
+	analyzer::CheckWinNameInternal $literal $word $tokens $index
+    } elseif {$literal eq "default"} {
+	# No-op.
+    } elseif {![catch {incr literal}]} {
+	# No-op.
+    } elseif {[matchKeyword $coreTk::builtinMasks $mask 0 0 script __ignore]} {
+	if {($depth != {}) && ([catch {incr depth}])} {
+	    set errIndex [lindex [getTokenRange $word] 0]
+	    set errLen   [lindex [getTokenRange $word] 1]
+	    set errPos   [expr {[string length $mask] + 1}]
+
+	    set errRange [list [expr {$errIndex + $errPos}] $errLen]
+	    logError Tk::badVisualDepth $errRange
+	}
+    } else {
+	logError Tk::badVisual [getTokenRange $word]
+    }
+    return [incr index]
+}
+
+proc ::coreTk::checkScreen {tokens index} {
+    # First warn because this is a non-portable command (in that it does
+    # nothing useful on any platform but UNIX.)  The check to verify
+    # the screen format is valid: <name>:<int>?.<int>?
+
+    set word [lindex $tokens [expr {$index - 1}]]
+    logError nonPortOption [getTokenRange $word]
+    set word [lindex $tokens $index]
+    if {![getLiteral $word literal]} {
+	return [checkWord $tokens $index]
+    }
+    set badScreen 0
+    if {[catch {llength $literal}]} {
+	set badScreen 1
+    } else {
+	set parts [split $literal :]
+	set coord [lindex $parts 1]
+
+	if {([llength $parts] != 2) \
+		|| (![regexp {^([0-9]+)(\.([0-9]+))?$} $coord c x dummy y]) \
+		|| ($c eq "") \
+		|| (($x != "") && [catch {incr x}]) \
+		|| (($y != "") && [catch {incr y}])} {
+	    set badScreen 1
+	}
+    }
+    if {$badScreen} {
+	logError Tk::badScreen [getTokenRange $word]
+    }
+    return [incr index]
+}
+
+proc ::coreTk::checkNameAndPairs {pairs tokens index} {
+    set argc [llength $tokens]
+    set start $index
+
+    while {$index < $argc} {
+	set word [lindex $tokens $index]
+	if {![getLiteral $word literal]} {
+	    return [checkCommand $tokens $index]
+	}
+
+	# If this is the first word and it does not begin with a
+	# "-" then it is the name for the image.  Continue checking
+	# the next word.
+
+	if {($index == $start) && ![string match "-*" $literal]} {
+	    incr index
+	    continue
+	}
+	set script ""
+	if {![matchKeyword $pairs $literal 0 0 script __ignore]} {
+	    set options {}
+	    foreach opt $pairs {
+		lappend options [lindex $opt 0]
+	    }
+	    logError badOption [getTokenRange $word] $options $literal
+	    incr index
+	    continue
+	}
+	if {$script eq ""} {
+	    set script checkWord
+	}
+	incr index
+	if {$index < $argc} {
+	    set index [{*}$script $tokens $index]
+	} else {
+	    logError noSwitchArg [getTokenRange $word] $literal
+	}
+    }
+    return $argc
+}
+proc ::coreTk::checkPalette {tokens index} {
+    set word [lindex $tokens $index]
+    if {![getLiteral $word literal]} {
+	return [checkWord $tokens $index]
+    }
+
+    # This expression *should* match <float>?/<float>/<float>?
+
+    set exp {^[-+]?([0-9]+(\.[0-9]+)?)(/[-+]?([0-9]+(\.[0-9]+)?)/[-+]?([0-9]+(\.[0-9]+)?))?$}
+    if {(![regexp $exp $literal c x x1 sub y y1 z z2]) \
+	    || ($c eq "") \
+	    || (($x != "") && [catch {expr {abs($x)}}]) \
+	    || (($sub != "") && [catch {expr {abs($y)}}] && [catch {expr {abs($z)}}])} {
+	logError Tk::badPalette [getTokenRange $word]
+    }
+    return [incr index]
+}
+proc ::coreTk::checkWinThenOptions {options tokens index} {
+    # Scan all arguments checking each window name unil the first
+    # non-window word is found.  At this point check the configure
+    # options.
+
+    set argc [llength $tokens]
+    if {$argc == $index} {
+	logError numArgs {}
+	return [incr index]
+    }
+
+    set start $index
+    while {$index < $argc} {
+	set word [lindex $tokens $index]
+	if {![getLiteral $word literal]} {
+	    return [checkCommand $tokens $index]
+	}
+	if {![string match ".*" $literal]} {
+	    break
+	}
+	analyzer::CheckWinNameInternal $literal $word $tokens $index
+	incr index
+    }
+    if {$index == $argc} {
+	return $index
+    } else {
+	return [checkConfigure 0 $options $tokens $index]
+    }
+}
+
+proc ::coreTk::checkPriority {tokens index} {
+    # The priortiy should be widgetDefault, startupFile, userDefault,
+    # interactive or an integer between 0 and 100.
+
+    set word [lindex $tokens $index]
+    if {![getLiteral $word literal]} {
+	return [checkWord $tokens $index]
+    }
+    set priority {widgetDefault startupFile userDefault interactive}
+    if {(![matchKeyword $priority $literal 0 0 x __ignore]) \
+	    && ([catch {incr literal 0}] \
+	    || ($literal < 0) || ($literal > 100))} {
+	logError Tk::badPriority [getTokenRange $word]
+    }
+    return [incr index]
+}
+
+proc ::coreTk::checkSetPalette {tokens index} {
+    set argc [llength $tokens]
+    if {$argc < 1} {
+	logError numArgs {}
+	return [checkCommand $tokens $index]
+    }
+    while {$index < $argc} {
+	set index [checkKeyword 1 {\
+		activeBackground foreground selectColor\
+		activeForeground highlightBackground selectBackground\
+		background highlightColor selectForeground\
+		disabledForeground insertBackground troughColor\
+	    } $tokens $index]
+	if {$index == $argc} {
+	    logError numArgs {}
+	    break
+	}
+	set index [checkColor $tokens $index]
+    }
+    return $index
+}
+
+proc ::coreTk::checkNullOrType {type tokens index} {
+    # Verify the word is empty string or <type>
+
+    set word [lindex $tokens $index]
+    if {![getLiteral $word literal]} {
+	return [checkWord $tokens $index]
+    }
+    if {$literal ne {}} {
+	return [{*}$type $tokens $index]
+    }
+    return [incr index]
+}
+
+
+proc ::coreTk::checkState {tokens index} {
+    # Either an integer or a Visibility keyword
+
+    set word [lindex $tokens $index]
+    if {[getLiteral $word literal]} {
+	if {[catch {incr literal}]} {
+	    return [checkKeyword 1 {\
+		    VisibilityUnobscured VisibilityPartiallyObscured\
+		    VisibilityFullyObscured\
+		} $tokens $index]
+	}
+    }
+    return [checkWord $tokens $index]
+}
+
+proc ::coreTk::checkRoot {tokens index} {
+    # Either an integer or a window name
+
+    set word [lindex $tokens $index]
+    if {[getLiteral $word literal]} {
+	if {[catch {incr literal}]} {
+	    return [checkWinName $tokens $index]
+	}
+    }
+    return [checkWord $tokens $index]
+}
+
+proc ::coreTk::checkBindBody {tokens index} {
+
+    set word [lindex $tokens $index]
+
+    if {![getLiteral $word literal]} {
+	return [checkWord $tokens $index]
+    }
+
+    # The body is a literal, we can check it.
+
+    # A speciality of bind scripts is that they are allowed to begin
+    # with a plus ("+") character. It is this possibility which may
+    # prevent us from directly using 'checkBody'.
+
+    # We check for that character and if it is present we hand of the
+    # script to a special body checker instead of the standard one.
+
+    # Note. This code does not take %-substitution into account. This
+    # means that usage of %W and other placeholders may cause the
+    # generation of invalid warnings and/or errors. I currently don't
+    # know how to handle this. Maybe some sort of 'context' on a stack
+    # which can be queried by the checkers called inside of
+    # [checkBody*] and alter their behaviour ?
+
+    # Alternative solution - implemented below.
+
+    # One separate pass over the literal to check the correctness of
+    # %-placeholders. And if there are some use the same trick as used
+    # for [expr] (see analyzer.tcl, checkExpr, line 2296) to replace
+    # the placeholders with acceptable data ('%%' => ' %', '%x' => '$x').
+
+    set start [lindex [lindex [lindex [lindex $word 2] 0] 1] 0]
+    set end   [lindex [lindex [lindex $word 2] end] 1]
+    set range [list $start [expr {[lindex $end 0] + [lindex $end 1] - $start}]]
+    set start [lindex $range 0]
+    set size  [lindex $range 1]
+
+    set head   [string range $::analyzer::script 0            [expr {$start-1}]]
+    set tail   [string range $::analyzer::script [expr {$start+$size}]      end]
+    set script [string range $::analyzer::script $start [expr {$start+$size-1}]]
+
+    # Now we have the script before and after the bind script, and the
+    # bind script itself. Check for %-characters in the literal/bind script
+    # Note invalid placeholders, note number of substitutions.
+
+    set nscript [ReplacePercents $script $word]
+    set save                   $::analyzer::script
+    set ::analyzer::trueScript $save
+    set ::analyzer::script     $head$nscript$tail
+
+    if {[regexp {^\+} $literal]} {
+	set res [checkBodyOffset 1 $tokens $index]
+    } else {
+	set res [checkBody $tokens $index]
+    }
+
+    set ::analyzer::script     $save
+    set ::analyzer::trueScript {}
+
+    return $res
+}
+
+# Bugzilla 32925. Now using '[]' as our dynamic word to render the
+# placeholders invisible to checks based on literals.
+namespace eval ::coreTk {
+    variable  percent {
+	%% {==}	%# {[]}	%a {[]}	%A {[]}	%b {[]}	%B {[]}	%c {[]}	%d {[]}
+	%D {[]}	%E {[]}	%f {[]}	%h {[]}	%k {[]}	%K {[]}	%m {[]}	%N {[]}
+	%o {[]}	%p {[]}	%R {[]}	%s {[]}	%S {[]}	%t {[]}	%T {[]}	%w {[]}
+	%W {[]}	%x {[]}	%X {[]}	%y {[]}	%Y {[]}
+    }
+}
+proc ::coreTk::ReplacePercents {script word} {
+    variable percent
+
+    set nscript [string map $percent $script]
+
+    if {[regexp {%} $nscript]} {
+	logError Tk::badBindSubst [getTokenRange $word] $script
+    }
+
+    # Force %% back in the form visible to the commands inside of the
+    # bind script. Sort of. We are still constrained to create a
+    # same-length replacement so that all the token indices etc. are
+    # correct.
+
+    return [string map {== { %}} $nscript]
+}
+
+
+proc ::coreTk::checkGridIndex {tokens index} {
+    # all, numeric, or widgetname
+
+    set word [lindex $tokens $index]
+    if {![getLiteral $word literal]} {
+	return [checkWord $tokens $index]
+    }
+    if {$literal eq "all"} {
+	return [incr index]
+    }
+    if {![catch {incr literal}]} {
+	# numeric
+	return [incr index]
+    }
+    return [checkWinName $tokens $index]
+}
+
+proc ::coreTk::checkAlpha {tokens index} {
+    set word [lindex $tokens $index]
+    # Check to see if:
+    # - it's a float
+    # - in the range 0 to 1
+
+    if {![getLiteral $word literal]} {
+	return [checkWord $tokens $index]
+    }
+
+    if {[catch {expr {abs($literal)}}]} {
+	logError badFloat [getTokenRange $word]
+	return [incr index]
+    }
+
+    if {($literal < 0) || (1 < $literal)} {
+	logError Tk::badAlpha [getTokenRange $word]
+    }
+
+    return [incr index]
+}
+
+proc ::coreTk::TtkStateOption {tokens index} {
+    return [analyzer::warn Tk::warnTtkStateOption {} {
+	checkKeyword 1 {normal disabled}
+    } $tokens $index]
+}
+
+proc ::coreTk::TtkStateOptionE {tokens index} {
+    return [analyzer::warn Tk::warnTtkStateOption {} {
+	checkKeyword 1 {readonly normal disabled}
+    } $tokens $index]
+}
+
+
+proc ::coreTk::TtkPadding {tokens index} {
+    return [analyzer::warn Tk::warnTtkPadding {} {
+	checkListValues 1 4 checkPixels
+    } $tokens $index]
+}
+
+
+
+# ### ######### ###########################
+pcx::complete

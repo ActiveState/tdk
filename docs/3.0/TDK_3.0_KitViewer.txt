@@ -1,0 +1,66 @@
+TDK 3.0 / Kit Viewer
+====================
+
+        New Tool. Specialized File Explorer for browsing through
+        Metakit/Zip based virtual file systems.
+
+Status
+------
+	New name:	Virtual Filesystem Explorer
+	Command:	vfse
+	Based on:	TkTreeCtrl for display of filetree.
+
+Abilities
+---------
+
+[OK]	Mount zip files, starkit's, starpacks for exploration.
+	(Command line and UI).
+
+[OK]	Mount system volumes (Win: Drives, Unix: /) for exploration.
+
+[OK]	Mount zip/metakit files in place (IOW: Pseudo-conversion of
+	the file into directory and then simply browsing deeper into
+	the tree.
+
+[OK]	Opening of files with platform specific viewer (Win: Registry,
+	file assocation; Unix: Just env(EDITOR)).
+
+[OK]	Copying of files out of mounted archives to anywhere in the
+	native filesystem.
+
+[OK]	Display of type infomration, property information for selected
+	files and directories.
+
+
+Possible abilities
+------------------
+
+[  ]	 Introspection on tclvfs : Mount any type of filesystem
+	 supported by tclvfs.
+
+[  ]	 May need plugin system for better selection of viewer on
+	 unix. Based on file type information, MIME-types + associated
+	 viewers ...
+
+[  ]	 Writing a file into a mounted non-native filesystem, if the
+	 filesystem supports the operation => Editing of deployed
+	 starkits and packs.
+
+
+Miscellanea
+-----------
+
+Internal organization of the code is a bit dismal, especially when it
+comes to menus, toolbar, handling of selection and actions. Should
+create some more object classes. Another point is that the combination
+of left and right pane should be placed into a larger 'explorer'
+widget. Currently this is the main appl. UI with windows strewn over
+the place.
+
+Note: Creation of file-explorer widget allows for use in other
+applications. TclApp/TAPE file selection panels could use
+this. Virtual filesystem would actually manage 'links' to the original
+places (part of file attributes).
+
+
+========================================================================

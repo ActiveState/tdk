@@ -1,0 +1,35 @@
+
+Specification of execution widget
+=================================
+
+Refs:	compiler/UI_spec.txt,	ui_te
+	wrapper/UI_spec.txt,	ui_te
+	compiler/Code_spec.txt,	tclpro::ui::execution
+	wrapper/Code_spec.txt,	tclpro::ui::execution
+
+API
+	Options
+		-command	Callback for internal start button.
+		-background	(-bg) Backgrund color.
+		-foreground	(-fg) Forground color.
+		-font		Font for internal text widget
+
+	Methods
+		enable		\ en/disable start button
+		disable		/
+		log level text	Add log text to window.
+				(level -: see tcllib/log)
+		clear		Clear log window
+
+Internals
+	Widgets
+
+	.run		Tk Button		(Start Button)
+	.log		BW ScrolledWindow	(Manager for Trace window)
+	.log.text	Tk Text			(Trace Window)
+
+	Placement
+
+	.run		Top @ Left
+	.log		Below .run, fill height, width
+	.log.text	Managed by .log

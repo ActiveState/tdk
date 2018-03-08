@@ -1,0 +1,132 @@
+Notes regarding frontend, internal architecture, musings, and stuff
+===================================================================
+
+oomk concept: virtual views for selection (row filtering) and sorting
+
+personal concept: virtual views to transduce values like 'id's into
+readable strings, f.e. the name of the object an id refers to. Also
+virtual views to declare which of the columns are actually visible (to
+the mktable = displayed) - projection (column filtering).
+
+
+oomk / personal interaction: Cannot mix personal views and oomk views
+in a sequence of views. oomk has to come first, below, and personal
+modifications have to come later. reason: personal views do not have
+the machinery to link correctly into metakit for operation ...
+
+conclusion: sorting on data computed by transduce (f.e. id -> string
+name) is not possible, would require the sorting view on top of a
+personmal one, not possible, s.a.
+
+
+workaround: we have to extend the actual view with columns containing
+all the computed information we need. have to precompute the contents
+after loading the database, and before opening windows. This means
+that transducers are not required anymore. The only thing we need is
+column filtering, and that can be done after sorting and row
+filtering.
+
+			    V----------\
+	view ----> controller		"ttable mktable"
+			     \----------^
+
+			: sorting, filtering
+			: table is given a different view ...
+
+
+The precompuation takes extremely long ... Loading of the data for
+procheck is fast, the precopute phase is then 55 seconds. That is much
+to slow for a good user experience ...
+
+Alternative ? ... The 'mktable' has to establish a cursor for reading
+the data ... currently internal ... If we controller is able to get
+this cursor it can set traces which compute the data ... Ahhh, this
+still prevents sorting by the precomputed data ...
+
+Alternative ... Perform the precompute as part of the phase generating
+the database ... The db is larger, the loading is faster ... Or allow
+the system to save the extended database ...
+
+
+
+
+Classes and widgets ...
+================================
+
+stable	"Structured Table"
+--------------------------
+
+	-	Knows columns (by name)
+	-	Knows columns by type (value mapper objects)
+	-	Knows columns by title (string mapper objects)
+	-	Has data view - Has to match column list
+		(May have more columns)
+
+	Change of the data view causes refresh of display
+	*	This handles filtering and sorting.
+
+	Data mapper default   -> self = identity
+	String mapper default -> self = identity / local map
+
+	Data mapper specification:
+	     Type code for a factory ?
+
+	     Factory has class + arguments for construction
+
+	Subviews - View commands are present for cursor and
+	during looping ... can use that to access the data
+	and display something based on this ...
+
+
+	map:	    column name -> id  | tktable -command
+		    column id -> name  |
+
+ - = - Better - = -
+
+   Data mapping done in virtual views ...
+   ditto hiding of columns, data based on subviews ...
+   separate viewing from transformations ...
+
+
+
+
+record	"Detail view"
+---------------------
+
+	- Has data view (has to match column)
+
+
+
+
+ref mapping object
+	- maps incoming id values to human readable string
+	- able to function as delegator for data mapping in autolist.
+	- delegator for data retrieval - no default - oomk view
+	- is given the columns to use for the creation of the string.
+
+filter view
+	- adaptor for data view
+	- delegator for data retrieval - no default - oomk view
+	- is able to filter data according to specified criteria
+	- changes to filter cause callout to observers ...
+
+data view
+	- adaptor for oomk view
+	- extended functionality: observer mgmt
+	- callout to observers on change
+
+
+
+Factory Lists
+-------------
+
+Mapping from 'view name' to class for new list displays.
+
+
+
+   * stevel  whispers: There's Csaba Nemethi's stuff, but also search c.l.t for Hugelist ... I've not used either
+bushong	OOMMF release 1.2.0.3
+    * stevel  whispers: http://groups.google.com/groups?q=Hugelist+group:comp.lang.tcl.*+group:comp.lang.tcl.*+group:comp.lang.tcl.*+group:comp.lang.tcl.*&hl=en&lr=&ie=UTF-8&group=comp.lang.tcl.*&scoring=d&selm=pgpmoose.200305051123.9682%40despot.non.net&rnum=1
+bushong	yes
+    * aku  whispered to stevel: Ah, Hugelist ... Will have look.
+

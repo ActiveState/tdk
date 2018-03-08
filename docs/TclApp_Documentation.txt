@@ -1,0 +1,575 @@
+TDK 2.5 TclApp
+==============
+
+Notes / Known Issues
+
+*	Danger.
+
+	JCW's Tclkit and the base-* kits provided by ActiveState as
+	part of the Tcl Dev Kit reset 'auto_path' to ... upon startup,
+	before yielding to the actual application.
+
+	This means that the application in the starkit/pack is by
+	default unable to find packages outside of the
+	starkit/pack. To circumvent this the application has to extend
+	the auto_path on its own to include the location of the
+	additional packages it needs but have not been wrapped.
+
+	For the base-* kits we provide this behaviour may change in
+	the future, so that they search in the local installation of
+	ActiveTcl / Tcl Dev Kit too.
+
+*	We are aware of the _security_ implications of the change
+	mentioned above. The current default behaviour means that
+	starkits/packs are seen as completely selfcontained. The
+	moment we open them up by allowing them to search for packages
+	outside of themselves it becomes possible for an adversary to
+	replace the packages it uses with its own, causing the
+	starkit/pack to execute arbitray code. This is independent of
+	the order of paths in auto_path. The adversary just has to use
+	higher minor version numbers to cause the replacement. The
+	only counter is to use 'package require -exact'. Something
+	almost never done, especially in packages requiring other
+	packages.
+
+	Because of this implication any change we will do will most
+	likely be controlled by one or more options to TclApp.
+
+
+
+==============
+
+Intro
+	TclApp is the sucessor to prowrap, the wrapper application Tcl
+	Dev Kit inherited from TclPro. The disadvantage of prowrap is
+	it reliance on pre-8.4 Tcl without VFS. Wrapping is possible,
+	but requires a lot of effort and handholding on the part of
+	the developer wishing to wrap its code for easy deployment.
+
+	TclApp makes use of the VFS layer coming with Tcl 8.4 or
+	higher, vastly simplifying the wrapping. Additionally it not
+	only wraps files, but allows the specification of packages as
+	well, giving the developer a high-level interface behind which
+	nitty-grit details, well, not vanish, but stay out of focus
+	for most of the time.
+
+Interfaces
+	TclAp has two interfaces, both accessible through one
+	application.
+
+	(1)	A command line interface (CLI) where the developer
+		specifies the files and packages to wrap as arguments
+		to TclApp.
+
+	(2)	A graphical user interface allowing the composition of
+		a wrapped application via mouse.
+
+	The interfaces are described together, linking command line
+	options to elements of the GUI and vice versa.
+
+	When TclApp is run without arguments GUI mode is invoked, else
+	CLI mode is assumed.
+
+	The 'TDK TclApp Key' refers to the key used in TclApp Project
+	files and equivalent to the CLI option.
+
+
+Explanations
+______________________________________________________________________
+
+[Misc options]
+______________________________________________________________________
+CLI Option:	-h				|
+CLI Option:	-help				|
+CLI Option:	-?				|
+GUI Element:	NONE				|
+TDK TclApp Key:	NONE
+Effect:
+		Provides quick help on the available CLI options.  The
+		application is not run and other arguments present are
+		ignored, except for configuration files listed by
+		-config options. The latter is important as a
+		configuration file may contain -h or any of its
+		aliases.
+______________________________________________________________________
+CLI Option:	-nologo
+GUI Element:	NONE
+TDK TclApp Key:	NONE
+Effect:
+		Suppresses the output of the banner message usually
+		shown when invoking TclApp in command line mode.
+______________________________________________________________________
+CLI Option:	-gui CONFIG	[2]		|
+GUI Element:	NONE				|
+TDK TclApp Key:	NONE
+Restrictions:
+		Allowed only as the first argument to TclApp. Illegal
+		if used after other arguments and options.
+Effect:
+		Invokes GUI mode from the command line and pre-loads
+		the contents of the file CONFIG into the GUI.
+Notes:
+		This option is used by the launcher application
+		(prolaunch) on windows to start TclApp when a TDK
+		project containing a TclApp configuration is
+		double-clicked.
+______________________________________________________________________
+CLI Option:	-t    PATH			| Optional
+CLI Option:	-temp PATH			|
+GUI Element:	-> Advanced -> Temp. directory	|
+TDK TclApp Key:	System/Tempdir
+Effect:
+		TclApp places transient state stored in files into a
+		instance-specific subdirectory of a directory T. T is
+		called the temp.directory and usually its location is
+		derived automatically, from system defaults and
+		environment variables. The option allows the developer
+		to choose T explicitly.
+______________________________________________________________________
+CLI Option:	-verbose			| Optional
+GUI Element:	-> Advanced -> Verbose		|
+TDK TclApp Key:	System/Verbose
+Effect:
+		Normally TclApp operates quietly while processing
+		options and wrapping files. This option activates
+		additional logging of current activity while TclApp is
+		running.
+______________________________________________________________________
+CLI Option:	-config CONFIG	[1]		| Optional
+GUI Element:	NONE				|
+TDK TclApp Key:	NONE
+Effect:
+		Allows the specification of additional configuration
+		information held in a file.
+Notes:
+		The contents of CONFIG are processed as if they there
+		present on the command line in the same place as the
+		option itself, with the following exceptions.
+
+		Changes to the destination base path (-anchor) inside
+		of the configuration file are canceled after the file
+		is processed, and the state before the processing of
+		the file is restored.
+
+		If CONFIG is a TDK prowrap configuration, then
+
+			-anchor ''
+
+		will be set before processing its contents to ensure
+		compatibility with prowrap.
+
+		A configuration file may contain additional -config
+		specifications. The recursive inclusion of a file is
+		not permitted however.
+______________________________________________________________________
+
+[Output options]
+______________________________________________________________________
+CLI Option:	-executable PATH		| Optional
+CLI Option:	-prefix PATH			|
+GUI Element:	-> Wrap -> Base Prefix		|
+TDK TclApp Key:	Wrap/InputPrefix
+Effect:
+		TclApp takes the specified file as basis for the file
+		it stores the files to wrap into. If present the file
+		has to exist, has to be readable, and has to contain a
+		metakit filesystem (MFS). The presence of additional
+		data before the MFS is no detraction, but actually
+		makes starkits and -packs possible. To create a
+		starpack use a tclkit as prefix file.
+
+		If no prefix is specified TclApp will use an empty
+		starkit as its prefix.
+Notes:
+		This option is illegal if -merge (see below) is
+		specified.
+Limitations:
+		It is not possible to directly use the application
+		(tclsh, wish, tclkit) currently used to run tclapp
+		itself as -executable. A copy of that file has to be
+		used.
+
+		Reason (TechSpeak): The file of the application is
+		mounted to get access to the tcl runtime library
+		stored in the metakit VFS at the end of the
+		file. Because of this the tcl itself sees the file
+		actually as directory (!), and directories cannot be
+		used as -executable. This also means that we are
+		unable to copy the contents of that file from within
+		tcl / tclapp.
+______________________________________________________________________
+CLI Option:	-out PATH			| Optional
+GUI Element:	-> Wrap -> Output / Output File	|
+TDK TclApp Key:	Wrap/Output
+Effect:
+		Specifies the (base) name of the file generated by TclApp.
+		Defaults to 'tclapp-out?.tcl?' if not specified.
+		The file need not exist, but the directory it is to be
+		placed into has to exist and must also be writable.
+Notes:
+		If -merge is specified the file has to exist and has
+		to be writable.
+
+		On Windows all files have to have an extension. If the
+		user specified a name without extension the
+		application will automatically add '.tcl' as default
+		extension.
+______________________________________________________________________
+CLI Option:	-merge				| Optional
+GUI Element:	-> Wrap -> Output / Merge	|
+TDK TclApp Key:	Wrap/Merge
+Effect:
+		Modifies the processing of -executable and -out (see
+		above). -executable becomes illegal. Because the file
+		specified by -out becomes the prefix file, effectively
+		merging the files to wrap into it.
+______________________________________________________________________
+CLI Option:	-nospecials			| Optional
+GUI Element:	-> Wrap -> Suppress Specials	|
+TDK TclApp Key:	Wrap/NoSpecials
+Effects:
+		TclApp normally stores a './main.tcl' file which
+		contains code instructing the tclkit running the
+		wrapped application which package to load to invoke
+		the application.
+
+		It additionally writes a file
+		'lib/application/pkgIndex.tcl' if no package was
+		marked as the application package (see -app) to make
+		the chosen startup file the application package.
+
+		Specifying this option suppresses the generation of
+		these two files. This can be used to wrap a code base
+		which already provides them on its own.
+Notes:
+		Specifying this option effectively cancels out
+		the effects -startup and -app. For the latter it still
+		behaves as -pkg, but without the marking of an
+		application package.
+______________________________________________________________________
+CLI Option:	-compile			| Optional
+GUI Element:	-> Wrap -> Compile Tcl Files	|
+TDK TclApp Key:	Wrap/Compile/Tcl
+Effect:
+		All files with the extension .tcl, except for files
+		named 'pkgIndex.tcl' are compiled to tcl bytecodes
+		before they are stored into the output MFS.
+
+		For the execution of such a startkit the package
+		tbcload has to be present. To ensure this tclapp wraps
+		that package automatically.
+
+		In other words, usage of -compile implies '-pkg tbcload'.
+______________________________________________________________________
+
+[Advanced options]
+______________________________________________________________________
+CLI Option:	-arguments ARGUMENT_LIST	| Optional
+GUI Element:	-> Advanced -> Arguments	|
+TDK TclApp Key:	App/Argument
+Effect:
+		When running the wrapped application the specified
+		arguments are inserted before the arguments given to
+		the wrapped application by its caller.
+Notes:
+		If specified multiple times the last specification
+		takes effect.
+______________________________________________________________________
+CLI Option:	-code TCL_SCRIPT_TEXT		| Optional
+GUI Element:	-> Advanced -> Initialization	|
+TDK TclApp Key:	App/Code
+Effect:
+		When running the wrapped application the specified
+		code is run before the starkit support is loaded and
+		initialized, and before the application package is
+		loaded/invoked.
+Notes:
+		If specified multiple times the given code fragments
+		are concatenated.
+______________________________________________________________________
+CLI Option:	-encoding encoding_name			| Optional
+GUI Element:	-> Wrapping -> Prefix File -> Select	|
+TDK TclApp Key:	Encoding
+Effect:
+		The encodings selected through this option, or GUI element
+		are added to the encodings already supported by the base
+		kit used as -prefix.
+Notes:
+I		Can be specified multiple times.
+
+II		Although the encodings are always added to the wrapped
+		application they will have an effect at runtime if and
+		only if a base kit was specified. In other words,
+		selection of additional encodings is worthwhile only
+		when generating a starpack.
+______________________________________________________________________
+CLI Option:	-pkgdir path			| Optional
+GUI Element:	-> Advanced -> Package Dirs	|
+TDK TclApp Key:	Pkg/Path
+Effect:
+		All listed paths are seen as reltive to the root of
+		the generated archive. During startup of the wrapped
+		application they are added to the auto_path variable
+		of the tcl interpreter, causing the same to look in
+		these directories for packages.
+
+		This has to be used if a wrapped package is placed
+		into a nonstandard application (i.e. outside of 'lib')
+		or the wrapped application will not be able to find
+		the package.
+______________________________________________________________________
+
+[Package wrapping]
+______________________________________________________________________
+CLI Option:	-pkg NAME			| Optional
+GUI Element:	-> Files			|
+TDK TclApp Key:	Package
+Effects:
+		The definition of package NAME is obtained from the
+		package database and the package files as listed in
+		the definition are placed into the directory lib/NAME
+		of the output MFS.
+Notes:
+		While this option is optional at least one has to be
+		specified if no files are explicitly wrapped.
+
+		The package NAME has exclusive use of the directory
+		lib/NAME. Placing other files into this directory
+		through the use of the file specification options is
+		not allowed.
+
+		The NAME can be a plain package name, or of the form
+		PKGNAME-VERSION. The latter allows the user to request
+		a specific version of the package PKGNAME.
+______________________________________________________________________
+CLI Option:	-app NAME			| Optional
+GUI Element:	-> Files			|
+TDK TclApp Key:	App/Package
+Effects:
+		See above, -pkg. Additional instructs TclApp that the
+		package NAME is the application package, i.e. the
+		package which, when 'package require'd will start the
+		wrapped application.
+
+		TclApp will insert code into the wrap framework to
+		[package require] this package.
+Notes:
+		If -app NAME is used explicitly specified files cannot
+		define the application package anymore. Because of
+		this the initial destination base path (-anchor) for
+		files reverts from 'lib/application' to '/', ie. the
+		root of the output MFS.
+
+		If -app NAME is used usage of the option -startup (see
+		below) is illegal, as the package already knows which
+		file(s) to load to run the application.
+______________________________________________________________________
+
+[File wrapping]
+______________________________________________________________________
+CLI Option:	FILESPEC			| Optional
+GUI Element:	-> Files			|
+TDK TclApp Key:	Path (Subcommand File)
+Effect:
+		The specified file is read and stored into the output
+		MFS.
+Notes:
+		If the file is a glob pattern it is expanded into a
+		list of files. Each file in the list is processed as
+		if specified explicitly on the command line.
+
+		The path of the file in the output MFS is determined
+		by the name of the input file and the current settings
+		for source base directory (-relativeto), destination
+		base directory (-anchor), and file rename modifier
+		(-alias). This is explained together in the following
+		section.
+______________________________________________________________________
+CLI Option:	-relativeto PATH		| Optional
+GUI Element:	-> Files			|
+TDK TclApp Key:	Path (Subcommand Relativeto)
+Effect:
+		Specifies the source base directory for the following
+		files. Affects the translation of source paths to
+		destination paths. This is explained in detail in the
+		following section.
+
+		Initial value is '' (i.e. the empty string)
+______________________________________________________________________
+CLI Option:	-anchor PATH			| Optional
+GUI Element:	-> Files			|
+TDK TclApp Key:	Path (Subcommand Anchor)
+Effect:
+		Specifies the destination base directory for the
+		following files. Affects the translation of source
+		paths to destination paths. This is explained in
+		detail in the following section.
+
+		Initial value is 'lib/application', placing explicitly
+		specified files into a default application package, or
+		'/', if -app was specified.
+Notes:
+		The GUI currently does not provide access to the
+		functionality of this option.
+______________________________________________________________________
+CLI Option:	-alias PATH			| Optional
+GUI Element:	-> Files			|
+TDK TclApp Key:	Path (Subcommand Alias)
+Effect:
+		Modifies the translation to the destination path of
+		the immediately following file. If that is a glob
+		pattern it modifies the translation of the first file
+		in the expanded pattern. Note that any intervening
+		argument which is not a FILESPEC invalidates this
+		option. This is explained in detail in the following
+		section.
+Notes:
+		The GUI currently does not provide access to the
+		functionality of this option.
+______________________________________________________________________
+CLI Option:	-startup PATH
+GUI Element:	-> Files
+TDK TclApp Key:	Path (Subcommand Startup)
+Effect:
+		Specifies that loading the file NAME in the output MFS
+		invokes the application (package).
+
+		TclApp will insert code into the wrap framework to
+		[source] this file. It will also set 'argv0' to the
+		this file in case the application changes behaviour if
+		its file is not the name of the application. An
+		example of such an application is 'tkcon'.
+Notes:
+		Usage is illegal if -app NAME was specified.
+______________________________________________________________________
+
+[File translation]
+______________________________________________________________________
+
+The source path of each file to wrap is translated into the
+destination path according to the rules below. Source means the path
+of the file in the native filesystem, and destination is the path of
+the file in the output MFS.
+
+The relevant context for the translation are the last occurence of
+-relativeto (source base path), -anchor (destination base path), and
+file modifier (-alias). These values are used in the translation of a
+PATH in the same order as given above.
+
+(a)	-relativeto
+
+	The effect of this setting on a PATH is described in the
+	prowrap documentation.
+
+	If there is no -relativeto setting before PATH (equivalent to
+	-relativeto '') a relative PATH is left unchanged. An absolute
+	path is made relative by stripping of the /, or the drive
+	specification (x:\).
+
+	With -relativeto RPATH it is illegal to specify a PATH which
+	does not have RPATH as prefix. The PATH is modified by
+	removing the RPATH prefix from it.
+
+(b)	-anchor ANCHOR
+
+	The result from the translation above is taken and the current
+	ANCHOR is prepended. IOW the destination is placed under
+	ANCHOR in the out MFS.
+
+(c)	-alias	PATH
+
+	If this value is set the file name in the result of the
+	translation above (i.e. the last component of that path) is
+	replaced with PATH. As a path is allowed this not only allows
+	renaming of the file, but also moving further it down the
+	hierarchy.
+
+
+Another way of looking at the steps (a) to (c) above is this:
+
+(a)	Strip the irrelevant portion of the location in the source
+	tree from PATH.
+
+(b)	Move the path to its proper spot in the destination tree.
+
+(c)	Perform fine-tuning of actualy filename and location in the
+	destination tree.
+
+
+Examples
+
+(1)	tclapp
+		-relativeto /foo/bar		\
+		-anchor	    greeze		\
+		-alias	    command		\
+		/foo/bar/this/is/here/file
+
+	(a)	=>	this/is/here/file
+	(b)	=>	greeze/this/is/here/file
+	(c)	=>	greeze/this/is/here/command
+
+(2)	tclapp
+		-relativeto /foo/bar	\
+		-anchor	    lib/app	\
+		-alias	    bin/file	\
+		/foo/bar/file
+
+	(a)	=>	file
+	(b)	=>	lib/app/file
+	(c)	=>	lib/app/bin/file
+______________________________________________________________________
+
+[Configuration files]
+______________________________________________________________________
+
+CLI and GUI accept different types of configuration files.  For a full
+definition of the configuration files see 'TclApp_FileFormats.txt'.
+Here we describe only the essentials.
+
+[1]	The CLI interface is able to use configuration files through
+	the -config CLI option.
+
+	This option accepts files in the following formats.
+
+	(a)	TDK Project File Format 2.0 / Tool: TDK Wrapper
+
+		This is the format used by prowrap to save
+		configurations composed with its GUI.
+
+	(b)	TDK Project File Format 2.0 / Tool: TDK TclApp
+
+		This is the format used by TclApp to save
+		configurations composed with its GUI.
+
+	(c)	Plain text containing one or more arguments for the
+		CLI per line. Each line is in CSV format using the
+		space character as separator.
+
+[2]	The GUI interface provides a menu action to load project
+	files into the UI. This action accepts files in the formats
+	(a) and (b) as specified above.
+
+	The complementary action for saving project files always uses
+	format (b) to write the information.
+______________________________________________________________________
+
+[Packaging]
+______________________________________________________________________
+
+Package definition files are in the format
+
+	TDK Project File Format 2.0 / Tool: TDK TclApp PackageDefinition
+
+They have the extension .tax (TclApp eXtension)
+
+TclApp searches the following locations for package definition files:
+
+(1)    In all paths where pkgIndex.tcl files can/could be found.
+(2)    In all paths listed in the environment variable TCLAPP_PKGPATH.
+       On unix the paths are separated by    : (colon)
+       On windows the paths are separated by ; (semicolon)
+
+TclApp scans 1 and 2 in this order for files, and loads them in
+order. If two files A and B both declare a package P the file loaded
+last has precedence. I.e. files loaded later overwrite earlier
+definitions.

@@ -1,0 +1,241 @@
+# This file contains tests for the initdebug.tcl file.
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1998-2000 by Ajuba Solutions
+#
+
+
+#
+# RCS: @(#) $Id: initdebug.test,v 1.5 2001/10/17 19:04:05 andreas_kupries Exp $
+
+if {[string compare test [info procs test]] == 1} {
+    lappend auto_path [file join [file dirname [info script]] ..]
+    package require protest
+    namespace import ::protest::*
+}
+
+catch {parse} parseMsg
+if {[regexp "invalid command" $parseMsg]} {
+    package require parser
+}
+
+if {[string compare testGui [info procs launchDbg]] == 1} {
+    source [file join [pwd] [file dirname [info script]] dbgLaunch.tcl]
+}
+
+set testFile [file join $::tcltest::temporaryDirectory test.tcl]
+set outputFile [file join $::tcltest::temporaryDirectory output]
+
+file copy -force [file join $::protest::sourceDirectory initdebug.tcl] $::tcltest::temporaryDirectory
+
+set pwd [pwd]
+cd $::protest::sourceDirectory
+
+proc launchTest {script {bg 0}} {
+    global testFile
+
+    set pwd [pwd]
+    cd $::tcltest::temporaryDirectory
+    makeFile $script $testFile
+    if {$bg} {
+	exec [info nameofexecutable] $testFile &
+    } else {
+	exec [info nameofexecutable] $testFile
+    }
+    cd $pwd
+    return
+}
+
+test initdebug-1.1 {debugger_init} {
+    file delete -force $outputFile
+    launchTest {
+	set f [open output w]
+	source initdebug.tcl
+puts "SOURCED"
+	if {[debugger_init]} {
+	    puts $f succeed
+	} else {
+	    puts $f failed
+	}
+puts "SAVED"
+	close $f
+	exit
+    }
+    set f [open $::outputFile r]
+    set result [read $f]
+    close $f
+    set result
+} "failed\n"
+test initdebug-1.2 {debugger_init} {
+    initDbg
+    initRemoteProject REMOTE 5321
+    launchTest {
+	set f [open output w]
+	source initdebug.tcl
+	if {[debugger_init 127.0.0.1 5321]} {
+	    puts $f succeed
+	} else {
+	    puts $f failed
+	}
+	close $f
+	exit
+    } 1
+    set result [waitForApp]	;# Attach
+    dbg::step run	
+    lappend result [waitForApp]	;# Exit
+    set f [open $outputFile r]
+    lappend result [read $f]
+    close $f
+    dbg::quit
+    set result
+} "attach exit {succeed\n}"
+
+test initdebug-2.1 {debugger_eval} {
+    file delete -force $outputFile
+    launchTest {
+	set f [open output w]
+	source initdebug.tcl
+	catch {debugger_eval} result
+	puts $f $result
+	close $f
+	exit
+    }
+    set f [open $outputFile r]
+    set result [read $f]
+    close $f
+    set result
+} {wrong # args: should be "debugger_eval ?options? script"
+}
+test initdebug-2.2 {debugger_eval} {
+    file delete -force $outputFile
+    launchTest {
+	set f [open output w]
+	source initdebug.tcl
+	catch {debugger_eval {set x 2}} result
+	puts $f $result
+	puts $f [set x]
+	close $f
+	exit
+    }
+    set f [open $outputFile r]
+    set result [read $f]
+    close $f
+    set result
+} "2\n2\n"
+
+test initdebug-3.1 {debugger_attached} {
+    file delete -force $outputFile
+    launchTest {
+	set f [open output w]
+	source initdebug.tcl
+	set result [debugger_attached]
+	puts $f $result
+	close $f
+	exit
+    }
+    set f [open $outputFile r]
+    set result [read $f]
+    close $f
+    set result
+} "0\n"
+test initdebug-3.2 {debugger_attached} {
+    initDbg
+    initRemoteProject REMOTE 5321
+    launchTest {
+	set f [open output w]
+	fconfigure $f -buffering none
+	source initdebug.tcl
+	if {[debugger_init 127.0.0.1 5321]} {
+	    puts $f succeed
+	} else {
+	    puts $f failed
+	}
+	puts $f [debugger_attached]
+	close $f
+	exit
+    } 1
+	
+    waitForApp
+    dbg::step run
+    after 500
+    dbg::quit
+    set f [open $outputFile r]
+    set result [read $f]
+    close $f
+    set result
+} "succeed\n1\n"
+test initdebug-3.3 {debugger_attached} {
+    initDbg
+    initRemoteProject REMOTE 5321
+    launchTest {
+	set f [open output w]
+	fconfigure $f -buffering none
+	source initdebug.tcl
+	if {[debugger_init 127.0.0.1 5321]} {
+	    puts $f succeed
+	} else {
+	    puts $f failed
+	}
+	puts $f [debugger_attached]
+	puts $f [debugger_eval {set x eval}]
+	puts $f [debugger_attached]
+	close $f
+	exit
+    } 1
+    
+    waitForApp
+    dbg::step any
+    waitForApp
+    set dbg::appHost {}
+    dbg::quit
+    after 500
+    set f [open $outputFile r]
+    set result [read $f]
+    close $f
+    set result
+} "succeed\n1\neval\n0\n"
+
+test initdebug-4.1 {sentinel, multiple sourcing of initdebug.tcl} {
+    initDbg
+    initRemoteProject REMOTE 5321
+    launchTest {
+	set f [open output w]
+	source initdebug.tcl
+	if {[debugger_init 127.0.0.1 5321]} {
+	    puts $f succeed
+	    puts $f [debugger_attached]
+	    source initdebug.tcl
+	    puts $f [debugger_attached]
+	} else {
+	    puts $f failed
+	}
+	close $f
+	exit
+    } 1
+    set result [waitForApp]	;# Attach
+    dbg::step run	
+    lappend result [waitForApp]	;# Exit
+    set f [open $outputFile r]
+    lappend result [read $f]
+    close $f
+    dbg::quit
+    set result
+} "attach exit {succeed
+1
+1
+}"
+
+catch {file delete -force $outputFile}
+catch {file delete -force $testFile}
+catch {file delete -force [file join $::tcltest::temporaryDirectory initdebug.tcl]}
+
+cd $pwd
+
+cleanupTests
+
+if {[info exists tk_version] && !$tcl_interactive} {
+    exit
+}

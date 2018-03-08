@@ -1,0 +1,2802 @@
+# This file contains tests for the instrument.tcl file.
+#
+# This file contains a collection of tests for one or more of the Tcl
+# built-in commands.  Sourcing this file into Tcl runs the tests and
+# generates output for errors.  No output means no errors were found.
+#
+# Copyright (c) 1998-2000 by Ajuba Solutions
+#
+
+
+#
+# RCS: @(#) $Id: instrument.test,v 1.3 2001/10/17 19:04:05 andreas_kupries Exp $
+
+if {[string compare test [info procs test]] == 1} {
+    lappend auto_path [file join [file dirname [info script]] ..]
+    package require protest
+    namespace import ::protest::*
+}
+
+catch {parse} parseMsg
+if {[regexp "invalid command" $parseMsg]} {
+    package require parser
+}
+
+source [file join $::protest::sourceDirectory system.tcl]
+source [file join $::protest::sourceDirectory block.tcl]
+source [file join $::protest::sourceDirectory instrument.tcl]
+source [file join $::protest::sourceDirectory location.tcl]
+source [file join $::protest::sourceDirectory util.tcl]
+set b [blk::makeBlock ""]
+
+set incrProcPrefix "#DBG INSTRUMENTED PROC TAG
+    upvar #0 errorInfo DbgNub_errorInfo errorCode DbgNub_errorCode
+    set DbgNub_level \[DbgNub_infoCmd level\]
+    eval \[list DbgNub_PushContext \$DbgNub_level\] \[info function \[lindex \[info level 0\] 0\] -type -name -args\]
+    set DbgNub_catchCode \[DbgNub_UpdateReturnInfo \[DbgNub_catchCmd {"
+
+set incrProcSuffix "} DbgNub_result\]\]
+    foreach DbgNub_index \[info locals\] {
+	if {\[trace vinfo \$DbgNub_index\] != \"\"} {
+	    if {0} {
+		catch {unset \$DbgNub_index}
+	    }
+	}
+	catch {unset \$DbgNub_index}
+    }
+    DbgNub_PopContext
+    return -code \$DbgNub_catchCode -errorinfo \$DbgNub_errorInfo -errorcode \$DbgNub_errorCode \$DbgNub_result
+# DBGNUB END"
+
+
+# Make sure all of the extensions are disabled so we start from a known state.
+
+proc resetExtensions {} {
+    foreach name [array names instrument::extensions] {
+	set instrument::extensions($name) 0
+    }
+}
+
+test instrument-1.1 {instrument::loadHandlers} {
+    resetExtensions
+    instrument::initialize 7.6
+    info exists instrument::handler(namespace)
+} 0
+test instrument-1.2 {instrument::loadHandlers} {
+    resetExtensions
+    instrument::initialize 8.0
+    info exists instrument::handler(namespace)
+} 1
+
+test instrument-2.1 {instrument::initialize, incrTcl 3.0} {
+    resetExtensions
+    instrument::extension incrTcl 1
+    instrument::initialize 8.0
+    foreach {name ver body} $instrument::incrTclCmds {
+	if {$name == "class" && $ver == "3.0"} {
+	    break
+	}
+    }
+    string compare $instrument::handler(class) $body
+} 0
+test instrument-2.2 {instrument::initialize, incrTcl 2.2} {
+    resetExtensions
+    instrument::extension incrTcl 1
+    instrument::initialize 7.6
+    foreach {name ver body} $instrument::incrTclCmds {
+	if {$name == "class" && $ver == "2.0"} {
+	    break
+	}
+    }
+    string compare $instrument::handler(class) $body
+} 0
+test instrument-2.3 {instrument::initialize, tclx} {
+    resetExtensions
+    instrument::extension tclx 1
+    instrument::initialize 8.0
+    info exists instrument::handler(for_array_keys)
+} 1
+test instrument-2.4 {instrument::initialize, tclx} {
+    resetExtensions
+    instrument::extension tclx 0
+    instrument::initialize 8.0
+    info exists instrument::handler(for_array_keys)
+} 0
+test instrument-2.5 {instrument::initialize, expect} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    info exists instrument::handler(expect)
+} 1
+test instrument-2.6 {instrument::initialize, expect} {
+    resetExtensions
+    instrument::extension expect 0
+    instrument::initialize 8.0
+    info exists instrument::handler(expect)
+} 0
+
+test instrument-3.1 {instrument::extension} {
+    instrument::extension foo bar
+    set result $::instrument::extensions(foo)
+    unset ::instrument::extensions(foo)
+    set result
+} bar
+
+test instrument-4.1 {instrument::addExtension} {
+    list [catch {instrument::addExtension 1.0 foobar} msg] $msg
+} {1 {Error in foobar: Extension requested unsupported version 1.0}}
+test instrument-4.2 {instrument::addExtension} {
+    list [catch {instrument::addExtension 2.0 foobar} msg] $msg
+} {0 {}}
+
+# TODO: addCommand
+
+resetExtensions
+instrument::extension incrTcl 0
+instrument::initialize 8.0
+
+test instrument-5.1 {instrument::Init & instrument::getLocation} {
+    blk::SetSource $b "set x 1"
+    instrument::Init $b
+    instrument::getLocation
+} "$b 1 {0 7}"
+
+# TODO: setLocation
+# TODO: pushContext
+# TODO: popContext
+# TODO: setAnchor
+# TODO: resetAnchor
+# TODO: setCursor
+# TODO: Flush
+# TODO: appendString
+# TODO: beginCommand
+# TODO: endCommand
+
+test instrument-6.1 {instrument::isLiteral} {
+    blk::Instrument $b "while 1 bar"
+} "DbgNub_Do 0 {$b 1 {0 11}} {while 1 {
+# DBGNUB START: {$b 1 {0 11}}
+DbgNub_Do 0 {$b 1 {8 3}} bar
+# DBGNUB END
+}}"
+test instrument-6.2 {instrument::isLiteral} {
+    blk::Instrument $b "while 1 \"bar baz\""
+} "DbgNub_Do 0 {$b 1 {0 17}} {while 1 \"
+# DBGNUB START: {$b 1 {0 17}}
+DbgNub_Do 0 {$b 1 {9 7}} {bar baz}
+# DBGNUB END
+\"}"
+test instrument-6.3 {instrument::isLiteral} {
+    blk::Instrument $b "while 1 {bar baz}"
+} "DbgNub_Do 0 {$b 1 {0 17}} {while 1 {
+# DBGNUB START: {$b 1 {0 17}}
+DbgNub_Do 0 {$b 1 {9 7}} {bar baz}
+# DBGNUB END
+}}"
+test instrument-6.4 {instrument::isLiteral} {
+    blk::Instrument $b "while 1 bar\\ baz"
+} "DbgNub_Do 0 {$b 1 {0 16}} {while 1 bar\\ baz}"
+test instrument-6.5 {instrument::isLiteral} {
+    blk::Instrument $b "while 1 \"bar\\ baz\""
+} "DbgNub_Do 0 {$b 1 {0 18}} {while 1 \"bar\\ baz\"}"
+test instrument-6.6 {instrument::isLiteral} {
+    blk::Instrument $b "while 1 {foo\\\nbar}"
+} "DbgNub_Do 0 {$b 1 {0 18}} {while 1 {
+# DBGNUB START: {$b 1 {0 18}}
+DbgNub_Do 0 {$b 1 {9 8}} foo\\\\\\nbar
+# DBGNUB END
+}}"
+
+# TODO: getLiteral
+
+test instrument-7.1 {instrument::Instrument, reentrant usage} {
+    set result ""
+    proc ::err {args} {
+	set ::result [list [catch {blk::Instrument $::b {set x 1}} msg] $msg]
+	return 1
+    }
+    set instrument::errorHandler ::err
+    lappend ::result [blk::Instrument $b {puts $a(}]
+    set instrument::errorHandler {}
+    set ::result
+}  "1 {The instrumenter is being called while in use!} {DbgNub_Do 0 {$b 1 {0 8}} {puts \$a(}}"
+test instrument-7.2 {instrument::Instrument, uncaught parsing errors in scripts} {
+    set instrument::errorHandler {}
+    list [catch {blk::Instrument $b {puts $a(}} msg] $msg $errorCode
+}  "0 {} {PARSE missingParen 7 {missing )}}"
+test instrument-7.3 {instrument::Instrument, normal completion} {
+    set result [list [blk::Instrument $b {set x 1}]]
+    lappend result [blk::Instrument $b {set y 2}]
+} "{DbgNub_Do 0 {$b 1 {0 7}} {set x 1}} {DbgNub_Do 0 {$b 1 {0 7}} {set y 2}}"
+test instrument-7.4 {instrument::Instrument, error in instrumenter} {
+    proc bgerror {args} {lappend ::result $args}
+    proc ::err {args} {
+	error "foobar"
+    }
+    set result {}
+    set instrument::handler(foo) {::err}
+    lappend result [blk::Instrument $b {foo}]
+    unset instrument::handler(foo)
+    set result
+} "foobar {}"
+
+
+test instrument-8.1 {instrument::parseScript} {
+    blk::Instrument $b {set a 1}
+} "DbgNub_Do 0 {$b 1 {0 7}} {set a 1}"
+test instrument-8.2 {instrument::parseScript} {
+    blk::Instrument $b {set a [expr 1 + 1]}
+} "DbgNub_Do 0 {$b 1 {0 18}} {set a \[DbgNub_Do 1 {$b 1 {7 10}} {expr 1 + 1}\]}"
+test instrument-8.3 {instrument::parseScript} {
+    blk::Instrument $b ""
+} ""
+test instrument-8.4 {instrument::parseScript} {
+    blk::Instrument $b "#comment\n #commented"
+} ""
+test instrument-8.5 {instrument::parseScript, error handling, no handler} {
+    list [catch {blk::Instrument $b "set x 1 ; set y \$z("} msg] $msg $errorCode
+} "0 {} {PARSE missingParen 18 {missing )}}"
+test instrument-8.6 {instrument::parseScript, error handling, handler returns 0} {
+    proc ::err {args} {
+	return 0
+    }
+    set instrument::errorHandler ::err
+    set result [list [catch {
+	blk::Instrument $b "set x 1 ; set y \$z("} msg] $msg $errorCode]
+    set instrument::errorHandler {}
+    set ::result
+} "0 {} {PARSE missingParen 18 {missing )}}"
+test instrument-8.7 {instrument::parseScript, error handling, handler returns 1} {
+    set ::result {}
+    proc ::err {loc} {
+	set ::result [list $loc $::errorCode]
+	return 1
+    }
+    set instrument::errorHandler ::err
+    lappend result [blk::Instrument $b "set x 1 ; set y \$z( ; set z 2"]
+    set instrument::errorHandler {}
+    set ::result
+} "{$b 1 {18 1}} {PARSE missingParen 18 {missing )}} {DbgNub_Do 0 {$b 1 {0 9}} {set x 1}
+DbgNub_Do 0 {$b 1 {9 20}} { set y \$z( ; set z 2}}"
+test instrument-8.8 {instrument::parseScript, error handling, handler returns 1, first line} {
+    set ::result {}
+    proc ::err {loc} {
+	set ::result [list $loc $::errorCode]
+	return 1
+    }
+    set instrument::errorHandler ::err
+    lappend result [blk::Instrument $b "set y \$z("]
+    set instrument::errorHandler {}
+    set ::result
+} "{$b 1 {8 1}} {PARSE missingParen 8 {missing )}} {DbgNub_Do 0 {$b 1 {0 9}} {set y \$z(}}"
+test instrument-8.9 {instrument::parseScript, trailing junk} {
+    blk::Instrument $b "set a 1\n# foobar"
+} "DbgNub_Do 0 {$b 1 {0 8}} {set a 1}"
+test instrument-8.10 {instrument::parseScript, separators} {
+    blk::Instrument $b "set a 1;set b 2"
+} "DbgNub_Do 0 {$b 1 {0 8}} {set a 1}\nDbgNub_Do 0 {$b 1 {8 7}} {set b 2}"
+# The check for special command handlers is fully tested below.
+test instrument-8.11 {instrument::parseScript, null commands} {
+    blk::Instrument $b {proc cmd {} {;foo}}
+} "DbgNub_Do 0 {$b 1 {0 18}} {proc cmd {} {
+# DBGNUB START: {$b 1 {0 18}}
+DbgNub_Do 0 {$b 1 {14 3}} foo
+# DBGNUB END
+}}"
+test instrument-8.12 {instrument::parseScript, null commands} {
+    blk::Instrument $b {proc cmd {} {bar;;foo}}
+} "DbgNub_Do 0 {$b 1 {0 22}} {proc cmd {} {
+# DBGNUB START: {$b 1 {0 22}}
+DbgNub_Do 0 {$b 1 {13 4}} bar
+DbgNub_Do 0 {$b 1 {18 3}} foo
+# DBGNUB END
+}}"
+test instrument-8.13 {instrument::parseScript, null commands} {
+    blk::Instrument $b {proc cmd {} {foo;;}}
+} "DbgNub_Do 0 {$b 1 {0 19}} {proc cmd {} {
+# DBGNUB START: {$b 1 {0 19}}
+DbgNub_Do 0 {$b 1 {13 4}} foo
+# DBGNUB END
+}}"
+test instrument-8.14 {instrument::parseScript, partial commands} {
+    resetExtensions
+    instrument::extension incrTcl 1
+    instrument::initialize 8.0
+    blk::Instrument $b {class foo {public set x 1}}
+} "DbgNub_Do 0 {$b 1 {0 26}} {DbgNub_Class class foo {
+# DBGNUB START: {$b 1 {0 26}}
+DbgNub_Do 0 {$b 1 {11 14}} {public set x 1}
+# DBGNUB END
+}}"
+
+test instrument-9.1 {instrument::parseCommand} {
+    blk::Instrument $b "   set x 1  \n  set y 2  "
+} "DbgNub_Do 0 {$b 1 {3 10}} {set x 1}\nDbgNub_Do 0 {$b 2 {15 9}} {set y 2}"
+
+test instrument-9.2 {instrument::parseCommand} "
+    blk::Instrument $b \"set x \\\\{\"
+" "DbgNub_Do 0 {$b 1 {0 8}} {set x \\{}"
+
+test instrument-9.3 {instrument::parseCommand} "
+    blk::Instrument $b \"set x 11}}22\"
+" "DbgNub_Do 0 {$b 1 {0 12}} set\\ x\\ 11\\}\\}22"
+
+test instrument-10.1 {instrument::parseWord} {
+    blk::Instrument $b {if {[bar]} {}}
+} "DbgNub_Do 0 {$b 1 {0 13}} {if {\[DbgNub_Do 1 {$b 1 {5 3}} bar\]} {
+# DBGNUB START: {$b 1 {0 13}}
+
+# DBGNUB END
+}}"
+test instrument-10.2 {instrument::parseWord} {
+    blk::Instrument $b {foo $x([bar])}
+} "DbgNub_Do 0 {$b 1 {0 13}} {foo \$x(\[DbgNub_Do 1 {$b 1 {8 3}} bar\])}"
+test instrument-10.3 {instrument::parseWord} {
+    blk::Instrument $b {foo blat[bob]blort}
+} "DbgNub_Do 0 {$b 1 {0 18}} {foo blat\[DbgNub_Do 1 {$b 1 {9 3}} bob\]blort}"
+
+test instrument-11.1 {instrument::parseBody, quotes} {
+    blk::Instrument $b "while 1 \"bar blat\nbaz blort\""
+} "DbgNub_Do 0 {$b 1 {0 28}} {while 1 \"
+# DBGNUB START: {$b 1 {0 28}}
+DbgNub_Do 0 {$b 1 {9 9}} {bar blat}
+DbgNub_Do 0 {$b 2 {18 9}} {baz blort}
+# DBGNUB END
+\"}"
+test instrument-11.2 {instrument::parseBody, braces} {
+    blk::Instrument $b "while 1 {bar blat\nbaz blort}"
+} "DbgNub_Do 0 {$b 1 {0 28}} {while 1 {
+# DBGNUB START: {$b 1 {0 28}}
+DbgNub_Do 0 {$b 1 {9 9}} {bar blat}
+DbgNub_Do 0 {$b 2 {18 9}} {baz blort}
+# DBGNUB END
+}}"
+test instrument-11.3 {instrument::parseBody, no quotes or braces} {
+    blk::Instrument $b "while 1 bar\\ blat\\;baz\\ blort"
+} "DbgNub_Do 0 {$b 1 {0 29}} {while 1 bar\\ blat\\;baz\\ blort}"
+test instrument-11.4 {instrument::parseBody, dynamic} {
+    blk::Instrument $b {while 1 $foo}
+} "DbgNub_Do 0 {$b 1 {0 12}} {while 1 \$foo}"
+test instrument-11.5 {instrument::parseBody, dynamic} {
+    blk::Instrument $b {while 1 [foo]bar}
+} "DbgNub_Do 0 {$b 1 {0 16}} {while 1 \[DbgNub_Do 1 {$b 1 {9 3}} foo\]bar}"
+test instrument-11.6 {instrument::parseBody, subcommand handling} {
+    blk::Instrument $b {set x [while 1 {set y 2}]}
+} "DbgNub_Do 0 {$b 1 {0 25}} {set x \[DbgNub_Do 1 {$b 1 {7 17}} {while 1 {
+# DBGNUB START: {$b 1 {7 17}}
+DbgNub_Do 0 {$b 1 {16 7}} {set y 2}
+# DBGNUB END
+}}\]}"
+test instrument-11.7 {instrument::parseBody, trailing comments} {
+    blk::Instrument $b {
+	proc p {} {
+	    # {
+	    foo
+	    # }
+	}
+    }
+} "DbgNub_Do 0 {$b 2 {2 42}} {proc p {} {
+# DBGNUB START: {$b 2 {2 42}}
+DbgNub_Do 0 {$b 4 {28 4}} foo
+# DBGNUB END
+}}"
+
+test instrument-12.1 {instrument::parseOption} {
+    set instrument::handler(foo) {
+	parseOption {{a parseBody} {b parseWord}} parseCommand
+    }
+    set result [blk::Instrument $b foo]
+    unset instrument::handler(foo)
+    set result
+} "DbgNub_Do 0 {$b 1 {0 3}} foo"
+test instrument-12.2 {instrument::parseOption, nonliteral} {
+    set instrument::handler(foo) {
+	parseOption {{a parseBody} {b parseWord}} parseCommand
+    }
+    set result [blk::Instrument $b {foo $sub; foo $sub([set])}]
+    unset instrument::handler(foo)
+    set result
+} "DbgNub_Do 0 {$b 1 {0 9}} {foo \$sub}
+DbgNub_Do 0 {$b 1 {10 15}} {foo \$sub(\[DbgNub_Do 1 {$b 1 {20 3}} set\])}"
+test instrument-12.3 {instrument::parseOption} {
+    set instrument::handler(foo) {
+	parseOption {{a parseBody} {b parseExpr}} parseCommand
+    }
+    set result [blk::Instrument $b {foo a bar; foo b {1+[bar]}; foo c bar}]
+    unset instrument::handler(foo)
+    set result
+} "DbgNub_Do 0 {$b 1 {0 10}} {foo a {
+# DBGNUB START: {$b 1 {0 10}}
+DbgNub_Do 0 {$b 1 {6 3}} bar
+# DBGNUB END
+}}
+DbgNub_Do 0 {$b 1 {11 16}} {foo b {1+\[DbgNub_Do 1 {$b 1 {21 3}} bar\]}}
+DbgNub_Do 0 {$b 1 {28 9}} {foo c bar}"
+
+test instrument-13.1 {instrument::parseSimpleArgs} {
+    set instrument::handler(foo) {
+	parseSimpleArgs 1 2 {parseExpr parseWord}
+    }
+    set result [blk::Instrument $b {
+	foo
+	foo {1+[bar]}
+	foo {1+[bar]} baz
+	foo {1+[bar]} baz blat
+    }]
+    unset instrument::handler(foo)
+    set result
+} "DbgNub_Do 0 {$b 2 {2 4}} foo
+DbgNub_Do 0 {$b 3 {7 14}} {foo {1+\[DbgNub_Do 1 {$b 3 {15 3}} bar\]}}
+DbgNub_Do 0 {$b 4 {22 18}} {foo {1+\[DbgNub_Do 1 {$b 4 {30 3}} bar\]} baz}
+DbgNub_Do 0 {$b 5 {41 23}} {foo {1+\[bar\]} baz blat}"
+
+test instrument-14.1 {instrument::parseTail} {
+    set instrument::handler(foo) {
+	parseTail 2 {parseBody parseExpr}
+    }
+    set result [blk::Instrument $b {
+	foo
+	foo bar
+	foo bar {1+[bar]}
+	foo bar {1+[bar]} {1+[bar]}
+    }]
+    unset instrument::handler(foo)
+    set result
+} "DbgNub_Do 0 {$b 2 {2 4}} foo
+DbgNub_Do 0 {$b 3 {7 8}} {foo bar}
+DbgNub_Do 0 {$b 4 {16 18}} {foo {
+# DBGNUB START: {$b 4 {16 18}}
+DbgNub_Do 0 {$b 4 {20 3}} bar
+# DBGNUB END
+} {1+\[DbgNub_Do 1 {$b 4 {28 3}} bar\]}}
+DbgNub_Do 0 {$b 5 {35 28}} {foo {
+# DBGNUB START: {$b 5 {35 28}}
+DbgNub_Do 0 {$b 5 {39 3}} bar
+# DBGNUB END
+} {
+# DBGNUB START: {$b 5 {35 28}}
+DbgNub_Do 0 {$b 5 {44 7}} {1+\[DbgNub_Do 1 {$b 5 {47 3}} bar\]}
+# DBGNUB END
+} {1+\[DbgNub_Do 1 {$b 5 {57 3}} bar\]}}"
+
+test instrument-15.1 {instrument::wrapCommand} {
+    set instrument::handler(foo) {
+	wrapCommand blat 2 {parseBody parseExpr}
+    }
+    set result [blk::Instrument $b {
+	foo
+	foo bar
+	foo bar {1+[bar]}
+	foo bar {1+[bar]} {1+[bar]}
+    }]
+    unset instrument::handler(foo)
+    set result
+} "DbgNub_Do 0 {$b 2 {2 4}} foo
+DbgNub_Do 0 {$b 3 {7 8}} {foo bar}
+DbgNub_Do 0 {$b 4 {16 18}} {blat foo {
+# DBGNUB START: {$b 4 {16 18}}
+DbgNub_Do 0 {$b 4 {20 3}} bar
+# DBGNUB END
+} {1+\[DbgNub_Do 1 {$b 4 {28 3}} bar\]}}
+DbgNub_Do 0 {$b 5 {35 28}} {foo bar {1+\[bar\]} {1+\[bar\]}}"
+
+test instrument-15.2 {instrument::parseExpr, dynamic} {
+    blk::Instrument $b {while [foo] body}
+} "DbgNub_Do 0 {$b 1 {0 16}} {while \[DbgNub_Do 1 {$b 1 {7 3}} foo\] {
+# DBGNUB START: {$b 1 {0 16}}
+DbgNub_Do 0 {$b 1 {12 4}} body
+# DBGNUB END
+}}"
+test instrument-15.3 {instrument::parseExpr, expression} {
+    blk::Instrument $b {while {1 + [foo] * sin([bar])} body}
+} "DbgNub_Do 0 {$b 1 {0 35}} {while {1 + \[DbgNub_Do 1 {$b 1 {12 3}} foo] * sin(\[DbgNub_Do 1 {$b 1 {24 3}} bar\])} {
+# DBGNUB START: {$b 1 {0 35}}
+DbgNub_Do 0 {$b 1 {31 4}} body
+# DBGNUB END
+}}"
+test instrument-15.4 {instrument::parseExpr, uncaught error} {
+    list [catch {blk::Instrument $b "while {err} body"} msg] $msg $::errorCode
+} {0 {} {PARSE syntax 7 {syntax error in expression "err"}}}
+test instrument-15.5 {instrument::parseExpr, error handling, handler returns 1} {
+    set ::result {}
+    proc ::err {loc} {
+	set ::result [list $loc $::errorCode]
+	return 1
+    }
+    set instrument::errorHandler ::err
+    lappend result [blk::Instrument $b "while {err} body"]
+    set instrument::errorHandler {}
+    set ::result
+} "{$b 1 {7 1}} {PARSE syntax 7 {syntax error in expression \"err\"}} {DbgNub_Do 0 {$b 1 {0 16}} {while {err} {
+# DBGNUB START: {$b 1 {0 16}}
+DbgNub_Do 0 {$b 1 {12 4}} body
+# DBGNUB END
+}}}"
+
+resetExtensions
+instrument::extension incrTcl 1
+instrument::initialize 7.6
+
+test instrument-16.1 {instrument::parseIncr22Class, empty class} {
+    blk::Instrument $b {class foo {;}}
+} "DbgNub_Do 0 {$b 1 {0 13}} {class foo {
+# DBGNUB START: {$b 1 {0 13}}
+
+# DBGNUB END
+}}"
+test instrument-16.2 {instrument::parseIncr22Class, error in class} {
+    set result [list [catch \
+	    {blk::Instrument $b {class foo {set y 1; set x $a(}}} msg] \
+	    $msg $errorCode]
+} "0 {} {PARSE missingParen 28 {missing )}}"
+test instrument-16.3 {instrument::parseIncr22Class, error in class} {
+    set ::result {}
+    proc ::err {loc} {
+	set ::result [list $loc $::errorCode]
+	return 1
+    }
+    set instrument::errorHandler ::err
+    lappend result [blk::Instrument $b {class foo {set y 1; set x $a(}}]
+    set instrument::errorHandler {}
+    set ::result
+} "{$b 1 {28 1}} {PARSE missingParen 28 {missing )}} {DbgNub_Do 0 {$b 1 {0 30}} {class foo {
+# DBGNUB START: {$b 1 {0 30}}
+set y 1
+ set x \$a(
+# DBGNUB END
+}}}"
+test instrument-16.4 {instrument::parseIncr22Class, protection} {
+    blk::Instrument $b {
+	class foo {
+	    public method foo {args} {set x 1}
+	}
+    }
+} "DbgNub_Do 0 {$b 2 {2 55}} {class foo {
+# DBGNUB START: {$b 2 {2 55}}
+public method foo {args} {
+# DBGNUB START: {$b 3 {19 35}}
+$incrProcPrefix
+DbgNub_Do 0 {$b 3 {45 7}} {set x 1}
+$incrProcSuffix
+}
+# DBGNUB END
+}}"
+test instrument-16.5 {instrument::parseIncr22Class, protection} {
+    blk::Instrument $b {
+	class foo {
+	    public {
+		method foo {args} {set x 1}
+	    }
+	}
+    }
+} "DbgNub_Do 0 {$b 2 {2 66}} {class foo {
+# DBGNUB START: {$b 2 {2 66}}
+public {
+# DBGNUB START: {$b 3 {19 46}}
+method foo {args} {
+# DBGNUB START: {$b 4 {30 28}}
+$incrProcPrefix
+DbgNub_Do 0 {$b 4 {49 7}} {set x 1}
+$incrProcSuffix
+}
+# DBGNUB END
+}
+# DBGNUB END
+}}"
+test instrument-16.6 {instrument::parseIncr22Class, variable} {
+    blk::Instrument $b {
+	class foo {
+	    variable
+	    variable x
+	    variable x 42
+	    variable x y body junk
+	    variable x 42 {set x 1}
+	}
+    }
+} "DbgNub_Do 0 {$b 2 {2 121}} {class foo {
+# DBGNUB START: {$b 2 {2 121}}
+variable
+variable x
+variable x 42
+variable x y body junk
+variable x 42 {
+# DBGNUB START: {$b 7 {96 24}}
+DbgNub_ItclConfig {
+DbgNub_Do 0 {$b 7 {111 7}} {set x 1}
+}
+# DBGNUB END
+}
+# DBGNUB END
+}}"
+test instrument-16.7 {instrument::parseIncr22Class, proc & method} {
+    blk::Instrument $b {
+	class foo {
+	    proc
+	    proc x
+	    proc x args
+	    proc y args body junk
+	    proc x {args} {set x 1}
+	    method
+	    method y
+	    method y args
+	    method y args body junk
+	    method y {args} {set y 1}
+	}
+    }
+} "DbgNub_Do 0 {$b 2 {2 215}} {class foo {
+# DBGNUB START: {$b 2 {2 215}}
+proc
+proc x
+proc x args
+proc y args body junk
+proc x {args} {
+# DBGNUB START: {$b 7 {85 24}}
+$incrProcPrefix
+DbgNub_Do 0 {$b 7 {100 7}} {set x 1}
+$incrProcSuffix
+}
+method
+method y
+method y args
+method y args body junk
+method y {args} {
+# DBGNUB START: {$b 12 {188 26}}
+$incrProcPrefix
+DbgNub_Do 0 {$b 12 {205 7}} {set y 1}
+$incrProcSuffix
+}
+# DBGNUB END
+}}"
+test instrument-16.8 {instrument::parseIncr22Class, constructor} {
+    blk::Instrument $b {
+	class foo {
+	    constructor
+	    constructor args
+	    constructor args init
+	    constructor args init body
+	    constructor args init body junk
+	}
+    }
+} "DbgNub_Do 0 {$b 2 {2 150}} {class foo {
+# DBGNUB START: {$b 2 {2 150}}
+constructor
+constructor args
+constructor args {
+# DBGNUB START: {$b 5 {58 22}}
+$incrProcPrefix
+DbgNub_Do 0 {$b 5 {75 4}} init
+$incrProcSuffix
+}
+constructor args init {
+# DBGNUB START: {$b 6 {85 27}}
+$incrProcPrefix
+DbgNub_Do 0 {$b 6 {107 4}} body
+$incrProcSuffix
+}
+constructor args init body junk
+# DBGNUB END
+}}"
+test instrument-16.9 {instrument::parseIncr22Class, destructor} {
+    blk::Instrument $b {
+	class foo {
+	    destructor
+	    destructor body
+	    destructor body junk
+	}
+    }
+} "DbgNub_Do 0 {$b 2 {2 78}} {class foo {
+# DBGNUB START: {$b 2 {2 78}}
+destructor
+destructor {
+# DBGNUB START: {$b 4 {35 16}}
+$incrProcPrefix
+DbgNub_Do 0 {$b 4 {46 4}} body
+$incrProcSuffix
+}
+destructor body junk
+# DBGNUB END
+}}"
+test instrument-16.10 {instrument::parseIncr22Class, private, protected, public} {
+    blk::Instrument $b {
+	class foo {
+	    public
+	    private
+	    protected
+	    public public public
+	    public destructor body
+	    public {
+	    }
+	    public {
+		set x 1
+	    }
+	}
+    }
+} "DbgNub_Do 0 {$b 2 {2 161}} {class foo {
+# DBGNUB START: {$b 2 {2 161}}
+public
+private
+protected
+public public {
+# DBGNUB START: {$b 6 {59 21}}
+public
+# DBGNUB END
+}
+public destructor {
+# DBGNUB START: {$b 7 {85 23}}
+$incrProcPrefix
+DbgNub_Do 0 {$b 7 {103 4}} body
+$incrProcSuffix
+}
+public {
+# DBGNUB START: {$b 8 {113 16}}
+
+# DBGNUB END
+}
+public {
+# DBGNUB START: {$b 10 {134 26}}
+set x 1
+# DBGNUB END
+}
+# DBGNUB END
+}}"
+
+test instrument-17.1 {instrument::parseItclBody} {
+    instrument::extension incrTcl 1
+    instrument::initialize 8.0
+    blk::Instrument $b {
+	body foo::bar {args} {@foo}
+    }
+} "DbgNub_Do 0 {$b 2 {2 28}} {DbgNub_WrapItclBody body foo::bar {args} {@foo}}"
+test instrument-17.2 {instrument::parseItclBody} {
+    instrument::extension incrTcl 1
+    instrument::initialize 8.0
+    blk::Instrument $b {
+	body foo::bar {args} {foo}
+    }
+} "DbgNub_Do 0 {$b 2 {2 27}} {DbgNub_WrapItclBody body foo::bar {args} {
+# DBGNUB START: {$b 2 {2 27}}
+DbgNub_Do 0 {$b 2 {24 3}} foo
+# DBGNUB END
+}}"
+test instrument-17.3 {instrument::parseItclBody} {
+    instrument::extension incrTcl 1
+    instrument::initialize 7.6
+    blk::Instrument $b {
+	class foo {proc bar {args} {baz}}
+    }
+} "DbgNub_Do 0 {$b 2 {2 34}} {class foo {
+# DBGNUB START: {$b 2 {2 34}}
+proc bar {args} {
+# DBGNUB START: {$b 2 {13 21}}
+$incrProcPrefix
+DbgNub_Do 0 {$b 2 {30 3}} baz
+$incrProcSuffix
+}
+# DBGNUB END
+}}"
+
+test instrument-18.1 {instrument::parseMethod} {
+    resetExtensions
+    instrument::extension incrTcl 1
+    instrument::initialize 7.6
+    set result [blk::Instrument $b {
+	class Foo {
+	    method foo::bar {args} {
+		set x 1
+	    }
+	}
+    }]
+    instrument::extension incrTcl 0
+    instrument::initialize 8.0
+    set result
+} "DbgNub_Do 0 {$b 2 {2 62}} {class Foo {
+# DBGNUB START: {$b 2 {2 62}}
+method foo::bar {args} {
+# DBGNUB START: {$b 3 {19 42}}
+$incrProcPrefix
+DbgNub_Do 0 {$b 4 {46 8}} {set x 1}
+$incrProcSuffix
+}
+# DBGNUB END
+}}"
+
+test instrument-19.1 {instrument::parseConfigure} {
+    resetExtensions
+    instrument::extension incrTcl 1
+    instrument::initialize 8.0
+    blk::Instrument $b {class Foo { public variable bar 42 {set x 1}}}
+} "DbgNub_Do 0 {$b 1 {0 45}} {DbgNub_Class class Foo {
+# DBGNUB START: {$b 1 {0 45}}
+DbgNub_Do 0 {$b 1 {12 32}} {DbgNub_WrapItclConfig public variable bar 42 {
+# DBGNUB START: {$b 1 {12 32}}
+DbgNub_Do 0 {$b 1 {36 7}} {set x 1}
+# DBGNUB END
+}}
+# DBGNUB END
+}}"
+
+# simpleControl
+
+test instrument-20.1 {instrument::itclProtection} {
+    instrument::extension incrTcl 1
+    instrument::initialize 8.0
+    blk::Instrument $b {
+	class foo {
+	    public {
+		set x 1
+	    }
+	}
+    }
+} "DbgNub_Do 0 {$b 2 {2 46}} {DbgNub_Class class foo {
+# DBGNUB START: {$b 2 {2 46}}
+public {
+# DBGNUB START: {$b 3 {19 26}}
+DbgNub_Do 0 {$b 4 {30 8}} {set x 1}
+# DBGNUB END
+}
+# DBGNUB END
+}}"
+test instrument-20.2 {instrument::itclProtection} {
+    instrument::extension incrTcl 1
+    instrument::initialize 8.0
+    blk::Instrument $b {
+	class foo {
+	    public public private set x 1
+	}
+    }
+} "DbgNub_Do 0 {$b 2 {2 50}} {DbgNub_Class class foo {
+# DBGNUB START: {$b 2 {2 50}}
+DbgNub_Do 0 {$b 3 {19 30}} {public public private set x 1}
+# DBGNUB END
+}}"
+test instrument-20.3 {instrument::itclProtection} {
+    instrument::extension incrTcl 1
+    instrument::initialize 8.0
+    blk::Instrument $b {
+	class foo {
+	    public set x 1
+	}
+    }
+} "DbgNub_Do 0 {$b 2 {2 35}} {DbgNub_Class class foo {
+# DBGNUB START: {$b 2 {2 35}}
+DbgNub_Do 0 {$b 3 {19 15}} {public set x 1}
+# DBGNUB END
+}}"
+test instrument-20.4 {instrument::itclProtection} {
+    instrument::extension incrTcl 1
+    instrument::initialize 8.0
+    blk::Instrument $b {
+	class foo {
+	    public
+	}
+    }
+} "DbgNub_Do 0 {$b 2 {2 27}} {DbgNub_Class class foo {
+# DBGNUB START: {$b 2 {2 27}}
+DbgNub_Do 0 {$b 3 {19 7}} public
+# DBGNUB END
+}}"
+
+# leaveClass, pushHandlers, and popHandlers are tested by wrapItclClass
+
+test instrument-21.1 {instrument::wrapItclClass, recursive} {
+    instrument::extension incrTcl 1
+    instrument::initialize 8.0
+    blk::Instrument $b {
+	constructor args body
+	class foo {
+	    constructor args {
+		constructor args body
+	    }
+	}
+	constructor args body
+    }
+} "DbgNub_Do 0 {$b 2 {2 22}} {constructor args body}
+DbgNub_Do 0 {$b 3 {25 70}} {DbgNub_Class class foo {
+# DBGNUB START: {$b 3 {25 70}}
+DbgNub_Do 0 {$b 4 {42 50}} {DbgNub_Constructor constructor args {
+# DBGNUB START: {$b 4 {42 50}}
+DbgNub_Do 0 {$b 5 {63 22}} {constructor args body}
+# DBGNUB END
+}}
+# DBGNUB END
+}}
+DbgNub_Do 0 {$b 8 {96 22}} {constructor args body}"
+test instrument-21.2 {instrument::wrapItclClass, errors} {
+    instrument::extension incrTcl 1
+    instrument::initialize 8.0
+    blk::Instrument $b {
+	class
+	class name
+	class name body extra
+    }
+} "DbgNub_Do 0 {$b 2 {2 6}} class
+DbgNub_Do 0 {$b 3 {9 11}} {class name}
+DbgNub_Do 0 {$b 4 {21 22}} {class name body extra}"
+
+test instrument-22.1 {instrument::parseReturnCmd, simple case} {
+    blk::Instrument $b {return}
+} "DbgNub_Do 0 {$b 1 {0 6}} return"
+test instrument-22.2 {instrument::parseReturnCmd, simple case} {
+    blk::Instrument $b {return foo}
+} "DbgNub_Do 0 {$b 1 {0 10}} {return foo}"
+test instrument-22.3 {instrument::parseReturnCmd, instrument} {
+    blk::Instrument $b {return -code 1 foo}
+} "DbgNub_Do 0 {$b 1 {0 18}} {DbgNub_Return -code 1 foo}"
+
+test instrument-23.1 {instrument::parseIfCmd, invalid args} {
+    blk::Instrument $b {if}
+} "DbgNub_Do 0 {$b 1 {0 2}} if"
+test instrument-23.2 {instrument::parseIfCmd, invalid args} {
+    blk::Instrument $b {if 1111}
+} "DbgNub_Do 0 {$b 1 {0 7}} {if 1111}"
+test instrument-23.3 {instrument::parseIfCmd, invalid args} {
+    blk::Instrument $b {if 1111 {} elseif}
+} "DbgNub_Do 0 {$b 1 {0 17}} {if 1111 {} elseif}"
+test instrument-23.4 {instrument::parseIfCmd, invalid args} {
+    blk::Instrument $b {if 1111 then}
+} "DbgNub_Do 0 {$b 1 {0 12}} {if 1111 then}"
+test instrument-23.5 {instrument::parseIfCmd, invalid args} {
+    blk::Instrument $b {if 1111 then {} else}
+} "DbgNub_Do 0 {$b 1 {0 20}} {if 1111 then {} else}"
+test instrument-23.6 {instrument::parseIfCmd, invalid args} {
+    blk::Instrument $b {if 1111 then {} {} {}}
+} "DbgNub_Do 0 {$b 1 {0 21}} {if 1111 then {} {} {}}"
+test instrument-23.7 {instrument::parseIfCmd, simple case} {
+    blk::Instrument $b {if {[foo]} {body}}
+} "DbgNub_Do 0 {$b 1 {0 17}} {if {\[DbgNub_Do 1 {$b 1 {5 3}} foo\]} {
+# DBGNUB START: {$b 1 {0 17}}
+DbgNub_Do 0 {$b 1 {12 4}} body
+# DBGNUB END
+}}"
+test instrument-23.8 {instrument::parseIfCmd, simple case} {
+    blk::Instrument $b {if {1} then {body}}
+} "DbgNub_Do 0 {$b 1 {0 18}} {if {1} then {
+# DBGNUB START: {$b 1 {0 18}}
+DbgNub_Do 0 {$b 1 {13 4}} body
+# DBGNUB END
+}}"
+test instrument-23.9 {instrument::parseIfCmd, simple case} {
+    blk::Instrument $b {if {1} {body} {elsebody}}
+} "DbgNub_Do 0 {$b 1 {0 24}} {if {1} {
+# DBGNUB START: {$b 1 {0 24}}
+DbgNub_Do 0 {$b 1 {8 4}} body
+# DBGNUB END
+} {
+# DBGNUB START: {$b 1 {0 24}}
+DbgNub_Do 0 {$b 1 {15 8}} elsebody
+# DBGNUB END
+}}"
+test instrument-23.10 {instrument::parseIfCmd, simple case} {
+    blk::Instrument $b {if {1} then {body} {elsebody}}
+} "DbgNub_Do 0 {$b 1 {0 29}} {if {1} then {
+# DBGNUB START: {$b 1 {0 29}}
+DbgNub_Do 0 {$b 1 {13 4}} body
+# DBGNUB END
+} {
+# DBGNUB START: {$b 1 {0 29}}
+DbgNub_Do 0 {$b 1 {20 8}} elsebody
+# DBGNUB END
+}}"
+test instrument-23.11 {instrument::parseIfCmd, simple case} {
+    blk::Instrument $b {if {1} then {body} else {elsebody}}
+} "DbgNub_Do 0 {$b 1 {0 34}} {if {1} then {
+# DBGNUB START: {$b 1 {0 34}}
+DbgNub_Do 0 {$b 1 {13 4}} body
+# DBGNUB END
+} else {
+# DBGNUB START: {$b 1 {0 34}}
+DbgNub_Do 0 {$b 1 {25 8}} elsebody
+# DBGNUB END
+}}"
+test instrument-23.12 {instrument::parseIfCmd, simple case} {
+    blk::Instrument $b {if {1} {body} elseif {[foo]} {elseifbody}}
+} "DbgNub_Do 0 {$b 1 {0 41}} {if {1} {
+# DBGNUB START: {$b 1 {0 41}}
+DbgNub_Do 0 {$b 1 {8 4}} body
+# DBGNUB END
+} elseif {\[DbgNub_Do 1 {$b 1 {23 3}} foo\]} {
+# DBGNUB START: {$b 1 {0 41}}
+DbgNub_Do 0 {$b 1 {30 10}} elseifbody
+# DBGNUB END
+}}"
+test instrument-23.13 {instrument::parseIfCmd, simple case} {
+    blk::Instrument $b {if {1} {body} elseif {2} {elseifbody} else {elsebody}}
+} "DbgNub_Do 0 {$b 1 {0 53}} {if {1} {
+# DBGNUB START: {$b 1 {0 53}}
+DbgNub_Do 0 {$b 1 {8 4}} body
+# DBGNUB END
+} elseif {2} {
+# DBGNUB START: {$b 1 {0 53}}
+DbgNub_Do 0 {$b 1 {26 10}} elseifbody
+# DBGNUB END
+} else {
+# DBGNUB START: {$b 1 {0 53}}
+DbgNub_Do 0 {$b 1 {44 8}} elsebody
+# DBGNUB END
+}}"
+
+test instrument-24.1 {instrument::parseSwitchCmd, invalid args} {
+    blk::Instrument $b {switch}
+} "DbgNub_Do 0 {$b 1 {0 6}} switch"
+test instrument-24.2 {instrument::parseSwitchCmd, invalid args} {
+    blk::Instrument $b {switch value}
+} "DbgNub_Do 0 {$b 1 {0 12}} {switch value}"
+test instrument-24.3 {instrument::parseSwitchCmd, switches} {
+    blk::Instrument $b {switch -exact value {pattern body}}
+} "DbgNub_Do 0 {$b 1 {0 34}} {switch -exact value {pattern {
+# DBGNUB START: {$b 1 {0 34}}
+DbgNub_Do 0 {$b 1 {29 4}} body
+# DBGNUB END
+}}}"
+test instrument-24.4 {instrument::parseSwitchCmd, switches} {
+    blk::Instrument $b {switch -glob value {pattern body}}
+} "DbgNub_Do 0 {$b 1 {0 33}} {switch -glob value {pattern {
+# DBGNUB START: {$b 1 {0 33}}
+DbgNub_Do 0 {$b 1 {28 4}} body
+# DBGNUB END
+}}}"
+test instrument-24.5 {instrument::parseSwitchCmd, switches} {
+    blk::Instrument $b {switch -regexp value {pattern body}}
+} "DbgNub_Do 0 {$b 1 {0 35}} {switch -regexp value {pattern {
+# DBGNUB START: {$b 1 {0 35}}
+DbgNub_Do 0 {$b 1 {30 4}} body
+# DBGNUB END
+}}}"
+test instrument-24.6 {instrument::parseSwitchCmd, switches} {
+    blk::Instrument $b {switch -regexp value {pattern {body}}}
+} "DbgNub_Do 0 {$b 1 {0 37}} {switch -regexp value {pattern {
+# DBGNUB START: {$b 1 {0 37}}
+DbgNub_Do 0 {$b 1 {31 4}} body
+# DBGNUB END
+}}}"
+test instrument-24.7 {instrument::parseSwitchCmd, single arg with substitutions} {
+    blk::Instrument $b {switch -regexp value [body]}
+} "DbgNub_Do 0 {$b 1 {0 27}} {switch -regexp value \[DbgNub_Do 1 {$b 1 {22 4}} body\]}"
+test instrument-24.8 {instrument::parseSwitchCmd, single arg} {
+    blk::Instrument $b {
+	switch -regexp value {
+	    pattern1 {
+		body
+	    }
+	    pattern2 -
+	    pattern3 {
+		body3
+	    }
+	    default {}
+	}
+    }
+} "DbgNub_Do 0 {$b 2 {2 119}} {switch -regexp value {
+	    pattern1 {
+# DBGNUB START: {$b 2 {2 119}}
+DbgNub_Do 0 {$b 4 {43 5}} body
+# DBGNUB END
+}
+	    pattern2 -
+	    pattern3 {
+# DBGNUB START: {$b 2 {2 119}}
+DbgNub_Do 0 {$b 8 {89 6}} body3
+# DBGNUB END
+}
+	    default {
+# DBGNUB START: {$b 2 {2 119}}
+
+# DBGNUB END
+}
+	}}"
+test instrument-24.9 {instrument::parseSwitchCmd, empty single arg} {
+    blk::Instrument $b {switch -regexp value {}}
+} "DbgNub_Do 0 {$b 1 {0 23}} {switch -regexp value {}}"
+test instrument-24.10 {instrument::parseSwitchCmd, complex body} {
+    blk::Instrument $b {
+	switch -regexp value {
+	    pattern1 "body"
+	    pattern2 "body1\nbody2"
+	}
+    }
+} "DbgNub_Do 0 {$b 2 {2 76}} {switch -regexp value {
+	    pattern1 \"
+# DBGNUB START: {$b 2 {2 76}}
+DbgNub_Do 0 {$b 3 {40 4}} body
+# DBGNUB END
+\"
+	    pattern2 \"body1\\nbody2\"
+	}}"
+test instrument-24.11 {instrument::parseSwitchCmd, complex pattern} {
+    blk::Instrument $b {
+	switch -regexp value {
+	    [foo] "body"
+	}
+    }
+} "DbgNub_Do 0 {$b 2 {2 44}} {switch -regexp value {
+	    \[foo\] \"
+# DBGNUB START: {$b 2 {2 44}}
+DbgNub_Do 0 {$b 3 {37 4}} body
+# DBGNUB END
+\"
+	}}"
+test instrument-24.12 {instrument::parseSwitchCmd, multiple arguments} {
+    blk::Instrument $b {switch value pattern body}
+} "DbgNub_Do 0 {$b 1 {0 25}} {switch value pattern {
+# DBGNUB START: {$b 1 {0 25}}
+DbgNub_Do 0 {$b 1 {21 4}} body
+# DBGNUB END
+}}"
+test instrument-24.13 {instrument::parseSwitchCmd, multiple arguments} {
+    blk::Instrument $b {switch -regexp value p1 b1 p2 b2}
+} "DbgNub_Do 0 {$b 1 {0 32}} {switch -regexp value p1 {
+# DBGNUB START: {$b 1 {0 32}}
+DbgNub_Do 0 {$b 1 {24 2}} b1
+# DBGNUB END
+} p2 {
+# DBGNUB START: {$b 1 {0 32}}
+DbgNub_Do 0 {$b 1 {30 2}} b2
+# DBGNUB END
+}}"
+test instrument-24.14 {instrument::parseSwitchCmd, multiple arguments, incomplete} {
+    blk::Instrument $b {switch -regexp value p1 b1 p2}
+} "DbgNub_Do 0 {$b 1 {0 29}} {switch -regexp value p1 {
+# DBGNUB START: {$b 1 {0 29}}
+DbgNub_Do 0 {$b 1 {24 2}} b1
+# DBGNUB END
+} p2}"
+test instrument-24.15 {instrument::parseSwitchCmd, multiple arguments} {
+    blk::Instrument $b {switch -regexp value pattern [body]foo}
+} "DbgNub_Do 0 {$b 1 {0 38}} {switch -regexp value pattern \[DbgNub_Do 1 {$b 1 {30 4}} body\]foo}"
+test instrument-24.16 {instrument::parseSwitchCmd, multiple arguments} {
+    blk::Instrument $b {
+	switch -regexp value [pa]ttern {
+	    body1
+	    body2
+	}
+    }
+} "DbgNub_Do 0 {$b 2 {2 58}} {switch -regexp value \[DbgNub_Do 1 {$b 2 {24 2}} pa\]ttern {
+# DBGNUB START: {$b 2 {2 58}}
+DbgNub_Do 0 {$b 3 {40 6}} body1
+DbgNub_Do 0 {$b 4 {51 6}} body2
+# DBGNUB END
+}}"
+test instrument-24.17 {instrument::parseSwitchCmd, multiple arguments, with -} {
+    blk::Instrument $b {switch value p1 bar p2 - p3 foo}
+} "DbgNub_Do 0 {$b 1 {0 31}} {switch value p1 {
+# DBGNUB START: {$b 1 {0 31}}
+DbgNub_Do 0 {$b 1 {16 3}} bar
+# DBGNUB END
+} p2 - p3 {
+# DBGNUB START: {$b 1 {0 31}}
+DbgNub_Do 0 {$b 1 {28 3}} foo
+# DBGNUB END
+}}"
+test instrument-24.18 {instrument::parseSwitchCmd, parsing errors} {
+    list [catch {blk::Instrument $b {switch value pattern {$x(}}} msg] $msg $::errorCode
+} {0 {} {PARSE missingParen 24 {missing )}}}
+
+
+test instrument-25.1 {instrument::parseExpect, no args} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    blk::Instrument $b {expect}
+} "DbgNub_Do 0 {$b 1 {0 6}} expect"
+test instrument-25.2 {instrument::parseExpect, one arg, nonliteral} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    blk::Instrument $b {expect [foo]}
+} "DbgNub_Do 0 {$b 1 {0 12}} {expect \[DbgNub_Do 1 {$b 1 {8 3}} foo\]}"
+test instrument-25.3 {instrument::parseExpect, one arg, simple pattern} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    blk::Instrument $b {expect {[foo bar]}}
+} "DbgNub_Do 0 {$b 1 {0 18}} {expect {\[foo bar\]}}" 
+test instrument-25.4 {instrument::parseExpect, one arg, pattern/body} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    blk::Instrument $b {
+	expect {
+	    [foo bar] [baz blat]
+	}
+    }
+} "DbgNub_Do 0 {$b 2 {2 38}} {expect {
+	    \[DbgNub_Do 1 {$b 3 {17 7}} {foo bar}\] \[DbgNub_Do 1 {$b 3 {27 8}} {baz blat}\]
+	}}"
+test instrument-25.5 {instrument::parseExpect, two args, non-literal} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    blk::Instrument $b {expect $brace {[foo bar] [baz blat]}}
+} "DbgNub_Do 0 {$b 1 {0 36}} {expect \$brace {\[foo bar\] \[baz blat\]}}"
+test instrument-25.6 {instrument::parseExpect, two args, non-literal} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    blk::Instrument $b {expect -brace [foo bar]}
+} "DbgNub_Do 0 {$b 1 {0 23}} {expect -brace \[DbgNub_Do 1 {$b 1 {15 7}} {foo bar}\]}"
+test instrument-25.7 {instrument::parseExpect, two args, -brace} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    blk::Instrument $b {expect -brace {[foo bar] [baz blat]}}
+} "DbgNub_Do 0 {$b 1 {0 36}} {expect -brace {\[DbgNub_Do 1 {$b 1 {16 7}} {foo bar}\] \[DbgNub_Do 1 {$b 1 {26 8}} {baz blat}\]}}"
+test instrument-25.8 {instrument::parseExpect, multiple args, -brace} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    blk::Instrument $b {expect foo {bar} baz {blat}}
+} "DbgNub_Do 0 {$b 1 {0 27}} {expect foo {
+# DBGNUB START: {$b 1 {0 27}}
+DbgNub_Do 0 {$b 1 {12 3}} bar
+# DBGNUB END
+} baz {
+# DBGNUB START: {$b 1 {0 27}}
+DbgNub_Do 0 {$b 1 {22 4}} blat
+# DBGNUB END
+}}"
+
+test instrument-26.1 {instrument::parseExpRange, quotes} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    blk::Instrument $b {expect "
+    foo bar
+    "}
+} "DbgNub_Do 0 {$b 1 {0 26}} {expect \"
+    foo {
+# DBGNUB START: {$b 1 {0 26}}
+DbgNub_Do 0 {$b 2 {17 3}} bar
+# DBGNUB END
+}
+    \"}"
+test instrument-26.2 {instrument::parseExpRange, braces} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    blk::Instrument $b {expect {
+    foo bar
+    }}
+} "DbgNub_Do 0 {$b 1 {0 26}} {expect {
+    foo {
+# DBGNUB START: {$b 1 {0 26}}
+DbgNub_Do 0 {$b 2 {17 3}} bar
+# DBGNUB END
+}
+    }}"
+test instrument-26.3 {instrument::parseScript, error handling, no handler} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    list [catch {blk::Instrument $b "expect {
+	set x 1 ; set y \$z(
+    }"} msg] $msg $errorCode
+} "0 {} {PARSE missingParen 28 {missing )}}"
+test instrument-26.4 {instrument::parseScript, error handling, handler returns 0} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    proc ::err {args} {
+	return 0
+    }
+    set instrument::errorHandler ::err
+    set result [list [catch {
+	blk::Instrument $b "expect {
+	set x 1 ; set y \$z(
+    }"} msg] $msg $errorCode]
+    set instrument::errorHandler {}
+    set ::result
+} "0 {} {PARSE missingParen 28 {missing )}}"
+test instrument-26.5 {instrument::parseScript, error handling, handler returns 1} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    set ::result {}
+    proc ::err {loc} {
+	set ::result [list $loc $::errorCode]
+	return 1
+    }
+    set instrument::errorHandler ::err
+    lappend result [blk::Instrument $b "expect {
+	set x 1 ; set y \$z(
+    }"]
+    set instrument::errorHandler {}
+    set ::result
+} "{$b 2 {28 1}} {PARSE missingParen 28 {missing )}} {DbgNub_Do 0 {$b 1 {0 35}} {expect {
+	set x 1 ; set y \$z(
+    }}}"
+
+test instrument-27.1 {instrument::expMatch} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    blk::Instrument $b {expect -noc -not -n -ti -ir foo bar}
+} "DbgNub_Do 0 {$b 1 {0 35}} {expect -noc -not -n -ti -ir foo {
+# DBGNUB START: {$b 1 {0 35}}
+DbgNub_Do 0 {$b 1 {32 3}} bar
+# DBGNUB END
+}}"
+test instrument-27.2 {instrument::expMatch} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    blk::Instrument $b {expect -i foo bar baz}
+} "DbgNub_Do 0 {$b 1 {0 21}} {expect -i foo bar {
+# DBGNUB START: {$b 1 {0 21}}
+DbgNub_Do 0 {$b 1 {18 3}} baz
+# DBGNUB END
+}}"
+
+test instrument-28.1 {instrument::parseExpectTokens, nonliterals} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    blk::Instrument $b {expect $x bar baz blat}
+} "DbgNub_Do 0 {$b 1 {0 22}} {expect \$x bar baz blat}"
+test instrument-28.2 {instrument::parseExpectTokens, switches} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    blk::Instrument $b {expect eof a null b default c timeout d full_buffer e}
+} "DbgNub_Do 0 {$b 1 {0 53}} {expect eof {
+# DBGNUB START: {$b 1 {0 53}}
+DbgNub_Do 0 {$b 1 {11 1}} a
+# DBGNUB END
+} null {
+# DBGNUB START: {$b 1 {0 53}}
+DbgNub_Do 0 {$b 1 {18 1}} b
+# DBGNUB END
+} default {
+# DBGNUB START: {$b 1 {0 53}}
+DbgNub_Do 0 {$b 1 {28 1}} c
+# DBGNUB END
+} timeout {
+# DBGNUB START: {$b 1 {0 53}}
+DbgNub_Do 0 {$b 1 {38 1}} d
+# DBGNUB END
+} full_buffer {
+# DBGNUB START: {$b 1 {0 53}}
+DbgNub_Do 0 {$b 1 {52 1}} e
+# DBGNUB END
+}}"
+test instrument-28.3 {instrument::parseExpectTokens, switches} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    blk::Instrument $b {expect -- -nocase bar}
+} "DbgNub_Do 0 {$b 1 {0 21}} {expect -- -nocase {
+# DBGNUB START: {$b 1 {0 21}}
+DbgNub_Do 0 {$b 1 {18 3}} bar
+# DBGNUB END
+}}"
+test instrument-28.4 {instrument::parseExpectTokens, switches} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    blk::Instrument $b {expect -glob pat a -regexp pat b -exact pat c}
+} "DbgNub_Do 0 {$b 1 {0 45}} {expect -glob pat {
+# DBGNUB START: {$b 1 {0 45}}
+DbgNub_Do 0 {$b 1 {17 1}} a
+# DBGNUB END
+} -regexp pat {
+# DBGNUB START: {$b 1 {0 45}}
+DbgNub_Do 0 {$b 1 {31 1}} b
+# DBGNUB END
+} -exact pat {
+# DBGNUB START: {$b 1 {0 45}}
+DbgNub_Do 0 {$b 1 {44 1}} c
+# DBGNUB END
+}}"
+test instrument-28.5 {instrument::parseExpectTokens, switches} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    blk::Instrument $b {expect {
+	-ti -timestamp -ir -iread -iw -iwrite -in -indices foo bar
+    }}
+} "DbgNub_Do 0 {$b 1 {0 74}} {expect {
+	-ti -timestamp -ir -iread -iw -iwrite -in -indices foo {
+# DBGNUB START: {$b 1 {0 74}}
+DbgNub_Do 0 {$b 2 {65 3}} bar
+# DBGNUB END
+}
+    }}"
+test instrument-28.6 {instrument::parseExpectTokens, switches} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    blk::Instrument $b {expect {
+	-n -notransfer -noc -nocase -nobrace foo bar
+    }}
+} "DbgNub_Do 0 {$b 1 {0 60}} {expect {
+	-n -notransfer -noc -nocase -nobrace foo {
+# DBGNUB START: {$b 1 {0 60}}
+DbgNub_Do 0 {$b 2 {51 3}} bar
+# DBGNUB END
+}
+    }}"
+test instrument-28.7 {instrument::parseExpectTokens, switches} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    blk::Instrument $b {expect {
+	-i arg -timeout arg pat body
+    }}
+} "DbgNub_Do 0 {$b 1 {0 44}} {expect {
+	-i arg -timeout arg pat {
+# DBGNUB START: {$b 1 {0 44}}
+DbgNub_Do 0 {$b 2 {34 4}} body
+# DBGNUB END
+}
+    }}"
+test instrument-28.8 {instrument::parseExpectTokens, unexpected switches} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    blk::Instrument $b {expect {
+	-nocast pat body
+    }}
+} "DbgNub_Do 0 {$b 1 {0 32}} {expect {
+	-nocast pat body
+    }}"
+test instrument-28.9 {instrument::parseExpectTokens, simple pattern/body} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    blk::Instrument $b {expect pat body}
+} "DbgNub_Do 0 {$b 1 {0 15}} {expect pat {
+# DBGNUB START: {$b 1 {0 15}}
+DbgNub_Do 0 {$b 1 {11 4}} body
+# DBGNUB END
+}}"
+
+test instrument-29.1 {instrument::parseInteractTokens, nonliterals} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    blk::Instrument $b {exp_interact $x bar baz blat}
+} "DbgNub_Do 0 {$b 1 {0 28}} {exp_interact \$x bar baz blat}"
+test instrument-29.2 {instrument::parseInteractTokens, switches} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    blk::Instrument $b {exp_interact eof a null b}
+} "DbgNub_Do 0 {$b 1 {0 25}} {exp_interact eof {
+# DBGNUB START: {$b 1 {0 25}}
+DbgNub_Do 0 {$b 1 {17 1}} a
+# DBGNUB END
+} null {
+# DBGNUB START: {$b 1 {0 25}}
+DbgNub_Do 0 {$b 1 {24 1}} b
+# DBGNUB END
+}}"
+test instrument-29.3 {instrument::parseInteractTokens, switches} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    blk::Instrument $b {exp_interact timeout arg body}
+} "DbgNub_Do 0 {$b 1 {0 29}} {exp_interact timeout arg {
+# DBGNUB START: {$b 1 {0 29}}
+DbgNub_Do 0 {$b 1 {25 4}} body
+# DBGNUB END
+}}"
+test instrument-29.4 {instrument::parseInteractTokens, switches} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    blk::Instrument $b {exp_interact -- -nocase bar}
+} "DbgNub_Do 0 {$b 1 {0 27}} {exp_interact -- -nocase {
+# DBGNUB START: {$b 1 {0 27}}
+DbgNub_Do 0 {$b 1 {24 3}} bar
+# DBGNUB END
+}}"
+test instrument-29.5 {instrument::parseInteractTokens, switches} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    blk::Instrument $b {exp_interact -regexp pat b -exact pat c -timeout 1 d}
+} "DbgNub_Do 0 {$b 1 {0 52}} {exp_interact -regexp pat {
+# DBGNUB START: {$b 1 {0 52}}
+DbgNub_Do 0 {$b 1 {25 1}} b
+# DBGNUB END
+} -exact pat {
+# DBGNUB START: {$b 1 {0 52}}
+DbgNub_Do 0 {$b 1 {38 1}} c
+# DBGNUB END
+} -timeout 1 {
+# DBGNUB START: {$b 1 {0 52}}
+DbgNub_Do 0 {$b 1 {51 1}} d
+# DBGNUB END
+}}"
+test instrument-29.6 {instrument::parseInteractTokens, switches} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    blk::Instrument $b {exp_interact {
+	-input 1 -output 2 -i 3 -u 4 pat body
+    }}
+} "DbgNub_Do 0 {$b 1 {0 59}} {exp_interact {
+	-input 1 -output 2 -i 3 -u 4 pat {
+# DBGNUB START: {$b 1 {0 59}}
+DbgNub_Do 0 {$b 2 {49 4}} body
+# DBGNUB END
+}
+    }}"
+test instrument-29.7 {instrument::parseInteractTokens, switches} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    blk::Instrument $b {exp_interact {
+	-echo -f -F -reset -nobrace -o pat body
+    }}
+} "DbgNub_Do 0 {$b 1 {0 61}} {exp_interact {
+	-echo -f -F -reset -nobrace -o pat {
+# DBGNUB START: {$b 1 {0 61}}
+DbgNub_Do 0 {$b 2 {51 4}} body
+# DBGNUB END
+}
+    }}"
+test instrument-29.8 {instrument::parseInteractTokens, unexpected switches} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    blk::Instrument $b {exp_interact {
+	-nocast body pat body2
+    }}
+} "DbgNub_Do 0 {$b 1 {0 44}} {exp_interact {
+	-nocast {
+# DBGNUB START: {$b 1 {0 44}}
+DbgNub_Do 0 {$b 2 {24 4}} body
+# DBGNUB END
+} pat {
+# DBGNUB START: {$b 1 {0 44}}
+DbgNub_Do 0 {$b 2 {33 5}} body2
+# DBGNUB END
+}
+    }}"
+test instrument-29.9 {instrument::parseInteractTokens, simple pattern/body} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    blk::Instrument $b {exp_interact pat body}
+} "DbgNub_Do 0 {$b 1 {0 21}} {exp_interact pat {
+# DBGNUB START: {$b 1 {0 21}}
+DbgNub_Do 0 {$b 1 {17 4}} body
+# DBGNUB END
+}}"
+
+test instrument-30.1 {instrument::parseExpTrapCmd, switches} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    blk::Instrument $b {
+	exp_trap -code body signals
+	exp_trap -max body signals
+	exp_trap -code -code -max body signals
+	exp_trap
+	exp_trap signals
+	exp_trap body signals
+	exp_trap body signals extra
+    }
+} "DbgNub_Do 0 {$b 2 {2 28}} {exp_trap -code {
+# DBGNUB START: {$b 2 {2 28}}
+DbgNub_Do 0 {$b 2 {17 4}} body
+# DBGNUB END
+} signals}
+DbgNub_Do 0 {$b 3 {31 27}} {exp_trap -max body signals}
+DbgNub_Do 0 {$b 4 {59 39}} {exp_trap -code -code -max body signals}
+DbgNub_Do 0 {$b 5 {99 9}} exp_trap
+DbgNub_Do 0 {$b 6 {109 17}} {exp_trap signals}
+DbgNub_Do 0 {$b 7 {127 22}} {exp_trap {
+# DBGNUB START: {$b 7 {127 22}}
+DbgNub_Do 0 {$b 7 {136 4}} body
+# DBGNUB END
+} signals}
+DbgNub_Do 0 {$b 8 {150 28}} {exp_trap body signals extra}"
+
+##############################################################################
+
+test instrument-31.1 {BLACKBOX, after} {
+    resetExtensions
+    instrument::initialize 7.5
+    blk::Instrument $b {
+	after cancel 32
+	after idle body
+	after idle body extra
+	after info
+	after 100 body
+	after 100 body extra
+    }
+} "DbgNub_Do 0 {$b 2 {2 16}} {after cancel 32}
+DbgNub_Do 0 {$b 3 {19 16}} {after idle {
+# DBGNUB START: {$b 3 {19 16}}
+DbgNub_Do 0 {$b 3 {30 4}} body
+# DBGNUB END
+}}
+DbgNub_Do 0 {$b 4 {36 22}} {after idle body extra}
+DbgNub_Do 0 {$b 5 {59 11}} {after info}
+DbgNub_Do 0 {$b 6 {71 15}} {after 100 {
+# DBGNUB START: {$b 6 {71 15}}
+DbgNub_Do 0 {$b 6 {81 4}} body
+# DBGNUB END
+}}
+DbgNub_Do 0 {$b 7 {87 21}} {after 100 body extra}"
+
+test instrument-32.1 {BLACKBOX, catch} {
+    resetExtensions
+    instrument::initialize 7.3
+    blk::Instrument $b {
+	catch
+	catch body
+	catch [body]
+	catch body msg
+	catch {body} [msg]
+	catch body msg extra
+    }
+} "DbgNub_Do 0 {$b 2 {2 6}} catch
+DbgNub_Do 0 {$b 3 {9 11}} {catch {
+# DBGNUB START: {$b 3 {9 11}}
+DbgNub_Do 0 {$b 3 {15 4}} body
+# DBGNUB END
+}}
+DbgNub_Do 0 {$b 4 {21 13}} {catch \[DbgNub_Do 1 {$b 4 {28 4}} body\]}
+DbgNub_Do 0 {$b 5 {35 15}} {catch {
+# DBGNUB START: {$b 5 {35 15}}
+DbgNub_Do 0 {$b 5 {41 4}} body
+# DBGNUB END
+} msg}
+DbgNub_Do 0 {$b 6 {51 19}} {catch {
+# DBGNUB START: {$b 6 {51 19}}
+DbgNub_Do 0 {$b 6 {58 4}} body
+# DBGNUB END
+} \[DbgNub_Do 1 {$b 6 {65 3}} msg\]}
+DbgNub_Do 0 {$b 7 {71 21}} {catch body msg extra}"
+
+test instrument-33.1 {BLACKBOX, eval} {
+    resetExtensions
+    instrument::initialize 7.3
+    blk::Instrument $b {
+	eval
+	eval body
+	eval body1 body2
+    }
+} "DbgNub_Do 0 {$b 2 {2 5}} eval
+DbgNub_Do 0 {$b 3 {8 10}} {eval {
+# DBGNUB START: {$b 3 {8 10}}
+DbgNub_Do 0 {$b 3 {13 4}} body
+# DBGNUB END
+}}
+DbgNub_Do 0 {$b 4 {19 17}} {eval body1 body2}"
+
+test instrument-34.1 {BLACKBOX, expr} {
+    resetExtensions
+    instrument::initialize 7.3
+    blk::Instrument $b {
+	expr
+	expr {3 + [body]}
+	expr 3 + [body]
+	expr 3 + {[body]}
+    }
+} "DbgNub_Do 0 {$b 2 {2 5}} expr
+DbgNub_Do 0 {$b 3 {8 18}} {expr {3 + \[DbgNub_Do 1 {$b 3 {19 4}} body\]}}
+DbgNub_Do 0 {$b 4 {27 16}} {expr 3 + \[DbgNub_Do 1 {$b 4 {37 4}} body\]}
+DbgNub_Do 0 {$b 5 {44 18}} {expr 3 + {\[body\]}}"
+
+test instrument-35.1 {BLACKBOX, for} {
+    resetExtensions
+    instrument::initialize 7.3
+    blk::Instrument $b {
+	for
+	for body
+	for body1 {3 + [body2]}
+	for body1 {3 + [body2]} body3
+	for body1 {3 + [body2]} body3 body4
+	for body1 {3 + [body2]} body3 body4 extra
+    }
+} "DbgNub_Do 0 {$b 2 {2 4}} for
+DbgNub_Do 0 {$b 3 {7 9}} {for body}
+DbgNub_Do 0 {$b 4 {17 24}} {for body1 {3 + \[body2\]}}
+DbgNub_Do 0 {$b 5 {42 30}} {for body1 {3 + \[body2\]} body3}
+DbgNub_Do 0 {$b 6 {73 36}} {for {
+# DBGNUB START: {$b 6 {73 36}}
+DbgNub_Do 0 {$b 6 {77 5}} body1
+# DBGNUB END
+} {3 + \[DbgNub_Do 1 {$b 6 {89 5}} body2\]} {
+# DBGNUB START: {$b 6 {73 36}}
+DbgNub_Do 0 {$b 6 {97 5}} body3
+# DBGNUB END
+} {
+# DBGNUB START: {$b 6 {73 36}}
+DbgNub_Do 0 {$b 6 {103 5}} body4
+# DBGNUB END
+}}
+DbgNub_Do 0 {$b 7 {110 42}} {for body1 {3 + \[body2\]} body3 body4 extra}"
+
+test instrument-36.1 {BLACKBOX, foreach} {
+    resetExtensions
+    instrument::initialize 7.3
+    blk::Instrument $b {
+	foreach
+	foreach arg
+	foreach arg body
+	foreach arg1 arg2 body
+	foreach arg1 arg2 arg3 body
+	foreach arg1 arg2 arg3 arg4 body
+    }
+} "DbgNub_Do 0 {$b 2 {2 8}} foreach
+DbgNub_Do 0 {$b 3 {11 12}} {foreach arg}
+DbgNub_Do 0 {$b 4 {24 17}} {foreach arg body}
+DbgNub_Do 0 {$b 5 {42 23}} {foreach arg1 arg2 {
+# DBGNUB START: {$b 5 {42 23}}
+DbgNub_Do 0 {$b 5 {60 4}} body
+# DBGNUB END
+}}
+DbgNub_Do 0 {$b 6 {66 28}} {foreach arg1 arg2 arg3 {
+# DBGNUB START: {$b 6 {66 28}}
+DbgNub_Do 0 {$b 6 {89 4}} body
+# DBGNUB END
+}}
+DbgNub_Do 0 {$b 7 {95 33}} {foreach arg1 arg2 arg3 arg4 {
+# DBGNUB START: {$b 7 {95 33}}
+DbgNub_Do 0 {$b 7 {123 4}} body
+# DBGNUB END
+}}"
+
+# 'if' is tested by parseIfCmd tests
+
+test instrument-37.1 {BLACKBOX, fcopy} {
+    resetExtensions
+    instrument::initialize 8.0
+    blk::Instrument $b {
+	fcopy
+	fcopy file1 file2
+	fcopy file1 file2 -command
+	fcopy file1 file2 -command body
+	fcopy file1 file2 -size 10 -command body
+	fcopy file1 file2 -command body -size 10 
+    }
+} "DbgNub_Do 0 {$b 2 {2 6}} fcopy
+DbgNub_Do 0 {$b 3 {9 18}} {fcopy file1 file2}
+DbgNub_Do 0 {$b 4 {28 27}} {fcopy file1 file2 -command}
+DbgNub_Do 0 {$b 5 {56 32}} {fcopy file1 file2 -command {
+# DBGNUB START: {$b 5 {56 32}}
+DbgNub_Do 0 {$b 5 {83 4}} body
+# DBGNUB END
+}}
+DbgNub_Do 0 {$b 6 {89 41}} {fcopy file1 file2 -size 10 -command {
+# DBGNUB START: {$b 6 {89 41}}
+DbgNub_Do 0 {$b 6 {125 4}} body
+# DBGNUB END
+}}
+DbgNub_Do 0 {$b 7 {131 42}} {fcopy file1 file2 -command {
+# DBGNUB START: {$b 7 {131 42}}
+DbgNub_Do 0 {$b 7 {158 4}} body
+# DBGNUB END
+} -size 10}"
+
+test instrument-38.1 {BLACKBOX, fileevent} {
+    resetExtensions
+    instrument::initialize 7.5
+    blk::Instrument $b {
+	fileevent
+	fileevent file1
+	fileevent file1 readable
+	fileevent file1 writable
+	fileevent file1 readable body
+	fileevent file1 writable body
+	fileevent file1 readable body extra
+    }
+} "DbgNub_Do 0 {$b 2 {2 10}} fileevent
+DbgNub_Do 0 {$b 3 {13 16}} {fileevent file1}
+DbgNub_Do 0 {$b 4 {30 25}} {fileevent file1 readable}
+DbgNub_Do 0 {$b 5 {56 25}} {fileevent file1 writable}
+DbgNub_Do 0 {$b 6 {82 30}} {fileevent file1 readable {
+# DBGNUB START: {$b 6 {82 30}}
+DbgNub_Do 0 {$b 6 {107 4}} body
+# DBGNUB END
+}}
+DbgNub_Do 0 {$b 7 {113 30}} {fileevent file1 writable {
+# DBGNUB START: {$b 7 {113 30}}
+DbgNub_Do 0 {$b 7 {138 4}} body
+# DBGNUB END
+}}
+DbgNub_Do 0 {$b 8 {144 36}} {fileevent file1 readable body extra}"
+
+test instrument-39.1 {BLACKBOX, namespace} {
+    resetExtensions
+    instrument::initialize 8.0
+    blk::Instrument $b {
+	namespace
+	namespace 1
+	namespace 1 2
+	namespace 1 2 3
+	namespace 1 2 3 4
+	namespace evad foo bar
+	namespace ev foo body
+	namespace eva foo body
+	namespace eval foo body
+	namespace eval foo [body]
+    }
+} "DbgNub_Do 0 {$b 2 {2 10}} namespace
+DbgNub_Do 0 {$b 3 {13 12}} {namespace 1}
+DbgNub_Do 0 {$b 4 {26 14}} {namespace 1 2}
+DbgNub_Do 0 {$b 5 {41 16}} {namespace 1 2 3}
+DbgNub_Do 0 {$b 6 {58 18}} {namespace 1 2 3 4}
+DbgNub_Do 0 {$b 7 {77 23}} {namespace evad foo bar}
+DbgNub_Do 0 {$b 8 {101 22}} {DbgNub_NamespaceEval namespace ev foo {
+# DBGNUB START: {$b 8 {101 22}}
+DbgNub_Do 0 {$b 8 {118 4}} body
+# DBGNUB END
+}}
+DbgNub_Do 0 {$b 9 {124 23}} {DbgNub_NamespaceEval namespace eva foo {
+# DBGNUB START: {$b 9 {124 23}}
+DbgNub_Do 0 {$b 9 {142 4}} body
+# DBGNUB END
+}}
+DbgNub_Do 0 {$b 10 {148 24}} {DbgNub_NamespaceEval namespace eval foo {
+# DBGNUB START: {$b 10 {148 24}}
+DbgNub_Do 0 {$b 10 {167 4}} body
+# DBGNUB END
+}}
+DbgNub_Do 0 {$b 11 {173 26}} {DbgNub_NamespaceEval namespace eval foo \[DbgNub_Do 1 {$b 11 {193 4}} body\]}"
+
+test instrument-39.2 {BLACKBOX, package} {
+    resetExtensions
+    instrument::initialize 7.5
+    blk::Instrument $b {
+	package
+	package ifneeded
+	package ifneeded name
+	package ifneeded name version
+	package ifneeded name version body
+	package ifneeded name version body extra
+	package require -exact name version
+    }
+} "DbgNub_Do 0 {$b 2 {2 8}} package
+DbgNub_Do 0 {$b 3 {11 17}} {package ifneeded}
+DbgNub_Do 0 {$b 4 {29 22}} {package ifneeded name}
+DbgNub_Do 0 {$b 5 {52 30}} {package ifneeded name version}
+DbgNub_Do 0 {$b 6 {83 35}} {package ifneeded name version {
+# DBGNUB START: {$b 6 {83 35}}
+DbgNub_Do 0 {$b 6 {113 4}} body
+# DBGNUB END
+}}
+DbgNub_Do 0 {$b 7 {119 41}} {package ifneeded name version body extra}
+DbgNub_Do 0 {$b 8 {161 36}} {package require -exact name version}"
+
+test instrument-40.1 {BLACKBOX, proc} {
+    resetExtensions
+    instrument::initialize 7.5
+    blk::Instrument $b {
+	proc
+	proc name
+	proc name args
+	proc name args body extra
+	proc name args $body
+	proc name args body
+	proc name args {
+	    body1
+	    body2
+	}
+    }
+} "DbgNub_Do 0 {$b 2 {2 5}} proc
+DbgNub_Do 0 {$b 3 {8 10}} {proc name}
+DbgNub_Do 0 {$b 4 {19 15}} {proc name args}
+DbgNub_Do 0 {$b 5 {35 26}} {proc name args body extra}
+DbgNub_Do 0 {$b 6 {62 21}} {proc name args \$body}
+DbgNub_Do 0 {$b 7 {84 20}} {proc name args {
+# DBGNUB START: {$b 7 {84 20}}
+DbgNub_Do 0 {$b 7 {99 4}} body
+# DBGNUB END
+}}
+DbgNub_Do 0 {$b 8 {105 42}} {proc name args {
+# DBGNUB START: {$b 8 {105 42}}
+DbgNub_Do 0 {$b 9 {127 6}} body1
+DbgNub_Do 0 {$b 10 {138 6}} body2
+# DBGNUB END
+}}"
+test instrument-40.2 {BLACKBOX: proc, substitutions in args} {
+    resetExtensions
+    instrument::initialize 7.5
+    blk::Instrument $b {proc [foo] [bar] body}
+} "DbgNub_Do 0 {$b 1 {0 21}} {proc \[DbgNub_Do 1 {$b 1 {6 3}} foo\] \[DbgNub_Do 1 {$b 1 {12 3}} bar\] {
+# DBGNUB START: {$b 1 {0 21}}
+DbgNub_Do 0 {$b 1 {17 4}} body
+# DBGNUB END
+}}"
+test instrument-40.3 {BLACKBOX: proc, body with continuations} {
+    resetExtensions
+    instrument::initialize 7.5
+    blk::Instrument $b "proc name args {\nfoo \\\nbar\n}"
+} "DbgNub_Do 0 {$b 1 {0 28}} {proc name args {
+# DBGNUB START: {$b 1 {0 28}}
+DbgNub_Do 0 {$b 2 {17 10}} foo\\ \\\\\\nbar
+# DBGNUB END
+}}"
+
+# 'return' is tested by parseReturnCmd tests
+# 'switch' is tested by parseSwitchCmd tests
+
+test instrument-41.1 {BLACKBOX, time} {
+    resetExtensions
+    instrument::initialize 7.5
+    blk::Instrument $b {
+	time
+	time body
+	time body count
+	time body count extra
+    }
+} "DbgNub_Do 0 {$b 2 {2 5}} time
+DbgNub_Do 0 {$b 3 {8 10}} {time {
+# DBGNUB START: {$b 3 {8 10}}
+DbgNub_Do 0 {$b 3 {13 4}} body
+# DBGNUB END
+}}
+DbgNub_Do 0 {$b 4 {19 16}} {time {
+# DBGNUB START: {$b 4 {19 16}}
+DbgNub_Do 0 {$b 4 {24 4}} body
+# DBGNUB END
+} count}
+DbgNub_Do 0 {$b 5 {36 22}} {time body count extra}"
+
+test instrument-42.1 {BLACKBOX, while} {
+    resetExtensions
+    instrument::initialize 7.5
+    blk::Instrument $b {
+	while
+	while 1111
+	while 1111 body extra
+	while [foo] [bar]
+	while [foo] body
+	while {3 + [foo]} body
+    }
+} "DbgNub_Do 0 {$b 2 {2 6}} while
+DbgNub_Do 0 {$b 3 {9 11}} {while 1111}
+DbgNub_Do 0 {$b 4 {21 22}} {while 1111 body extra}
+DbgNub_Do 0 {$b 5 {44 18}} {while \[DbgNub_Do 1 {$b 5 {51 3}} foo\] \[DbgNub_Do 1 {$b 5 {57 3}} bar\]}
+DbgNub_Do 0 {$b 6 {63 17}} {while \[DbgNub_Do 1 {$b 6 {70 3}} foo\] {
+# DBGNUB START: {$b 6 {63 17}}
+DbgNub_Do 0 {$b 6 {75 4}} body
+# DBGNUB END
+}}
+DbgNub_Do 0 {$b 7 {81 23}} {while {3 + \[DbgNub_Do 1 {$b 7 {93 3}} foo\]} {
+# DBGNUB START: {$b 7 {81 23}}
+DbgNub_Do 0 {$b 7 {99 4}} body
+# DBGNUB END
+}}"
+
+foreach ver {7.6 8.0} {
+test instrument-43.1 "BLACKBOX, body $ver" {
+    resetExtensions
+    instrument::extension incrTcl 1
+    instrument::initialize $ver
+    blk::Instrument $b {
+	body
+	body name
+	body name args
+	body name args body1
+	body name args body1 extra
+    }
+} "DbgNub_Do 0 {$b 2 {2 5}} body
+DbgNub_Do 0 {$b 3 {8 10}} {body name}
+DbgNub_Do 0 {$b 4 {19 15}} {body name args}
+DbgNub_Do 0 {$b 5 {35 21}} {DbgNub_WrapItclBody body name args {
+# DBGNUB START: {$b 5 {35 21}}
+DbgNub_Do 0 {$b 5 {50 5}} body1
+# DBGNUB END
+}}
+DbgNub_Do 0 {$b 6 {57 27}} {body name args body1 extra}"
+}
+
+
+test instrument-44.1 {BLACKBOX, class 7.6} {
+    resetExtensions
+    instrument::extension incrTcl 1
+    instrument::initialize 7.6
+    blk::Instrument $b {
+	class
+	class name
+	class name {method name args body}
+	class name {method name args body} extra
+    }
+} "DbgNub_Do 0 {$b 2 {2 6}} class
+DbgNub_Do 0 {$b 3 {9 11}} {class name}
+DbgNub_Do 0 {$b 4 {21 35}} {class name {
+# DBGNUB START: {$b 4 {21 35}}
+method name args {
+# DBGNUB START: {$b 4 {33 21}}
+$incrProcPrefix
+DbgNub_Do 0 {$b 4 {50 4}} body
+$incrProcSuffix
+}
+# DBGNUB END
+}}
+DbgNub_Do 0 {$b 5 {57 41}} {class name {method name args body} extra}"
+
+test instrument-44.2 {BLACKBOX, class 8.0} {
+    resetExtensions
+    instrument::extension incrTcl 1
+    instrument::initialize 8.0
+    blk::Instrument $b {
+	class
+	class name
+	class name {method name args body}
+	class name {method name args body} extra
+    }
+} "DbgNub_Do 0 {$b 2 {2 6}} class
+DbgNub_Do 0 {$b 3 {9 11}} {class name}
+DbgNub_Do 0 {$b 4 {21 35}} {DbgNub_Class class name {
+# DBGNUB START: {$b 4 {21 35}}
+DbgNub_Do 0 {$b 4 {33 21}} {DbgNub_WrapItclBody method name args {
+# DBGNUB START: {$b 4 {33 21}}
+DbgNub_Do 0 {$b 4 {50 4}} body
+# DBGNUB END
+}}
+# DBGNUB END
+}}
+DbgNub_Do 0 {$b 5 {57 41}} {class name {method name args body} extra}"
+
+foreach ver {7.6 8.0} {
+test instrument-45.1 "BLACKBOX, configbody $ver" {
+    resetExtensions
+    instrument::extension incrTcl 1
+    instrument::initialize $ver
+    blk::Instrument $b {
+	configbody
+	configbody name
+	configbody name body
+	configbody name @body
+	configbody name body extra
+    }
+} "DbgNub_Do 0 {$b 2 {2 11}} configbody
+DbgNub_Do 0 {$b 3 {14 16}} {configbody name}
+DbgNub_Do 0 {$b 4 {31 21}} {configbody name {
+# DBGNUB START: {$b 4 {31 21}}
+DbgNub_Do 0 {$b 4 {47 4}} body
+# DBGNUB END
+}}
+DbgNub_Do 0 {$b 5 {53 22}} {configbody name @body}
+DbgNub_Do 0 {$b 6 {76 27}} {configbody name body extra}"
+}
+
+test instrument-46.1 {BLACKBOX, incr namespace 7.6} {
+    resetExtensions
+    instrument::extension incrTcl 1
+    instrument::initialize 7.6
+    blk::Instrument $b {
+	namespace
+	namespace all body
+	namespace children body
+	namespace parent body
+	namespace qualifiers body
+	namespace tail body
+	namespace foo body
+	namespace foo body extra
+    }
+} "DbgNub_Do 0 {$b 2 {2 10}} namespace
+DbgNub_Do 0 {$b 3 {13 19}} {namespace all body}
+DbgNub_Do 0 {$b 4 {33 24}} {namespace children body}
+DbgNub_Do 0 {$b 5 {58 22}} {namespace parent body}
+DbgNub_Do 0 {$b 6 {81 26}} {namespace qualifiers body}
+DbgNub_Do 0 {$b 7 {108 20}} {namespace tail body}
+DbgNub_Do 0 {$b 8 {129 19}} {DbgNub_NamespaceEval namespace foo {
+# DBGNUB START: {$b 8 {129 19}}
+DbgNub_Do 0 {$b 8 {143 4}} body
+# DBGNUB END
+}}
+DbgNub_Do 0 {$b 9 {149 25}} {DbgNub_NamespaceEval namespace foo body {
+# DBGNUB START: {$b 9 {149 25}}
+DbgNub_Do 0 {$b 9 {168 5}} extra
+# DBGNUB END
+}}"
+
+test instrument-47.1 {BLACKBOX, incr namespace 8.0} {
+    resetExtensions
+    instrument::extension incrTcl 1
+    instrument::initialize 8.0
+    blk::Instrument $b {
+	namespace
+	namespace 1
+	namespace 1 2
+	namespace 1 2 3
+	namespace 1 2 3 4
+	namespace evad foo bar
+	namespace ev foo body
+	namespace eva foo body
+	namespace eval foo body
+	namespace eval foo [body]
+    }
+} "DbgNub_Do 0 {$b 2 {2 10}} namespace
+DbgNub_Do 0 {$b 3 {13 12}} {namespace 1}
+DbgNub_Do 0 {$b 4 {26 14}} {namespace 1 2}
+DbgNub_Do 0 {$b 5 {41 16}} {namespace 1 2 3}
+DbgNub_Do 0 {$b 6 {58 18}} {namespace 1 2 3 4}
+DbgNub_Do 0 {$b 7 {77 23}} {namespace evad foo bar}
+DbgNub_Do 0 {$b 8 {101 22}} {DbgNub_NamespaceEval namespace ev foo {
+# DBGNUB START: {$b 8 {101 22}}
+DbgNub_Do 0 {$b 8 {118 4}} body
+# DBGNUB END
+}}
+DbgNub_Do 0 {$b 9 {124 23}} {DbgNub_NamespaceEval namespace eva foo {
+# DBGNUB START: {$b 9 {124 23}}
+DbgNub_Do 0 {$b 9 {142 4}} body
+# DBGNUB END
+}}
+DbgNub_Do 0 {$b 10 {148 24}} {DbgNub_NamespaceEval namespace eval foo {
+# DBGNUB START: {$b 10 {148 24}}
+DbgNub_Do 0 {$b 10 {167 4}} body
+# DBGNUB END
+}}
+DbgNub_Do 0 {$b 11 {173 26}} {DbgNub_NamespaceEval namespace eval foo \[DbgNub_Do 1 {$b 11 {193 4}} body\]}"
+
+test instrument-48.1 {BLACKBOX, commandloop} {
+    resetExtensions
+    instrument::extension tclx 1
+    instrument::initialize 8.0
+    blk::Instrument $b {
+	commandloop -async -interactive foo -prompt1 body -prompt2 body \
+		-endcommand body extra
+    }
+} "DbgNub_Do 0 {$b 2 {2 88}} {commandloop -async -interactive foo -prompt1 {
+# DBGNUB START: {$b 2 {2 88}}
+DbgNub_Do 0 {$b 2 {47 4}} body
+# DBGNUB END
+} -prompt2 {
+# DBGNUB START: {$b 2 {2 88}}
+DbgNub_Do 0 {$b 2 {61 4}} body
+# DBGNUB END
+}  -endcommand {
+# DBGNUB START: {$b 2 {2 88}}
+DbgNub_Do 0 {$b 2 {79 4}} body
+# DBGNUB END
+} extra}"
+
+test instrument-49.1 {BLACKBOX, for_array_keys} {
+    resetExtensions
+    instrument::extension tclx 1
+    instrument::initialize 8.0
+    blk::Instrument $b {
+	for_array_keys
+	for_array_keys var
+	for_array_keys var name
+	for_array_keys var name body
+	for_array_keys var name body extra
+    }
+} "DbgNub_Do 0 {$b 2 {2 15}} for_array_keys
+DbgNub_Do 0 {$b 3 {18 19}} {for_array_keys var}
+DbgNub_Do 0 {$b 4 {38 24}} {for_array_keys var name}
+DbgNub_Do 0 {$b 5 {63 29}} {for_array_keys var name {
+# DBGNUB START: {$b 5 {63 29}}
+DbgNub_Do 0 {$b 5 {87 4}} body
+# DBGNUB END
+}}
+DbgNub_Do 0 {$b 6 {93 35}} {for_array_keys var name body extra}"
+
+test instrument-49.2 {BLACKBOX, for_file} {
+    resetExtensions
+    instrument::extension tclx 1
+    instrument::initialize 8.0
+    blk::Instrument $b {
+	for_file
+	for_file var
+	for_file var name
+	for_file var name body
+	for_file var name body extra
+    }
+} "DbgNub_Do 0 {$b 2 {2 9}} for_file
+DbgNub_Do 0 {$b 3 {12 13}} {for_file var}
+DbgNub_Do 0 {$b 4 {26 18}} {for_file var name}
+DbgNub_Do 0 {$b 5 {45 23}} {for_file var name {
+# DBGNUB START: {$b 5 {45 23}}
+DbgNub_Do 0 {$b 5 {63 4}} body
+# DBGNUB END
+}}
+DbgNub_Do 0 {$b 6 {69 29}} {for_file var name body extra}"
+
+
+test instrument-50.1 {BLACKBOX, loop} {
+    resetExtensions
+    instrument::extension tclx 1
+    instrument::initialize 8.0
+    blk::Instrument $b {
+	loop
+	loop var
+	loop var {[first]}
+	loop var {[first]} {[limit]}
+	loop var {[first]} {[limit]} body
+	loop var {[first]} {[limit]} {[incr]} body
+	loop var {[first]} {[limit]} {[incr]} body extra
+    }
+} "DbgNub_Do 0 {$b 2 {2 5}} loop
+DbgNub_Do 0 {$b 3 {8 9}} {loop var}
+DbgNub_Do 0 {$b 4 {18 19}} {loop var {\[first\]}}
+DbgNub_Do 0 {$b 5 {38 29}} {loop var {\[first\]} {\[limit\]}}
+DbgNub_Do 0 {$b 6 {68 34}} {loop var {\[DbgNub_Do 1 {$b 6 {79 5}} first\]} {\[DbgNub_Do 1 {$b 6 {89 5}} limit\]} {
+# DBGNUB START: {$b 6 {68 34}}
+DbgNub_Do 0 {$b 6 {97 4}} body
+# DBGNUB END
+}}
+DbgNub_Do 0 {$b 7 {103 43}} {loop var {\[DbgNub_Do 1 {$b 7 {114 5}} first\]} {\[DbgNub_Do 1 {$b 7 {124 5}} limit\]} {\[DbgNub_Do 1 {$b 7 {134 4}} incr\]} {
+# DBGNUB START: {$b 7 {103 43}}
+DbgNub_Do 0 {$b 7 {141 4}} body
+# DBGNUB END
+}}
+DbgNub_Do 0 {$b 8 {147 49}} {loop var {\[first\]} {\[limit\]} {\[incr\]} body extra}"
+
+test instrument-51.1 {BLACKBOX, try_eval} {
+    resetExtensions
+    instrument::extension tclx 1
+    instrument::initialize 8.0
+    blk::Instrument $b {
+	try_eval
+	try_eval code
+	try_eval code catch
+	try_eval code catch finally
+	try_eval code catch finally extra
+    }
+} "DbgNub_Do 0 {$b 2 {2 9}} try_eval
+DbgNub_Do 0 {$b 3 {12 14}} {try_eval code}
+DbgNub_Do 0 {$b 4 {27 20}} {try_eval {
+# DBGNUB START: {$b 4 {27 20}}
+DbgNub_Do 0 {$b 4 {36 4}} code
+# DBGNUB END
+} {
+# DBGNUB START: {$b 4 {27 20}}
+DbgNub_Do 0 {$b 4 {41 5}} catch
+# DBGNUB END
+}}
+DbgNub_Do 0 {$b 5 {48 28}} {try_eval {
+# DBGNUB START: {$b 5 {48 28}}
+DbgNub_Do 0 {$b 5 {57 4}} code
+# DBGNUB END
+} {
+# DBGNUB START: {$b 5 {48 28}}
+DbgNub_Do 0 {$b 5 {62 5}} catch
+# DBGNUB END
+} {
+# DBGNUB START: {$b 5 {48 28}}
+DbgNub_Do 0 {$b 5 {68 7}} finally
+# DBGNUB END
+}}
+DbgNub_Do 0 {$b 6 {77 34}} {try_eval code catch finally extra}"
+
+test instrument-52.1 {BLACKBOX, signal} {
+    resetExtensions
+    instrument::extension tclx 1
+    instrument::initialize 8.0
+    blk::Instrument $b {
+	signal
+	signal trap
+	signal trap {SIGINT}
+	signal trap {SIGINT} body
+	signal trap {SIGINT} body extra
+	signal -restart trap
+	signal -restart trap {SIGINT}
+	signal -restart trap {SIGINT} body
+	signal -restart trap {SIGINT} body extra
+    }
+} "DbgNub_Do 0 {$b 2 {2 7}} signal
+DbgNub_Do 0 {$b 3 {10 12}} {signal trap}
+DbgNub_Do 0 {$b 4 {23 21}} {signal trap {SIGINT}}
+DbgNub_Do 0 {$b 5 {45 26}} {signal trap {SIGINT} {
+# DBGNUB START: {$b 5 {45 26}}
+DbgNub_Do 0 {$b 5 {66 4}} body
+# DBGNUB END
+}}
+DbgNub_Do 0 {$b 6 {72 32}} {signal trap {SIGINT} body extra}
+DbgNub_Do 0 {$b 7 {105 21}} {signal -restart trap}
+DbgNub_Do 0 {$b 8 {127 30}} {signal -restart trap {SIGINT}}
+DbgNub_Do 0 {$b 9 {158 35}} {signal -restart trap {SIGINT} {
+# DBGNUB START: {$b 9 {158 35}}
+DbgNub_Do 0 {$b 9 {188 4}} body
+# DBGNUB END
+}}
+DbgNub_Do 0 {$b 10 {194 41}} {signal -restart trap {SIGINT} body extra}"
+
+test instrument-53.1 {BLACKBOX, exp_exit} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    blk::Instrument $b {
+	exp_exit
+	exp_exit -onexit
+	exp_exit -onexit body
+	exp_exit -onexit body extra
+	exp_exit foo bar baz
+    }
+} "DbgNub_Do 0 {$b 2 {2 9}} exp_exit
+DbgNub_Do 0 {$b 3 {12 17}} {exp_exit -onexit}
+DbgNub_Do 0 {$b 4 {30 22}} {exp_exit -onexit {
+# DBGNUB START: {$b 4 {30 22}}
+DbgNub_Do 0 {$b 4 {47 4}} body
+# DBGNUB END
+}}
+DbgNub_Do 0 {$b 5 {53 28}} {exp_exit -onexit body extra}
+DbgNub_Do 0 {$b 6 {82 21}} {exp_exit foo bar baz}"
+
+test instrument-54.1 {BLACKBOX, exp_interact} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    blk::Instrument $b {
+	interact
+	interact pattern body
+    }
+} "DbgNub_Do 0 {$b 2 {2 9}} interact
+DbgNub_Do 0 {$b 3 {12 22}} {interact pattern {
+# DBGNUB START: {$b 3 {12 22}}
+DbgNub_Do 0 {$b 3 {29 4}} body
+# DBGNUB END
+}}"
+
+test instrument-55.1 {BLACKBOX, exp_trap} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    blk::Instrument $b {
+	trap
+	trap body signals
+    }
+} "DbgNub_Do 0 {$b 2 {2 5}} trap
+DbgNub_Do 0 {$b 3 {8 18}} {trap {
+# DBGNUB START: {$b 3 {8 18}}
+DbgNub_Do 0 {$b 3 {13 4}} body
+# DBGNUB END
+} signals}"
+
+test instrument-56.1 {BLACKBOX, expect} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    blk::Instrument $b {
+	expect
+	expect
+	expect pattern body
+    }
+} "DbgNub_Do 0 {$b 2 {2 7}} expect
+DbgNub_Do 0 {$b 3 {10 7}} expect
+DbgNub_Do 0 {$b 4 {18 20}} {expect pattern {
+# DBGNUB START: {$b 4 {18 20}}
+DbgNub_Do 0 {$b 4 {33 4}} body
+# DBGNUB END
+}}"
+
+test instrument-57.1 {BLACKBOX, expect_after} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    blk::Instrument $b {
+	expect_after
+	expect_after -info
+	expect_after pattern body
+    }
+} "DbgNub_Do 0 {$b 2 {2 13}} expect_after
+DbgNub_Do 0 {$b 3 {16 19}} {expect_after -info}
+DbgNub_Do 0 {$b 4 {36 26}} {expect_after pattern {
+# DBGNUB START: {$b 4 {36 26}}
+DbgNub_Do 0 {$b 4 {57 4}} body
+# DBGNUB END
+}}"
+
+test instrument-58.1 {BLACKBOX, expect_background} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    blk::Instrument $b {
+	expect_background
+	expect_background -info
+	expect_background pattern body
+    }
+} "DbgNub_Do 0 {$b 2 {2 18}} expect_background
+DbgNub_Do 0 {$b 3 {21 24}} {expect_background -info}
+DbgNub_Do 0 {$b 4 {46 31}} {expect_background pattern {
+# DBGNUB START: {$b 4 {46 31}}
+DbgNub_Do 0 {$b 4 {72 4}} body
+# DBGNUB END
+}}"
+
+test instrument-59.1 {BLACKBOX, expect_before} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    blk::Instrument $b {
+	expect_before
+	expect_before -info
+	expect_before pattern body
+    }
+} "DbgNub_Do 0 {$b 2 {2 14}} expect_before
+DbgNub_Do 0 {$b 3 {17 20}} {expect_before -info}
+DbgNub_Do 0 {$b 4 {38 27}} {expect_before pattern {
+# DBGNUB START: {$b 4 {38 27}}
+DbgNub_Do 0 {$b 4 {60 4}} body
+# DBGNUB END
+}}"
+
+test instrument-60.1 {BLACKBOX, expect_tty} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    blk::Instrument $b {
+	expect_tty
+	expect_tty pattern body
+    }
+} "DbgNub_Do 0 {$b 2 {2 11}} expect_tty
+DbgNub_Do 0 {$b 3 {14 24}} {expect_tty pattern {
+# DBGNUB START: {$b 3 {14 24}}
+DbgNub_Do 0 {$b 3 {33 4}} body
+# DBGNUB END
+}}"
+
+test instrument-61.1 {BLACKBOX, expect_user} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    blk::Instrument $b {
+	expect_user
+	expect_user pattern body
+    }
+} "DbgNub_Do 0 {$b 2 {2 12}} expect_user
+DbgNub_Do 0 {$b 3 {15 25}} {expect_user pattern {
+# DBGNUB START: {$b 3 {15 25}}
+DbgNub_Do 0 {$b 3 {35 4}} body
+# DBGNUB END
+}}"
+
+test instrument-62.1 {BLACKBOX, interact} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    blk::Instrument $b {
+	interact
+	interact pattern body
+    }
+} "DbgNub_Do 0 {$b 2 {2 9}} interact
+DbgNub_Do 0 {$b 3 {12 22}} {interact pattern {
+# DBGNUB START: {$b 3 {12 22}}
+DbgNub_Do 0 {$b 3 {29 4}} body
+# DBGNUB END
+}}"
+
+test instrument-63.1 {BLACKBOX, expect trap} {
+    resetExtensions
+    instrument::extension expect 1
+    instrument::initialize 8.0
+    blk::Instrument $b {
+	trap
+	trap body signals
+    }
+} "DbgNub_Do 0 {$b 2 {2 5}} trap
+DbgNub_Do 0 {$b 3 {8 18}} {trap {
+# DBGNUB START: {$b 3 {8 18}}
+DbgNub_Do 0 {$b 3 {13 4}} body
+# DBGNUB END
+} signals}"
+
+##############################################################################
+
+test instrument-64.1 {BLACKBOX: bodies, continuation lines} {
+    resetExtensions
+    instrument::initialize 7.5
+    blk::Instrument $b "proc a {} {
+	foo a \\
+	    b}"
+} "DbgNub_Do 0 {$b 1 {0 28}} {proc a {} {
+# DBGNUB START: {$b 1 {0 28}}
+DbgNub_Do 0 {$b 2 {13 14}} foo\\ a\\ \\\\\\n\\t\\ \\ \\ \\ b
+# DBGNUB END
+}}"
+test instrument-64.2 {BLACKBOX: bodies, continuation lines} {
+    instrument::extension incrTcl 1
+    instrument::initialize 8.0
+    blk::Instrument $b "body a {} {
+	foo a \\
+	    b}"
+} "DbgNub_Do 0 {$b 1 {0 28}} {DbgNub_WrapItclBody body a {} {
+# DBGNUB START: {$b 1 {0 28}}
+DbgNub_Do 0 {$b 2 {13 14}} foo\\ a\\ \\\\\\n\\t\\ \\ \\ \\ b
+# DBGNUB END
+}}"
+
+resetExtensions
+instrument::extension incrTcl 1
+instrument::initialize 7.6
+
+test instrument-65.1 {BLACKBOX, incrClass, bad form} {
+    blk::Instrument $b {class}
+} "DbgNub_Do 0 {$b 1 {0 5}} class"
+test instrument-65.2 {BLACKBOX, incrClass, bad form} {
+    blk::Instrument $b {class foo}
+} "DbgNub_Do 0 {$b 1 {0 9}} {class foo}"
+test instrument-65.3 {BLACKBOX, incrClass, bad form} {
+    blk::Instrument $b {class foo bar baz}
+} "DbgNub_Do 0 {$b 1 {0 17}} {class foo bar baz}"
+test instrument-65.4 {BLACKBOX, incrClass, good form} {
+    blk::Instrument $b {class foo {set x 1}}
+} "DbgNub_Do 0 {$b 1 {0 19}} {class foo {
+# DBGNUB START: {$b 1 {0 19}}
+set x 1
+# DBGNUB END
+}}"
+
+test instrument-66.1 {BLACKBOX, incrNamespace, errors} {
+    blk::Instrument $b {
+	namespace
+	namespace foo
+    }
+} "DbgNub_Do 0 {$b 2 {2 10}} namespace
+DbgNub_Do 0 {$b 3 {13 14}} {namespace foo}"
+test instrument-66.2 {BLACKBOX, incrNamespace, errors} {
+    blk::Instrument $b {
+	namespace foo -bar
+    }
+} "DbgNub_Do 0 {$b 2 {2 19}} {namespace foo -bar}"
+test instrument-66.3 {BLACKBOX, incrNamespace, simple body} {
+    blk::Instrument $b {
+	namespace foo bar
+    }
+} "DbgNub_Do 0 {$b 2 {2 18}} {DbgNub_NamespaceEval namespace foo {
+# DBGNUB START: {$b 2 {2 18}}
+DbgNub_Do 0 {$b 2 {16 3}} bar
+# DBGNUB END
+}}"
+test instrument-66.4 {BLACKBOX, incrNamespace, simple body} {
+    blk::Instrument $b {
+	namespace foo $bar
+    }
+} "DbgNub_Do 0 {$b 2 {2 19}} {DbgNub_NamespaceEval namespace foo \$bar}"
+test instrument-66.5 {BLACKBOX, incrNamespace, extra args} {
+    blk::Instrument $b {
+	namespace foo bar baz blat
+    }
+} "DbgNub_Do 0 {$b 2 {2 27}} {DbgNub_NamespaceEval namespace foo bar baz {
+# DBGNUB START: {$b 2 {2 27}}
+DbgNub_Do 0 {$b 2 {24 4}} blat
+# DBGNUB END
+}}"
+
+resetExtensions
+instrument::extension incrTcl 1
+instrument::initialize 8.0
+
+test instrument-67.1 {BLACKBOX, itclBody} {
+    instrument::extension incrTcl 1
+    instrument::initialize 8.0
+    blk::Instrument $b {
+	body
+	body foo
+	body foo args
+	body foo args cmds extra
+    }
+} "DbgNub_Do 0 {$b 2 {2 5}} body
+DbgNub_Do 0 {$b 3 {8 9}} {body foo}
+DbgNub_Do 0 {$b 4 {18 14}} {body foo args}
+DbgNub_Do 0 {$b 5 {33 25}} {body foo args cmds extra}"
+test instrument-67.2 {BLACKBOX, itclBody} {
+    instrument::extension incrTcl 1
+    instrument::initialize 8.0
+    blk::Instrument $b {
+	body foo args {set x 1}
+    }
+} "DbgNub_Do 0 {$b 2 {2 24}} {DbgNub_WrapItclBody body foo args {
+# DBGNUB START: {$b 2 {2 24}}
+DbgNub_Do 0 {$b 2 {17 7}} {set x 1}
+# DBGNUB END
+}}"
+
+test instrument-68.1 {BLACKBOX, constructor, errors} {
+    instrument::extension incrTcl 1
+    instrument::initialize 8.0
+    blk::Instrument $b {
+	class foo {
+	    constructor
+	    constructor args
+	    constructor args init body extra
+	}
+    }
+} "DbgNub_Do 0 {$b 2 {2 92}} {DbgNub_Class class foo {
+# DBGNUB START: {$b 2 {2 92}}
+DbgNub_Do 0 {$b 3 {19 12}} constructor
+DbgNub_Do 0 {$b 4 {36 17}} {constructor args}
+DbgNub_Do 0 {$b 5 {58 33}} {constructor args init body extra}
+# DBGNUB END
+}}"
+test instrument-68.2 {BLACKBOX, constructor, normal} {
+    instrument::extension incrTcl 1
+    instrument::initialize 8.0
+    blk::Instrument $b {
+	class foo {
+	    constructor args init
+	    constructor args init body
+	}
+    }
+} "DbgNub_Do 0 {$b 2 {2 74}} {DbgNub_Class class foo {
+# DBGNUB START: {$b 2 {2 74}}
+DbgNub_Do 0 {$b 3 {19 22}} {DbgNub_Constructor constructor args {
+# DBGNUB START: {$b 3 {19 22}}
+DbgNub_Do 0 {$b 3 {36 4}} init
+# DBGNUB END
+}}
+DbgNub_Do 0 {$b 4 {46 27}} {DbgNub_Constructor constructor args {
+# DBGNUB START: {$b 4 {46 27}}
+DbgNub_Do 0 {$b 4 {63 4}} init
+# DBGNUB END
+} {
+# DBGNUB START: {$b 4 {46 27}}
+DbgNub_Do 0 {$b 4 {68 4}} body
+# DBGNUB END
+}}
+# DBGNUB END
+}}"
+
+test instrument-69.1 {BLACKBOX: binary data} {
+    blk::Instrument $b "set x a\0b"
+} "DbgNub_Do 0 {$b 1 {0 10}} {set x a\0b}"
+
+test instrument-70.1 {BLACKBOX: parsing errors} {
+    set ::result {}
+    proc ::err {loc} {
+	set ::result [list $loc $::errorCode]
+	return 1
+    }
+    set instrument::errorHandler ::err
+    lappend result [blk::Instrument $b "proc foo {} { set x {}f }"]
+    set instrument::errorHandler {}
+    set ::result
+} "{$b 1 {22 1}} {PARSE braceExtra 22 {extra characters after close-brace}} {DbgNub_Do 0 {$b 1 {0 25}} {proc foo {} {
+# DBGNUB START: {$b 1 {0 25}}
+DbgNub_Do 0 {$b 1 {13 11}} { set x {}f }
+# DBGNUB END
+}}}"
+
+test instrument-71.1 {BLACKBOX: incr Tcl 2.2} {
+    instrument::extension incrTcl 1
+    instrument::initialize 7.6
+    blk::Instrument $b {
+	class Foo {
+	    inherit baz
+	    constructor {args} {set x 1} {set y 2}
+	    destructor {set y 3}
+	    method m1 {args} {set y 4}
+	    proc p1 {args} {set y 5}
+	    variable v1 42 {set y 6}
+	    constructor {args} @body1 @body2
+	    destructor @body
+	    method m1 {args} @body
+	    proc p1 {args} @body
+	    variable v1 42 @body
+	    common c1 42
+	    set x 1
+	}
+    }
+} "DbgNub_Do 0 {$b 2 {2 365}} {class Foo {
+# DBGNUB START: {$b 2 {2 365}}
+inherit baz
+constructor {args} {set x 1} {
+# DBGNUB START: {$b 4 {36 39}}
+$incrProcPrefix
+DbgNub_Do 0 {$b 4 {66 7}} {set y 2}
+$incrProcSuffix
+}
+destructor {
+# DBGNUB START: {$b 5 {80 21}}
+$incrProcPrefix
+DbgNub_Do 0 {$b 5 {92 7}} {set y 3}
+$incrProcSuffix
+}
+method m1 {args} {
+# DBGNUB START: {$b 6 {106 27}}
+$incrProcPrefix
+DbgNub_Do 0 {$b 6 {124 7}} {set y 4}
+$incrProcSuffix
+}
+proc p1 {args} {
+# DBGNUB START: {$b 7 {138 25}}
+$incrProcPrefix
+DbgNub_Do 0 {$b 7 {154 7}} {set y 5}
+$incrProcSuffix
+}
+variable v1 42 {
+# DBGNUB START: {$b 8 {168 25}}
+DbgNub_ItclConfig {
+DbgNub_Do 0 {$b 8 {184 7}} {set y 6}
+}
+# DBGNUB END
+}
+constructor {args} @body1 @body2
+destructor @body
+method m1 {args} @body
+proc p1 {args} @body
+variable v1 42 @body
+common c1 42
+set x 1
+# DBGNUB END
+}}"
+test instrument-71.2 {BLACKBOX, incr Tcl 2.2, non-literal body} {
+    instrument::extension incrTcl 1
+    instrument::initialize 7.6
+    set result [blk::Instrument $b {
+	class Foo {
+	    method foo::bar {args} $body
+	}
+    }]
+    instrument::extension incrTcl 0
+    instrument::initialize 8.0
+    set result
+} "DbgNub_Do 0 {$b 2 {2 49}} {class Foo {
+# DBGNUB START: {$b 2 {2 49}}
+method foo::bar {args} \$body
+# DBGNUB END
+}}"
+
+test instrument-72.1 {BLACKBOX: incr Tcl 3.0} {
+    instrument::extension incrTcl 1
+    instrument::initialize 8.0
+    blk::Instrument $b {
+	class Foo {
+	    inherit baz
+	    constructor {args} {set x 1} {set y 2}
+	    destructor {set y 3}
+	    method m1 {args} {set y 4}
+	    proc p1 {args} {set y 5}
+	    variable v1 42 {set y 6}
+	    constructor {args} @body1 @body2
+	    destructor @body
+	    method m1 {args} @body
+	    proc p1 {args} @body
+	    variable v1 42 @body
+	    common c1 42
+	    set x 1
+	}
+    }
+} "DbgNub_Do 0 {$b 2 {2 365}} {DbgNub_Class class Foo {
+# DBGNUB START: {$b 2 {2 365}}
+DbgNub_Do 0 {$b 3 {19 12}} {inherit baz}
+DbgNub_Do 0 {$b 4 {36 39}} {DbgNub_Constructor constructor {args} {
+# DBGNUB START: {$b 4 {36 39}}
+DbgNub_Do 0 {$b 4 {56 7}} {set x 1}
+# DBGNUB END
+} {
+# DBGNUB START: {$b 4 {36 39}}
+DbgNub_Do 0 {$b 4 {66 7}} {set y 2}
+# DBGNUB END
+}}
+DbgNub_Do 0 {$b 5 {80 21}} {DbgNub_WrapItclBody destructor {
+# DBGNUB START: {$b 5 {80 21}}
+DbgNub_Do 0 {$b 5 {92 7}} {set y 3}
+# DBGNUB END
+}}
+DbgNub_Do 0 {$b 6 {106 27}} {DbgNub_WrapItclBody method m1 {args} {
+# DBGNUB START: {$b 6 {106 27}}
+DbgNub_Do 0 {$b 6 {124 7}} {set y 4}
+# DBGNUB END
+}}
+DbgNub_Do 0 {$b 7 {138 25}} {DbgNub_WrapItclBody proc p1 {args} {
+# DBGNUB START: {$b 7 {138 25}}
+DbgNub_Do 0 {$b 7 {154 7}} {set y 5}
+# DBGNUB END
+}}
+DbgNub_Do 0 {$b 8 {168 25}} {DbgNub_WrapItclConfig variable v1 42 {
+# DBGNUB START: {$b 8 {168 25}}
+DbgNub_Do 0 {$b 8 {184 7}} {set y 6}
+# DBGNUB END
+}}
+DbgNub_Do 0 {$b 9 {198 33}} {DbgNub_Constructor constructor {args} @body1 @body2}
+DbgNub_Do 0 {$b 10 {236 17}} {DbgNub_WrapItclBody destructor @body}
+DbgNub_Do 0 {$b 11 {258 23}} {DbgNub_WrapItclBody method m1 {args} @body}
+DbgNub_Do 0 {$b 12 {286 21}} {DbgNub_WrapItclBody proc p1 {args} @body}
+DbgNub_Do 0 {$b 13 {312 21}} {DbgNub_WrapItclConfig variable v1 42 @body}
+DbgNub_Do 0 {$b 14 {338 13}} {common c1 42}
+DbgNub_Do 0 {$b 15 {356 8}} {set x 1}
+# DBGNUB END
+}}"
+
+blk::release $b
+
+cleanupTests
+
+if {[info exists tk_version] && !$tcl_interactive} {
+    exit
+}
+
+
+
+
+

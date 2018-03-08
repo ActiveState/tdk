@@ -1,0 +1,16 @@
+Package hv3::ashelp 0.1
+Meta entrysource hv3ashelp.tcl
+Meta included    hv3ashelp.tcl
+Meta platform    tcl
+Meta summary     Glue between AS Help Viewer and AS Helpfile Accessor package
+Meta category    Glue
+Meta subject ashelp toc glue merge
+Meta description The package manages the help viewer's database of help files
+Meta description currently shown. It translates from helpfile internal paths
+Meta description to the uri shown by the viewer, and back, for the table of
+Meta description contents, search results, and requested files. Integrates the
+Meta description data of multiple help files into a single TOC, unified
+Meta description searching, etc.
+Meta require     ashelp
+Meta require     fileutil
+

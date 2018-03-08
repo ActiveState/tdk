@@ -1,0 +1,122 @@
+TDK 3.0 Checker Xref Cross-reference data
+=========================================
+
+Cross-reference data, informal
+------------------------------
+
+The data made available to us by the backend is
+
+*	A list of files.
+
+	Per file, identified by its md5 hash, a list of paths for that
+	file.
+
+*	A list of namespaces.
+
+	Per namespace, identified through its fully qualified path, a
+	list of definitions and usages. Both definitions and usages
+	list the exact location of the command doing the definition or
+	using the namespace, and also the entity containing the
+	command (class, procedure, or other namespace).
+
+
+*	A list of commands.
+
+	Per command, identified through its fully qualified name, a
+	list of definitions and usages. Usages are like for
+	namespaces. Definitions go beyond the data for namespaces,
+	listing the type of the command (procedure, builtin, class,
+	...), and its protection level (public, private, ..., for
+	classes).
+
+	The scope is the execution context for the command, i.e. the
+	namespace 'variable' and other namespace commands commands in
+	the command body will search first for definitions.
+
+	In the case of imported or renamed commands origin information
+	is present too.
+
+
+*	A list of variables.
+
+	Per variable, identified by its name and the lexical scope it
+	is defined in, lists of definitions and usages. The former are
+	the places where a variable comes into a scope or is given a
+	value. The latter is where its value is asked for. Roughly.
+
+	Regarding the defining scope most scopes are identified by
+	type and fully qualified name, like namespaces. Others need
+	location information to distinguish between
+	different/altenrative definitions of a command, which may have
+	different variables defined, which should not be confused with
+	each other.
+
+	Usage and definition data is basically like for
+	namespaces. Definitions additionally carry the type of the
+	definition (local, imported, argument, ...), and in the case
+	of imported variable we can have a reference to the variable
+	which is imported too. For import by upvar' a list of scopes
+	the variable may have come from may be listed too.
+
+
+*	Locations
+
+	are identified through a file reference (id), a line in that
+	file, and a range in that file, the latter described by
+	character offset into the file and the size of the range in
+	characters.
+
+
+Cross-reference data, formal
+------------------------------
+
+1.	Files
+	-	Name	(Path)
+	-	Id	(Hash (md5), ID)
+
+	Id enables the merging of file data from disparate xref
+	databases (Identical files in different paths).
+
+2.	Namespaces
+	-	Name
+	-	Defined where (multiples): Location
+	-	Used where:		   Location
+
+3.	Commands
+	-	Name	(fully qualified, ID)
+	-	Type
+	-	Protection level
+	-	Defined where:	Location (inlined)
+				No 'proc'
+==>		**	Package	(requires extended pcx api)
+
+	-	Used where:	Location
+	-	May refer to original command by name
+		(Imported and/or renamed)
+
+4.	Variables
+	-	Id = Defining scope + Name in scope
+	-	Defined where (multiples): Location
+	-	Origin if imported.
+	-	Originscopes if imported through upvar
+	-	Used where:		   Location
+
+
+A.	Location
+	-	File:			Id reference
+	-	Line:			Integer
+	-	CmdRange:		Offset and length of cmd in file.
+	-	Containing scope:	Named class, namespace, or proc
+
+
+Data structures required by the frontend
+----------------------------------------
+
+Reverse mapping
+~~~~~~~~~~~~~~~
+
+	Click on word/range, locate important information.
+
+	(File x Line)     => List(CmdRange)
+	(File x CmdRange) => Command, Variables, Namespaces
+	Word		  => List(Entities)

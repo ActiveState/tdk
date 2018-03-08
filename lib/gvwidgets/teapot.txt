@@ -1,0 +1,49 @@
+Package clabel 0.1
+Meta entrysource clabel.tcl
+Meta included    clabel.tcl
+Meta platform    tcl
+Meta require     snit
+
+Package vlabel 0.1
+Meta entrysource vlabel.tcl
+Meta included    vlabel.tcl
+Meta platform    tcl
+Meta require     clabel
+Meta require     snit
+
+Package vtable 0.1
+Meta entrysource vtable.tcl
+Meta included    vtable.tcl
+Meta platform    tcl
+Meta require     req
+Meta require     snit
+Meta require     Tktable
+
+Package vtree 0.1
+Meta entrysource vtree.tcl
+Meta included    vtree.tcl
+Meta platform    tcl
+Meta require     image
+Meta require     snit
+Meta require     syscolor
+Meta require     treectrl
+Meta require     widget::scrolledwindow
+
+Package vpage 0.1
+Meta entrysource vpage.tcl
+Meta included    vpage.tcl
+Meta platform    tcl
+Meta require     image
+Meta require     snit
+Meta require     syscolor
+Meta require     treectrl
+Meta require     widget::scrolledwindow
+
+Package svtable 0.1
+Meta entrysource svtable.tcl
+Meta included    svtable.tcl
+Meta platform    tcl
+Meta require     BWidget
+Meta require     snit
+Meta require     vtable
+

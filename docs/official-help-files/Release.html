@@ -1,0 +1,983 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+<head>
+<title>Tcl Dev Kit - Release Notes</title>
+<link rel="stylesheet" type="text/css" href="aspn.css">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head>
+
+<body marginheight="5" topmargin="5" marginwidth="10" leftmargin="10">
+
+@header@
+
+<hr size="1" noshade width="100%">
+
+<a name="top"></a>
+
+
+<h1>Tcl Dev Kit Release Notes</h1>
+
+<ul>
+    <li><a class="doc" href="#intro">Introduction</a></li>
+    <li><a class="doc" href="#new">New in Version 5.4.1</a></li>
+    <li><a class="doc" href="#history">Release History</a></li>
+    <li><a class="doc" href="#known_issues">Known Issues</a></li>
+    <li><a class="doc" href="#contact">Contact ActiveState</a></li>
+</ul>
+
+<h2><a name="intro">Introduction</a></h2>
+
+<p>ActiveState's Tcl Dev Kit is a powerful set of development tools and
+an extended Tcl platform for professional Tcl developers.</p>
+
+<p>Tcl Dev Kit is a component of ActiveTcl Pro Studio, which also
+includes ActiveState's Komodo IDE enhanced with integrated Tcl
+debugging and syntax checking.  For more information on ActiveTcl Pro
+Studio and its benefits, see <a class="doc"
+href="http://www.activestate.com/activetcl-pro-studio">ActiveTcl
+Pro Studio</a>.</p>
+
+<p>Tcl Dev Kit includes the following Tcl productivity tools:</p>
+
+<ul>
+  <li><strong><a class="doc" href="Debugger.html">Debugger</a> </strong></li>
+  <li><strong><a class="doc" href="Checker.html">Checker</a></strong></li>
+  <li><strong><a class="doc" href="Compiler.html">Compiler</a></strong></li>
+  <li><strong><a class="doc" href="TclApp.html">TclApp</a></strong></li>
+  <li><strong><a class="doc" href="Package.html">Package Editor</a></strong></li>
+  <!-- <li><strong><a class="doc" href="TclVFSE.html">VFS Explorer</a></strong></li> -->
+  <li><strong><a class="doc" href="ServMgr.html">Service Manager</a></strong></li>
+  <li><strong><a class="doc" href="Inspector.html">Inspector</a></strong></li>
+  <li><strong><a class="doc" href="Xref.html">Cross Reference Tool</a></strong></li>
+</ul>
+
+<p>Binaries for Windows, Mac OS X, Linux, Solaris, HP-UX and AIX are
+available on the <a class="doc"
+href="http://www.activestate.com">ActiveState</a> web site.</p>
+
+
+<a class="topText" href="#top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>				
+
+<!-- -------------------------------------------------------------------------------------------- -->
+
+<h2><a name="new">New in Version 5.4.1, September 2015</a></h2>
+
+<h3>General</h3>
+<ul>
+	<li>Fixed issue in general startup which broke the splash</li>
+</ul>
+<h3><a name="541_checker">Tcl Dev Kit TclChecker</a></h3>
+<ul>
+	<li>Fixed rules for "lset", "zlib"</li>
+	<li>Fixed problem with reporting of errors found in .pcx files</li>
+	<li>Fixed problem which arose from the difference between a package name and the name of the namespace providing its rules.</li>
+</ul>
+<h3><a name="541_tcldebugger">Tcl Dev Kit Debugger</h3>
+<ul>
+	<li>Fixed various issues with instrumentation of "iTcl" and "TclOO"</li>
+	<li>Extended the time interval in which the application has to start talking to the debugger.</li>
+	<li>Extended interaction with the checker, now able to set Tcl version to check against, and list of messages to suppress.</li>
+</ul>
+
+<!-- -------------------------------------------------------------------------------------------- -->
+
+<h2><a name="history">Release History</a></h2>
+
+<h2><a name="54">New in Version 5.4, December 2014</a></h2>
+
+<h3>General</h3>
+<ul>
+	<li>Made installer more robust against bad Tcl installations.</li>
+	<li>Fixed uninstaller's BOM search (OS X).</li>
+	<li>Updated/Removed various outdated links in the help.</li>
+</ul>
+<h3><a name="54_tclapp">Tcl Dev Kit TclApp</a></h3>
+<ul>
+	<li>Fixed GUI issue causing multiple scans of the basekit to determine Tcl version for compile.</li>
+</ul>
+<h3><a name="54_compiler">Tcl Dev Kit TclCompiler</a></h3>
+<ul>
+	<li>Extended to handle the new Aux-structures used by the foreach command (introduced by Tcl 8.6.2)</li>
+	<li>Fixed mishandling of exception ranges when compiling more than 254 literals.</li>
+	<li>Fixed interference between variables in the compiled code vs those in the compiler.</li>
+</ul>
+<h3><a name="54_checker">Tcl Dev Kit TclChecker</a></h3>
+<ul>
+	<li>Fixed handling of empty variable names (lone $).</li>
+	<li>Allow multi-digit format placeholders for "$n%s". Warn when more over 2 digits.</li>
+	<li>Updated the http rules to http 2.7</li>
+	<li>Fixed issues in TclOO/snit support (missing rules, recognize class commands, oo/TclOO mismatch, ...)</li>
+	<li>Extended Tcl 8.6 support ("string is entier", "lmap", "dict map")</li>
+	<li>Fixed issues with "dict filter $script", "apply", "try"</li>
+	<li>Report mismatch between file name of .pcx file (FOO.pcx) vs its registered package (BAR).</li>
+</ul>
+<h3><a name="54_tcldebugger">Tcl Dev Kit Debugger</h3>
+<ul>
+	<li>Fixed issues with TclOO support</li>
+	<li>Fixed issues with "info frame" handling</li>
+	<li>Added support for interpreter options (vs application options), and for non-std encoding of the primary script.</li>
+	<li>Fixed problem with "info script" in "source"</li>
+</ul>
+<h3><a name="54_tclxref">Tcl Dev Kit Cross-Reference Tool</h3>
+<ul>
+	<li>Fixed crash involving problems in Treectrl.</li>
+</ul>
+
+<h2><a name="53">New in Version 5.3, October 2011</a></h2>
+
+<h3>General</h3>
+<ul>
+	<li>Bugfixes for handling of the Apple menu on OS X.</li>
+	<li>Better handling of a missing browser when invoking one for help display, or from the license dialog</li>
+</ul>
+
+<h3><a name="53_tclapp">Tcl Dev Kit TclApp</a></h3>
+<ul>
+	<li>Updated compiler package, fixed a crashing bug (uninitialized variable).</li>
+	<li>Fixed several issues when option <code>-merge</code> is specified:
+	<ul>
+	<li>Option <code>-startup</code> is not required, do not complain when it is missing.</li>
+	<li>Compute default architecture from option <code>-output</code>, not <code>-prefix</code>.</li>
+	<li>Do not use a 'virtual basekit' as last fallback for package search. We
+	cannot assume that a basekit, tclkit, etc. is used to run the output.</li>
+	</ul>
+	</li>
+	<li>Show custom icons in prefered size 32x32, or nearest to this.</li>
+	<li>Mount <code>-prefix</code> file read-only, preventing bogus change of modified timestamp
+	 for a file which is not written to.</li>
+</ul>
+
+<h3><a name="53_compiler">Tcl Dev Kit TclCompiler</a></h3>
+<ul>
+	<li>Updated compiler package, fixed a crashing bug (uninitialized variable).</li>
+</ul>
+
+<h3><a name="53_checker">Tcl Dev Kit TclChecker</a></h3>
+<ul>
+	<li>Made the rules for Tk public (as Tk.pcx).</li>
+	<li>TclOO handling extended to recognize method arguments as variables.</li>
+	<li>Fixed problem with handling of <code>dict for</code> when <code>-onepass</code> is active.</li>
+	<li>Fixed problem with message output when <code>-onepass</code> is active and checked code read from <code>stdin</code>.</li>
+	<li>Fixed handling of format, accept any number of flags in a specification, not just one.</li>
+</ul>
+
+<h3><a name="53_tcldebugger">Tcl Dev Kit Debugger</h3>
+  
+<ul>
+	<li>Fixed problem with main menu when at a breakpoint and a context menu is open.</li>
+</ul>
+
+<h2><a name="521">New in Version 5.2.1, September 2010</a></h2>
+
+<h3>General</h3>
+<ul>
+	<li>Bugfixes for several tools.</li>
+	<li>Extended Teapot Server to allow users to provide their own header/footer HTML fragments.</li>
+	<li>Extended meta data scanner heuristics to recognize new doctools 'image' markup.</li>
+</ul>
+
+<h3><a name="521_tclapp">Tcl Dev Kit TclApp</a></h3>
+
+<ul>
+	<li>Updated compiler package to 1.7.1, fixing a bug in the code rewriting engine causing misaligned jumps if the input file contained more than 255 literals.</li>
+	<li>Fixed mishandling of startup file infomation in the Files tab when deleting tree entries</li>
+	<li>Fixed mishandled selection context information causing the display of the wrong icon on the path classification display</li>
+	<li>Fixed improper blanking of table cells in the meta data editor dialogs when editing entries.</li>
+	<li>Changed the platform setup in wrapped applications. Dynamic identification is now done only for starkits. For starpacks we use the platform of the prefix file (basekit).</li>
+</ul>
+
+<h3><a name="521_compiler">Tcl Dev Kit TclCompiler</a></h3>
+
+<ul>
+	<li>Updated compiler package to 1.7.1, fixing a bug in the code rewriting engine causing misaligned jumps if the input file contained more than 255 literals.</li>
+</ul>
+
+<h3><a name="521_checker">Tcl Dev Kit TclChecker</a></h3>
+
+<ul>
+	<li>Fixed loss of messages by bad checkUserProc/checkProcCall interaction.</li>
+	<li>Extended the handling of 'default' branches in switch/case commands to detect when they are not the last branch, and warn about misplaced default handler</li>
+	<li>Fixes in the code tracking indentations for style warnings. switch/case did not take the list into account the branches could be a part of.</li>
+</ul>
+
+<h3><a name="521_tcldebugger">Tcl Dev Kit Debugger</h3>
+  
+<ul>
+	<li>Fixed mishandling of [info script PATH] commands in debugged code.</li>
+	<li>Added recognition of the Tcl 8.5+ switch options -nocase, -matchvar, and -indexvar</li>
+	<li>Added proper support for ITcl version 4 used with Tcl 8.6+</li>
+</ul>
+
+<h2><a name="52">New in Version 5.2, January 2010</a></h2>
+
+<h3>General</h3>
+<ul>
+	<li>Bugfixes for several tools.</li>
+	<li>Added display of license information to the About Box.</li>
+</ul>
+
+<h3><a name="52_tclapp">Tcl Dev Kit TclApp</a></h3>
+
+<ul>
+	<li>Platform information shown by the Package Selection Dialog tweaked for clarity.</li>
+	<li>Show ok/fail information in the exit status of TclApp.</li>
+	<li>Fixed problems in the command line processing which wrongly cut it short in some situations.</li>
+</ul>
+
+<h3><a name="52_checker">Tcl Dev Kit TclChecker</a></h3>
+
+<ul>
+	<li>Added definition for the math function entier/1.</li>
+</ul>
+
+<h3><a name="52_tcldebugger">Tcl Dev Kit Debugger</h3>
+  
+<ul>
+	<li>Fixed a performance regression which caused a quadratic slowdown of the instrumenter.</li>
+	<li>Fixed a problem with instrumenting Tcl 8.6's [try] command, clashed with TclBlend support (java::try).</li>
+</ul>
+
+
+<h2><a name="51">New in Version 5.1, September 2009</a></h2>
+
+<h3>General</h3>
+<ul>
+	<li>Bugfixes for several tools.</li>
+	<li>Trial versions show the number of remaining days in the title bars.</li>
+</ul>
+
+<h3><a name="510_tclapp">Tcl Dev Kit TclApp</a></h3>
+
+<ul>
+	<li>Support for the two new bytecode instructions of Tcl 8.6 (tclcompiler86).</li>
+	<li>Now detecting when bytecompiled files are used as input.
+	<ul>
+	<li>Preventing double-compilation of such files.</li>
+	<li>Checking Tcl version embedded in the bytecode of such files against the Tcl version of the prefix file.</li>
+	</ul>
+	</li>
+</ul>
+
+<h3><a name="510_checker">Tcl Dev Kit TclChecker</a></h3>
+
+<ul>
+	<li>Added support for Tcl 8.6 commands and features.</li>
+	<li>Added option -indent to configure indentation style.</li>
+</ul>
+
+<h3><a name="510_tclvfse">Tcl Dev Kit Virtual Filesystem Explorer</a></h3>
+
+<ul>
+	<li>Extended command line support with 'unwrap' command.</li>
+</ul>
+
+<h3><a name="510_tcldebugger">Tcl Dev Kit Debugger</h3>
+  
+<ul>
+	<li>Added ability to open the current file in Komodo.</li>
+</ul>
+
+<h2><a name="502">New in Version 5.0.2, May 2009</a></h2>
+
+<h3>General</h3>
+<ul>
+	<li>Bugfixes for several tools.</li>
+</ul>
+
+<h3><a name="502_tclapp">Tcl Dev Kit TclApp</a></h3>
+
+<ul>
+	<li>Support for byte-compiling of Tcl code for Tcl 8.6 basekits.</li>
+</ul>
+
+
+<h2><a name="501">New in Version 5.0.1, November 2008</a></h2>
+
+<h3>General</h3>
+<ul>
+	<li>Bugfixes for several tools.</li>
+</ul>
+
+
+<h2><a name="50">New in Version 5.0, October 2008</a></h2>
+
+<h3>General</h3>
+<ul>
+	<li>Bugfixes for several tools.</li>
+</ul>
+
+<h3><a name="50_checker">Tcl Dev Kit TclChecker</a></h3>
+
+<ul>
+	<!-- TODO -- Blow this section up re all the new things -->
+	<!-- TODO -- link this to the docs of the new things -->
+	<li>Two new machine-readable output formats and options to
+	activate them (-as dict, -as script)</li>
+	<li>New generation of suggestions on how to modify commands to
+	fix the found problems, where possible.</li>
+	<li>Added support for Tcl 8.6.</li>
+	<li>New checks of coding style.</li>
+	<!-- TODO -- Mention all the new checker message codes which
+	  -- were added somewhere -->
+	<li>New support for user-defined options (PCO files)</li>
+	<li>New support for line-based suppression of output
+	(-range)</li>
+
+</ul>
+
+<h3><a name="50_tclapp">Tcl Dev Kit TclApp</a></h3>
+
+<ul>
+	<li>Bugfixes.</li>
+	<li>Extended support for multi-architecture starkits.</li>
+	<li>Easier cross-platform wrapping through the new ability to select basekits directly from configured TEApot repositories.</li>
+	<li>Extended operations on starkits and starpacks from the commandline.</li>
+</ul>
+
+<h3><a name="50_vfse">Tcl Dev Kit TclVFSE</a></h3>
+
+<ul>
+	<li>Extended command line interface</li>
+</ul>
+
+
+<h3>New in Version 4.1, April 2008</h2>
+
+<h3>General</h3>
+<ul>
+	<li>Bugfixes for several tools.</li>
+        <li>TclDebugger - Added support for multi-threaded debugging.</li>
+        <li>TclDebugger - Added support for 'snit', 'TclOO'.</li>
+	<li>TclChecker - Added support for 'snit', 'TclOO', 'XOTcl'.</li>
+        <li>TclApp - Improved OS X support. Automatic handling of option <code>-psnXXX</code> for OS X bundles.</li>
+</ul>
+
+<h3>New in Version 4.0.4, November 2007</h2>
+
+<h3>General</h3>
+<ul>
+</ul>
+
+<h3><a name="new">New in Version 4.0.3, October 2007</a></h2>
+
+<h3>General</h3>
+<ul>
+	<li> General. Fixed problem with the tools not able to run on
+	     Ubuntu 7.10 (Gutsy Gibbon). Updated underlying basekits
+	     to upx 3.00. </li>
+</ul>
+
+<h3>New in Version 4.0.2, September 2007</h2>
+
+<h3>General</h3>
+<ul>
+	<li>Bugfixes for several tools. Most notably we improved on
+	the 8.4/8.5 Compiler differentiation in TclApp.</li>
+</ul>
+
+
+<h3>New in Version 4.0.1, July 2007</h2>
+
+<h3>General</h3>
+<ul>
+	<li>Bugfixes for several tools.</li>
+        <li>TclApp - New switch '-postcode' (+ gui text entry)</li>
+	<li>TclApp - Enhanced checking of basekits for Tcl version and
+	architecture information.</li>
+</ul>
+
+<h3>Tcl Dev Kit 4.0, May 2007</a></h2>
+
+<h3>General</h3>
+<ul>
+	<li>Bugfixes for several tools.</li>
+  <li>Mac OS X and Solaris x86 support.</li>
+  <li>Tcl 8.5 support.</li>
+	<li>Integration of the TEApot package repository.</li>
+	<li>General facelift of all tools, including themed widgets.</li>
+</ul>
+
+<h3><a name="4_tclapp">Tcl Dev Kit TclApp</a></h3>
+
+<ul>
+  <li><strong>TEApot integration</strong>: Packages for inclusion in
+  wrapped applications can be sourced from the ActiveState TEApot
+  repository, making it easier to wrap applications for
+  multiple platforms. Packages can also be sourced from .tap files or
+  other TEApot repositories.</li>
+  <li><strong>APP bundles</strong>: Support for the ".app" directory
+  structure for GUI applications on Mac OS X.</li>
+  <li><strong>Metadata</strong>: A <code>-metadata</code> option has
+  been added to support metadata key/value pairs used by TEA packages
+  ('name', 'version', 'platform' etc.). An <code>-infoplist</code>
+  option has also been added for specifying <em>Info.plist</em>
+  metadata for OS X applications</li>
+</ul>
+
+<h3><a name="4_tclpe">Tcl Dev Kit Package Editor</a></h3>
+
+<ul>
+  <li><strong>TEApot integration</strong>: Can read and write TEApot
+  packages, generate TEApot packages from spec, and expand TEApot
+  packages into directories.</li>
+</ul>
+
+<h3><a name="4_checker">Tcl Dev Kit TclChecker</a></h3>
+
+<ul>
+  <li>Recognition of inline pragmas to control the checker's behaviour
+  in detail.</li>
+</ul>
+
+<h3><a name="4_tclvfse">Tcl Dev Kit Virtual Filesystem Explorer</a></h3>
+
+<ul>
+  <li>Can now look in OS X .app bundles if the executable inside is
+  mountable (starkit/starpack).</li>
+</ul>
+
+<h3><a name="4_tclxref">Tcl Dev Kit Cross Reference Tool</a></h3>
+
+<ul>
+  <li>Can now scan TEApot metadata (<em>teapot.txt</em>).</li>
+</ul>
+
+<a class="topText" href="#top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+<h3>Tcl Dev Kit 3.2, April 2005</a></h2>
+
+<h4>General</h4>
+<ul>
+	<li>Bugfixes for several tools.</li>
+        <li>Removed the embedded ActiveTcl distribution. The Tcl Dev
+        Kit applications now work with any (Active)Tcl installation they find.
+	<li>Removed the Tcl Browser Plugin distribution.
+</ul>
+
+<h4>Tcl Dev Kit Compiler</h4>
+
+<ul>
+	<li>Revised the command line API to accept <a class="doc"
+	href="Compiler.html#compiling_cfg">configuration files</a>
+	without activating the GUI.
+</ul>
+
+
+<h4>Tcl Dev Kit TclApp</h4>
+
+<ul>
+	<li>Revised the <a class="doc"
+	href="TclApp.html#locating_custom_tap">search for package
+	definition files</a>. TclApp now manages a list of paths to
+	search in its global preferences. Default values are set
+	during installation based on the found (Active)Tcl
+	installations.
+
+	<li>Added a new tab Kit Info allowing the
+	editing of the string information embedded in Windows
+	executables (Copyright, Version, ...). The associated command
+	line option is <strong><a class="doc"
+	href="TclApp.html#custom_stringinfo">-stringinfo</a></strong>.
+
+</ul>
+
+
+<h4>Tcl Virtual Filesystem Explorer</h4>
+
+<ul>
+        <li>Extended the Version Tab in the <strong>File Properties Dialog</strong> to
+	allow editing of the shown string information embedded into
+	Windows executables.
+
+</ul>
+
+
+<h3>Tcl Dev Kit 3.1.1: December, 2004</a></h2>
+
+<h3>General</h3>
+<ul>
+        <li>Updated to the ActiveTcl 8.4.9 code base.
+	<li>Bugfixes for several tools.</li>
+</ul>
+
+<h3>Tcl Dev Kit Compiler</h3>
+
+<ul>
+	<li>Now providing the sources of package
+	<strong><a class="doc" href="Compiler.html#bytecode">tbcload</a></strong>.
+</ul>
+
+<h3>Tcl Dev Kit 3.1: March, 2004</h3>
+
+<h3>General</h3>
+  
+  <ul>
+    <li>In all the graphical tools, Ctrl-plus
+    and Ctrl-minus can be used to increase or decrease the font size.
+    Alternatively, Ctrl-MouseWheel will have the same effect on
+    operating systems where the mouse wheel is supported.</li>
+    
+    <li>Tcllib version 1.6 is supported.</li>
+    
+    <li>The HTML version of the documentation now has search functionality.</li>
+  
+  </ul>
+
+<h3>Cross Reference Tool</h3>
+
+  <ul>
+    <li>Scanning performance is faster (approximately 14 times faster), uses
+    less memory, and generates a smaller database (by approximately 60%).</li>
+    <li>The 3.1 version of the Cross Reference Tool can read databases
+    generated by the 3.0 version; however, 3.1 databases cannot be read
+    by the 3.0 version.</li>
+  </ul>
+
+<h3>Virtual Filesystem Explorer</h3>
+  
+  <ul>
+    <li>If the icon associated with a file type is "known" (based on the file's
+    extension), it will be displayed more quickly. The file will subsequently
+    be analyzed for identifying characteristics, and the icon will be updated
+    if necessary. Icon identification is more intelligent; in addition to looking
+    within the file, the application will also look in the registry (on Windows)
+    and, if an association is found, the icon embedded in the associated
+    application is used.</li>
+    <li>On Unix systems, the Virtual Filesystem Explorer now displays (by 
+    default) the current user's HOME directory in the directory panel.</li> 
+
+  </ul>
+
+<h3>TclApp</h3>
+  
+  <ul>
+    <li>The graphical version of TclApp now displays the corresponding
+    command-line string in the output displayed on the <strong>Run</strong>
+    tab.</li>
+    <li>The <strong>Files</strong> tab has a new "Scan" button that lists 
+    the packages required by the items that have already been added on
+    the <strong>Files</strong> tab.</li>
+    
+  </ul>
+
+<h3>Tcl Debugger</h3>
+  
+  <ul>
+    <li>Tooltips can be disabled (or re-enabled) via the 
+    <strong>Windows</strong> tab in the <strong>Preferences</strong>.</li>
+  </ul>
+
+<h3>Inspector</h3>
+
+<ul>
+  <li>Tooltips can be disabled (or re-enabled) via the <strong>Help | Show 
+  Tooltips</strong> menu option.</li>
+</ul>
+
+<h3>Browser Plugin</h3>
+
+<ul>
+  <li>The plugin initialization crashing issue on HP-UX and Solaris has been
+  corrected.</li>
+</ul>
+
+<a class="topText" href="#top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+
+<h3>Tcl Dev Kit 3.0: November, 2003</h3>
+    
+    <p>Tcl Dev Kit version 3.0 includes two new tools and numerous enhancements to
+    existing tools. The following sections provide a brief overview of the new tools 
+    and enhancements to existing tools. Refer to the relevant chapter in the 
+    User Guide for a complete description.</p>
+    
+    <p>Project files from previous versions of the Tcl Dev Kit are compatible 
+    with this version.</p>
+    
+<h4><a name="new_vfs">Virtual Filesystem Explorer</a> <span class="subheading">(New!)</span></h4>
+    
+    
+    <p>The Virtual Filesystem Explorer is used to mount and navigate system drives
+    and volumes, to view the contents of archive files with .zip extensions,
+    and to view the contents of starkits and starpacks. Refer to the 
+    Virtual Filesystem Explorer section 
+    in the User Guide for complete information.</p>
+    
+    <p>Running the Virtual Filesystem Explorer:</p>
+    
+    <p>Windows</p>
+         
+      <ul>
+        <li>Start Menu: <strong>Start | Programs | ActiveState
+        Tcl Dev Kit | Tcl Dev Kit VFS Explorer</strong></li>
+        <li>Command Line: <code>tclvfse.tcl</code></li>
+      </ul>
+            
+    <p>Unix</p>
+          
+      <ul>
+        <li>Shell Prompt: <code>tclvfse</code></li>
+      </ul>
+      
+<h4><a name="new_xref">Cross Reference Tool</a> <span class="subheading">(New!)</span></h4>
+    
+    <p>The Cross Reference Tool is a new application that builds a
+    database of program components, including packages, namespaces, variables,
+    etc. Program component information can be extracted from programs and 
+    packages contained in <a class="doc" href="TclApp.html">TclApp</a>
+    (or Prowrap) projects, Tcl Dev Kit 
+    <a class="doc" href="Package.html">Package</a> definitions (".tap files"), and
+    from 
+    <a class="doc" target="_blank" href="http://www.activestate.com/komodo-ide">Komodo</a>
+    project files. The database can be explored via any of the program components. 
+    For example, the Cross Reference Tool can be used to view commands and variables 
+    within namespaces, or the source of variable definitions. Refer to the 
+    <a class="doc" href="Xref.html">Cross Reference Tool</a> section of the User 
+    Guide for complete information.</p>
+    
+    <p>Running the Cross Reference Tool:</p>
+    
+    <p>Windows</p>
+         
+      <ul>
+        <li>Start Menu: <strong>Start | Programs | ActiveState
+        Tcl Dev Kit | Tcl Dev Kit Cross Reference Tool</strong></li>
+        <li>Command Line: <code>tclxref.tcl</code></li>
+      </ul>
+            
+    <p>Unix</p>
+          
+      <ul>
+        <li>Shell Prompt: <code>tclxref</code></li>
+      </ul>
+    
+    
+<h4><a name="new_debugger">Debugger</a></h4>
+    
+    <ul>
+      <li><strong>Renamed Executable</strong>: To start the debugger from the
+      Windows command line, enter <code>tcldebugger.tcl</code>. From the Unix
+      command line, enter <code>tcldebugger</code>.</li>
+      
+      <li><strong>Integrated Coverage</strong>: It it no longer necessary to
+      invoke the debugger with the <code>coverage</code> switch; coverage
+      functionality is accessible via the <strong>View | Code Coverage</strong>
+      menu option, or via the Code Coverage button on the toolbar.</li>
+      
+      <li><strong>Profiling</strong>: Profiling has been extended to include a
+      timing mechanism. Timing information for individual calls is displayed on
+      the <strong>Calls</strong> tab in the <strong>Code Coverage and
+      Profiling</strong> dialog.</li>
+     
+      
+      <li><strong>Debugging Multiple Processes</strong>: The debugger can 
+      "spawn" another debugger process. To control spawning, use
+      the sub-commands on the <strong>Debug | Breakpoints</strong> menu
+      ("Add all Spawnpoints" (each line where...); "Add Spawnpoint" (a specific
+      line where a new debugger process should be spawned); "Disable Spawnpoint").</li>
+      
+      <li><strong>User Preferences</strong>: User preferences from previous 
+      Tcl Dev Kit versions (such as debugger color usage) will not be imported 
+      during installation, and must be manually re-configured.</li> 
+    
+    </ul>
+    
+    
+<h4><a name="new_checker">Checker</a></h4>
+    
+    
+    <ul>
+    
+      <li><strong>Renamed Executable</strong>: To start the graphical version of 
+      the Checker from the Windows command line, enter <code>tclchecker.tcl</code>.
+      From the Unix command line, enter <code>tclchecker</code>.</li>
+      
+      <li><strong>Package Versions</strong>: The <code>-use</code> option allows
+      a version specification, and overrides <code>package require</code>
+      statements. For example, <code>-use tk4.1</code> will scan against version
+      4.1 of Tk, even if the <code>package require</code> statement specified a
+      different Tk version.</li>
+      
+      <li><strong>Variables</strong>: The Checker now scans variable usage.</li>
+      
+      <li><strong>Checker API</strong>: The
+      <a class="doc" href="Checker.html#pcx_api">Checker API</a> is documented in the
+      User Guide.</li>
+      
+    </ul>
+    
+    
+<h4><a name="new_compiler">Compiler</a></h4>
+    
+    
+    <ul>
+      <li><strong>Renamed Executable</strong>: To start the Compiler from the
+      Windows command line, enter <code>tclcompiler.tcl</code>. From the Unix
+      command line, enter <code>tclcompiler</code>.</li>
+      
+      <li><strong>8.3 Compiler</strong>: The 8.3-compatible compiler is no longer
+      included.</li>
+    
+      
+    </ul>
+    
+    
+<h4><a name="new_tclapp">TclApp</a></h4>
+    
+    <ul>
+    
+      <li><strong>Renamed Executable</strong>: To start the graphical version of
+      TclApp from the Windows command line, enter <code>tclapp.tcl</code>. From
+      the Unix command line, enter <code>tclapp</code>. To use the command-line
+      version, append options to the command.</li>
+    
+      <li><strong>Icon Preview</strong>:
+      In the <a class="doc" href="TclApp.html#application_gui">graphical TclApp</a>,
+      if an icon is associated with the selected <strong>Prefix file</strong> (as
+      specified on the <strong>Wrapping</strong> tab), the icon will be displayed
+      to the left of the Prefix file field.</li>
+      
+      <li><strong>Custom Icons</strong>: Custom icons can be assigned to wrapped
+      applications using the <strong>Custom icon</strong> field on the
+      <strong>Wrapping</strong> tab of the
+      <a class="doc" href="TclApp.html#application_gui">graphical TclApp</a>, or
+      using the <code>-icon <em>path</em></code>
+      <a class="doc" href="TclApp.html#cmdline">command-line switch</a>.</li>
+      
+      <li><strong>Starkit to Starpack Conversion</strong>: TclApp can be used
+      to convert <a class="doc" href="TclApp.html#star">starkits into starpacks</a>.</li>
+      
+      <li><strong>Command-Line Logging</strong>: When using the
+      <a class="doc" href="TclApp.html#cmdline">command-line</a> 
+      version of TclApp, output can be written to a log file using the new
+      <code>-log</code> switch.</li>
+      
+      <li><strong>Default Extensions</strong>: When using a <code>-prefix</code>
+      file, the prefix file's extension will be used as the default extension
+      for the generated application (if no explicit output file name is specified).
+      If the prefix has no extension, the name of the generated application will 
+      have no extension.</li>
+      
+      <li><strong>Package Versions</strong>: If the version of a package specified
+      in a TclApp project file does not exist, the
+      <a class="doc" href="TclApp.html#cmdline">command-line</a> version of
+      TclApp will fail unless the <code>-pkg-accept</code> switch is used (which
+      will use the highest available version of the package).
+      When using the 
+      <a class="doc" href="TclApp.html#application_gui">graphical TclApp</a>,
+      a message will be displayed when opening the project file, and the highest
+      available version of the specified package will be used.</li>
+    
+    </ul>
+    
+<h4><a name="new_package">Package Editor</a></h4>
+    
+    <ul>
+      <li><strong>Renamed Executable</strong>: To start the Package
+      Editor from the Windows command line, enter <code>tclpe.tcl</code>.
+      From the Unix command line, enter <code>tclpe</code>.</li>
+     
+    </ul>
+    
+    
+<h4><a name="new_servman">Service Manager</a></h4>
+    
+    <ul>
+      <li><strong>Renamed Executable</strong>: To start the Service Manager
+      from the Windows command line, enter <code>tclsvc.tcl</code>.</li>
+      
+      <li><strong>Service Base Kit</strong>: The Tcl Dev Kit includes a new base
+      kit ("<code>base-tclsvc-win32-ix86.exe</code>") that can be used to build
+      "portable" services. When using TclApp to generate the application, specify
+      <code>base-tclsvc-win32-ix86.exe</code> as the prefix file. This service
+      can then be installed on any system (using the Tcl Dev Kit's <strong>Service
+      Manager</strong>) that supports Windows NT-based services.</li>
+      
+    </ul>  
+    
+<h4><a name="new_inspector">Inspector</a></h4>
+    
+    
+    <ul>
+    
+      <li><strong>Renamed Executable</strong>: To start the Inspector from the 
+      Windows command line, enter <code>tclinspector.tcl</code>.
+      From the Unix command line, enter <code>tclinspector</code>.</li>
+      
+      <li><strong>Updated Icons</strong>: The icons in the Inspector have been
+      updated.</li>
+    
+    </ul>
+    
+    
+      
+<h4>Documentation and Demos</h4>
+    
+    <ul>
+      <li><strong>Demos</strong>: The demonstration programs included with the
+      Tcl Dev Kit have been updated and expanded. See the
+      <a class="doc" href="Demos.html">Demos</a> page for a list and brief
+      description of each program.</li>
+      
+      <li><strong>Tutorials</strong>: There is a new 
+      <a class="doc" href="README_spawn.html">Debugging Subprocesses</a> tutorial; 
+      the Building TclApps tutorial 
+      has been expanded to include wrapping extensions and DLLs.</li>
+      
+    </ul>
+    
+
+
+<h3>Tcl Dev Kit 3.0 Beta 1: November, 2003</h3>
+
+<h3>Tcl Dev Kit 2.6: May, 2003</h3>
+  
+  <ul>
+  <li>TclApp supports a new 
+  <a class="doc" href="TclApp.html#interp"><strong>-interpreter</strong></a> option for specifying 
+  the interpreter to be included with starkits.</li>
+  <li>TclApp supports a new 
+  <a class="doc" href="TclApp.html#compile"><strong>-notbcload</strong></a> option that prevents 
+  the inclusion of the <code>tbcload</code> package in the output application.</li>
+  <li>The <a class="doc" href="Debugger.html#stdout">debugger</a> now passes STDOUT and
+  STDERR output, and prompts for STDIN input, via the <strong>Eval Console</strong>.</li>
+</ul> 
+
+<h3>Tcl Dev Kit 2.5: February, 2003</h3>
+  
+  <ul>
+  
+    <li>The Tcl Dev Kit Wrapper has been replaced by the new TclApp component. 
+    This component is capable of generating starkits, starpacks and Windows 
+    services.</li>
+    <li>The Tcl Dev Kit includes a new "Service Manager" component for registering 
+    Windows services built with TclApp.</li>
+    <li>The Inspector component is now fully exposed; previously, only aspects 
+    of the Inspector were utilized by the Debugger with Coverage component.</li>
+    <li>This version of the Tcl Dev Kit includes the Tcl Browser Plugin for 
+    Internet Explorer and browsers based on the Netscape plug-in API.</li>
+    
+  </ul>
+
+<h3>Tcl Dev Kit 2.5 beta 2: February, 2003</h3>
+
+<h3>Tcl Dev Kit 2.5 beta 1: January, 2003</h3>
+
+<h3>Tcl Dev Kit 2.1: November, 2002</h3>
+  
+  <ul>
+    <li>Based on the Tcl 8.3.5 core; the Tcl 8.4 components are based on 8.4.1</li>
+    <li>Additional Wrapper stubs to support Tcl 8.4-based applications. See 
+    Specifying the Tcl Interpreter for 
+    a list of command-line interpreters, or <a name="wrapping_tab">Wrapping 
+    Tab</a> for information on specifying interpreters in the graphical Wrapper.</li>
+    <li>Compiler support for Tcl 8.4-based applications.</li>
+    <li>The Wrapper stubs for the "-lite" variants of the <code>bigtclsh</code> and 
+    <code>bigwish</code> interpreters are now the default. The non-lite versions 
+    are no longer supported.</li>
+  </ul> 
+
+<h3>Tcl Dev Kit 2.0.1: October, 2002</h3>
+  
+    <ul>
+      <li>TclXML version 2.3 (including expat)</li>
+      <li>TclDOM version 2.3</li>
+    	<li>Fixed bug in handling of PATHEXT variable when running a Windows 
+    	installation as a user without administrative rights</li>
+    </ul>
+	
+<h3>Tcl Dev Kit 2.0: August, 2002</h3>
+	
+	<ul>
+  <li><strong>Graphical Compiler</strong> The Tcl Dev Kit Compiler has a new 
+  <a class="doc" href="Compiler.html#compiling_gui">graphical interface</a>.</li>
+  <li><strong>Graphical Wrapper</strong> The Tcl Dev Kit Wrapper has a new 
+  <a class="doc" href="Compiler.html#compiling_gui">graphical interface</a>.</li>
+  <li><strong>Code Profiling</strong> The Tcl Dev Kit Debugger now provides code 
+  <a class="doc" href="Debugger.html#profiling">coverage analysis and profiling</a>.</li>
+  <li><strong>View Syntax Errors in Debugger</strong> The Tcl Dev Kit Debugger has a 
+  new <a class="doc" href="Debugger.html#navigating">Syntax Errors dialog</a> 
+  that can be used to quickly list and display all the errors in programs 
+  open in the code display.</li>
+  <li><strong>Checker API</strong> The Tcl Dev Kit Checker documentation now 
+  includes the <a class="doc" href="Checker.html#pcx_api">Checker Interface 
+  Specification</a>, for writing custom checker packages.</li>
+  <li><strong>Variable Value Formatting</strong> You can now specify the format 
+  (hex, octal, etc) in which variable values are displayed in the <a class="doc" 
+  href="Debugger.html#variable_display">Variable Display pane</a>, the 
+  <a class="doc" href="Debugger.html#watch_var">Watch Variables window</a> and 
+  the <a class="doc" href="Debugger.html#DisplayingData">Data Display</a> 
+  window.</li>
+  <li><strong>Support for Tcl 8.4</strong></li>
+  <li><strong>Project Management</strong> The file format for debugger projects
+  has changed between Tcl Dev Kit version 1 and 2.  Version 1 .tpj files can still be opened
+  by the debugger; changes to version 1 projects will still be stored in the version
+  1 format.  However, information about variable value formatting cannot be stored
+  in version 1 project files. New projects will always use the version 2 format.</li>
+  
+</ul>
+<h3>TclPro 2.0 beta 1: June, 2002</h3>
+
+<h3>TclPro 1.5.0.2: January, 2002</h3>
+
+    <ul>
+      <li><strong>TclPro Wrapper</strong>: fixed a bug where big shells (for 
+      wrapping of scripts that used [incr Tcl], TclX, ...) were not being 
+      distributed</li>
+      <li><strong>TclPro Wrapper</strong>: reintroduced *-dynamic shells to 
+      distribution</li>
+      <li><strong>ActiveTcl 8.3.4.2</strong>: support (and inclusion) of the 
+      latest ActiveTcl version</li>
+    </ul>
+    
+<h3>TclPro 1.5.0.1: December, 2001</h3>
+
+<h3>TclPro 1.5.0.1 beta 1: October, 2001</h3>
+
+		
+<a class="topText" href="#top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+<h2><a name="known_issues">Known Issues</a></h2>
+    
+<ul>
+
+  <li>If the file type icon displayed in the Virtual Filesystem Explorer
+  changes based on file analysis, the new icon will not change until the
+  window is refreshed (for example, by covering then uncovering the
+  application).</li>
+
+  <li>User preferences from previous Tcl Dev Kit versions (such as debugger 
+  color usage) will not be imported during installation, and must be manually 
+  re-configured.</li>
+  
+  <li>The compiled help file cannot be opened on Windows NT4 systems.</li>
+</ul>
+
+
+<a class="topText" href="#top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+
+<h2><a name="contact">Contact ActiveState</a></h2>
+
+<ul>
+  <li>For installation-related support issues, please send questions to 
+  <a class="doc" href="mailto:support@ActiveState.com">support@ActiveState.com</a>.</li>
+  <li>Subscribe to the <a class="doc" href="http://aspn.ActiveState.com/ASPN/Mail/">Tcl 
+	mailing lists</a>. Mailing list information and list archives can be viewed 
+	on <a class="doc" target="_blank" href="http://aspn.ActiveState.com/ASPN/Mail/">ASPN</a>, 
+  the ActiveState Programmer Network.</li>
+  <li>See the <a class="doc" href="Resources.html">Resources</a> topic for more Tcl 
+	information sources.</li>
+  <li>Submit an online  <a class="doc" target="_blank"
+  href="http://bugs.activestate.com/query.cgi?set_product=TclDevKit">
+  Bug Report</a>.  From this form, you can also view existing bugs and check 
+	the status of previous submissions.  When submitting a bug report, please 
+	include all relevant details and one or more examples that will help us reproduce 
+	the problem.</li>
+</ul>
+
+<a class="topText" href="#top"><img src="images/top.gif" height="11" width="11" border="0"/>Top</a>
+
+</body>
+</html>
