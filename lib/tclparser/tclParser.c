@@ -110,8 +110,6 @@ Tclparser_Init(interp)
 
     Tcl_CreateObjCommand(interp, "parse", ParseObjCmd, NULL, NULL);
 
-    Tcl_CreateObjCommand(interp, "tdk_license", TdkLicenseObjCmd, NULL, NULL);
-
     return Tcl_PkgProvide(interp, packageName, packageVersion);
 }
 
